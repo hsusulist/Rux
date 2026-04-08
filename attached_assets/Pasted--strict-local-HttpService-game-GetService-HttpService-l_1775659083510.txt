@@ -1,0 +1,773 @@
+--!strict
+
+local HttpService = game:GetService("HttpService")
+local Selection = game:GetService("Selection")
+local RunService = game:GetService("RunService")
+
+local PLUGIN_NAME = "Replit AI Agent"
+local WIDGET_ID = "ReplitAIAgentWidget"
+local TOOLBAR_NAME = "Replit AI"
+local BUTTON_TOOLTIP = "Toggle Replit AI Agent Panel"
+
+local SERVER_BASE_URL = "[your-replit-app.repl.co](https://your-replit-app.repl.co)"
+local POLL_ENDPOINT = SERVER_BASE_URL .. "/plugin/poll"
+local TOOL_RESULT_ENDPOINT = SERVER_BASE_URL .. "/plugin/tool_result"
+local HEARTBEAT_ENDPOINT = SERVER_BASE_URL .. "/plugin/heartbeat"
+
+local SESSION_ID = HttpService:GenerateGUID(false)
+local PLUGIN_ID = "studio-" .. HttpService:GenerateGUID(false)
+
+local state = {
+	status = "Idle",
+	logs = {},
+	toolLogs = {},
+	conversation = {},
+	snapshots = {},
+	pendingRestoreTarget = nil,
+	lastPoll = 0,
+	pollInterval = 2,
+}
+
+local function pushLog(message: string)
+	table.insert(state.logs, ("[%s] %s"):format(os.date("%X"), message))
+end
+
+local function pushToolLog(message: string)
+	table.insert(state.toolLogs, ("[%s] %s"):format(os.date("%X"), message))
+end
+
+local function setStatus(status: string)
+	state.status = status
+end
+
+local function jsonEncode(data)
+	local ok, result = pcall(function()
+		return HttpService:JSONEncode(data)
+	end)
+	return ok, result
+end
+
+local function jsonDecode(data)
+	local ok, result = pcall(function()
+		return HttpService:JSONDecode(data)
+	end)
+	return ok, result
+end
+
+local function safeRequest(url: string, method: string, bodyTable: any?)
+	local headers = {
+		["Content-Type"] = "application/json",
+	}
+
+	local body = nil
+	if bodyTable ~= nil then
+		local ok, encoded = jsonEncode(bodyTable)
+		if not ok then
+			return false, "Failed to encode JSON body"
+		end
+		body = encoded
+	end
+
+	local ok, response = pcall(function()
+		return HttpService:RequestAsync({
+			Url = url,
+			Method = method,
+			Headers = headers,
+			Body = body,
+		})
+	end)
+
+	if not ok then
+		return false, "HTTP request failed: " .. tostring(response)
+	end
+
+	if not response.Success then
+		return false, ("HTTP %s: %s"):format(tostring(response.StatusCode), tostring(response.Body))
+	end
+
+	if response.Body and response.Body ~= "" then
+		local decodedOk, decoded = jsonDecode(response.Body)
+		if decodedOk then
+			return true, decoded
+		else
+			return true, response.Body
+		end
+	end
+
+	return true, nil
+end
+
+local function getFullNameSafe(instance: Instance): string
+	local ok, result = pcall(function()
+		return instance:GetFullName()
+	end)
+	return ok and result or instance.Name
+end
+
+local function getSelectedInstanceInfo()
+	local selected = Selection:Get()
+	if #selected == 0 then
+		return {
+			name = nil,
+			path = nil,
+			className = nil,
+		}
+	end
+
+	local inst = selected[1]
+	return {
+		name = inst.Name,
+		path = getFullNameSafe(inst),
+		className = inst.ClassName,
+	}
+end
+
+local function isScriptLike(inst: Instance): boolean
+	return inst:IsA("Script") or inst:IsA("LocalScript") or inst:IsA("ModuleScript")
+end
+
+local function findScriptByName(name: string): Instance?
+	for _, inst in ipairs(game:GetDescendants()) do
+		if isScriptLike(inst) and inst.Name == name then
+			return inst
+		end
+	end
+	return nil
+end
+
+local function findInstanceByPath(path: string): Instance?
+	local parts = string.split(path, ".")
+	local current: Instance = game
+	local startIndex = 1
+
+	if parts[1] == "game" then
+		startIndex = 2
+	end
+
+	for i = startIndex, #parts do
+		local part = parts[i]
+		local found = current:FindFirstChild(part)
+		if not found then
+			return nil
+		end
+		current = found
+	end
+
+	return current
+end
+
+local function buildScriptTree()
+	local items = {}
+
+	for _, inst in ipairs(game:GetDescendants()) do
+		if isScriptLike(inst) then
+			table.insert(items, {
+				name = inst.Name,
+				className = inst.ClassName,
+				path = getFullNameSafe(inst),
+			})
+		end
+	end
+
+	return items
+end
+
+local function buildInstanceTree(root: Instance)
+	local function walk(node: Instance)
+		local children = {}
+		for _, child in ipairs(node:GetChildren()) do
+			table.insert(children, walk(child))
+		end
+
+		return {
+			name = node.Name,
+			className = node.ClassName,
+			path = getFullNameSafe(node),
+			children = children,
+		}
+	end
+
+	return walk(root)
+end
+
+local function searchCode(query: string)
+	local results = {}
+
+	for _, inst in ipairs(game:GetDescendants()) do
+		if isScriptLike(inst) then
+			local source = ""
+			local ok = pcall(function()
+				source = inst.Source
+			end)
+
+			if ok then
+				local lineNumber = 0
+				for line in string.gmatch(source, "([^\n]*)\n?") do
+					lineNumber += 1
+					if string.find(string.lower(line), string.lower(query), 1, true) then
+						table.insert(results, {
+							script = inst.Name,
+							path = getFullNameSafe(inst),
+							line = lineNumber,
+							content = line,
+						})
+					end
+				end
+			end
+		end
+	end
+
+	return results
+end
+
+local function findUsages(variableName: string)
+	return searchCode(variableName)
+end
+
+local function snapshotScript(name: string)
+	local inst = findScriptByName(name)
+	if not inst or not isScriptLike(inst) then
+		return false, "Script not found"
+	end
+
+	local ok, source = pcall(function()
+		return inst.Source
+	end)
+	if not ok then
+		return false, "Unable to read script source"
+	end
+
+	state.snapshots[name] = {
+		source = source,
+		timestamp = os.time(),
+		path = getFullNameSafe(inst),
+	}
+	return true, "Snapshot saved"
+end
+
+local function diffLines(oldText: string, newText: string)
+	local oldLines = string.split(oldText, "\n")
+	local newLines = string.split(newText, "\n")
+	local maxLines = math.max(#oldLines, #newLines)
+	local diffs = {}
+
+	for i = 1, maxLines do
+		local oldLine = oldLines[i]
+		local newLine = newLines[i]
+		if oldLine ~= newLine then
+			table.insert(diffs, {
+				line = i,
+				before = oldLine,
+				after = newLine,
+			})
+		end
+	end
+
+	return diffs
+end
+
+local function restoreScript(name: string)
+	local snapshot = state.snapshots[name]
+	if not snapshot then
+		return false, "No snapshot found"
+	end
+
+	local inst = findScriptByName(name)
+	if not inst or not isScriptLike(inst) then
+		return false, "Script not found"
+	end
+
+	local ok, err = pcall(function()
+		inst.Source = snapshot.source
+	end)
+
+	if not ok then
+		return false, "Restore failed: " .. tostring(err)
+	end
+
+	return true, "Script restored"
+end
+
+local function getProperties(instancePath: string)
+	local inst = findInstanceByPath(instancePath)
+	if not inst then
+		return false, "Instance not found"
+	end
+
+	local props = {
+		Name = inst.Name,
+		ClassName = inst.ClassName,
+		Parent = inst.Parent and getFullNameSafe(inst.Parent) or nil,
+	}
+
+	local successArchivable, archivable = pcall(function()
+		return inst.Archivable
+	end)
+	if successArchivable then
+		props.Archivable = archivable
+	end
+
+	return true, props
+end
+
+local function setProperty(instancePath: string, propertyName: string, value: any)
+	local inst = findInstanceByPath(instancePath)
+	if not inst then
+		return false, "Instance not found"
+	end
+
+	local ok, err = pcall(function()
+		inst[propertyName] = value
+	end)
+
+	if not ok then
+		return false, "Failed to set property: " .. tostring(err)
+	end
+
+	return true, "Property updated"
+end
+
+local function createScript(name: string, scriptType: string, parentPath: string)
+	local parentInst = findInstanceByPath(parentPath)
+	if not parentInst then
+		return false, "Parent not found"
+	end
+
+	local newScript: Instance
+	if scriptType == "Script" then
+		newScript = Instance.new("Script")
+	elseif scriptType == "LocalScript" then
+		newScript = Instance.new("LocalScript")
+	elseif scriptType == "ModuleScript" then
+		newScript = Instance.new("ModuleScript")
+	else
+		return false, "Unsupported script type"
+	end
+
+	newScript.Name = name
+	newScript.Parent = parentInst
+
+	return true, {
+		name = newScript.Name,
+		path = getFullNameSafe(newScript),
+		className = newScript.ClassName,
+	}
+end
+
+local function executeTool(toolName: string, arguments: {[string]: any})
+	pushToolLog("Executing tool: " .. toolName)
+	setStatus("Executing")
+
+	if toolName == "read_script" then
+		local inst = findScriptByName(arguments.name)
+		if not inst or not isScriptLike(inst) then
+			return { ok = false, error = "Script not found" }
+		end
+
+		local ok, source = pcall(function()
+			return inst.Source
+		end)
+		if not ok then
+			return { ok = false, error = "Unable to read script source" }
+		end
+
+		return {
+			ok = true,
+			name = inst.Name,
+			path = getFullNameSafe(inst),
+			source = source,
+		}
+	elseif toolName == "write_script" then
+		local inst = findScriptByName(arguments.name)
+		if not inst or not isScriptLike(inst) then
+			return { ok = false, error = "Script not found" }
+		end
+
+		local snapshotOk = snapshotScript(arguments.name)
+		pushToolLog("Snapshot before write: " .. tostring(snapshotOk))
+
+		local ok, err = pcall(function()
+			inst.Source = arguments.code
+		end)
+		if not ok then
+			return { ok = false, error = "Write failed: " .. tostring(err) }
+		end
+
+		return { ok = true, message = "Script updated", name = inst.Name }
+	elseif toolName == "create_script" then
+		local ok, result = createScript(arguments.name, arguments.type, arguments.parent)
+		if not ok then
+			return { ok = false, error = result }
+		end
+		return { ok = true, created = result }
+	elseif toolName == "delete_script" then
+		local inst = findScriptByName(arguments.name)
+		if not inst or not isScriptLike(inst) then
+			return { ok = false, error = "Script not found" }
+		end
+
+		local snapshotOk = snapshotScript(arguments.name)
+		pushToolLog("Snapshot before delete: " .. tostring(snapshotOk))
+		inst:Destroy()
+		return { ok = true, message = "Script deleted" }
+	elseif toolName == "list_scripts" then
+		local scripts = {}
+		for _, inst in ipairs(game:GetDescendants()) do
+			if isScriptLike(inst) then
+				table.insert(scripts, inst.Name)
+			end
+		end
+		return { ok = true, scripts = scripts }
+	elseif toolName == "get_script_tree" then
+		return { ok = true, tree = buildScriptTree() }
+	elseif toolName == "check_errors" then
+		local inst = findScriptByName(arguments.name)
+		if not inst or not isScriptLike(inst) then
+			return { ok = false, error = "Script not found" }
+		end
+
+		local ok, source = pcall(function()
+			return inst.Source
+		end)
+		if not ok then
+			return { ok = false, error = "Unable to read source" }
+		end
+
+		return {
+			ok = true,
+			message = "Basic validation only. Full Luau syntax validation is limited in plugins.",
+			source_length = #source,
+		}
+	elseif toolName == "get_output_log" then
+		return {
+			ok = true,
+			message = "Direct Studio output access is limited. Returning plugin logs instead.",
+			logs = state.logs,
+		}
+	elseif toolName == "get_error_log" then
+		local errors = {}
+		for _, line in ipairs(state.toolLogs) do
+			if string.find(string.lower(line), "error", 1, true) or string.find(string.lower(line), "failed", 1, true) then
+				table.insert(errors, line)
+			end
+		end
+		return { ok = true, errors = errors }
+	elseif toolName == "search_code" then
+		return { ok = true, matches = searchCode(arguments.query) }
+	elseif toolName == "find_usages" then
+		return { ok = true, matches = findUsages(arguments.variable_name) }
+	elseif toolName == "get_instance_tree" then
+		return { ok = true, tree = buildInstanceTree(game) }
+	elseif toolName == "get_properties" then
+		local ok, result = getProperties(arguments.instance_path)
+		if not ok then
+			return { ok = false, error = result }
+		end
+		return { ok = true, properties = result }
+	elseif toolName == "set_property" then
+		local ok, result = setProperty(arguments.instance_path, arguments.property, arguments.value)
+		if not ok then
+			return { ok = false, error = result }
+		end
+		return { ok = true, message = result }
+	elseif toolName == "find_instance" then
+		for _, inst in ipairs(game:GetDescendants()) do
+			if inst.Name == arguments.name then
+				return {
+					ok = true,
+					instance = {
+						name = inst.Name,
+						path = getFullNameSafe(inst),
+						className = inst.ClassName,
+					},
+				}
+			end
+		end
+		return { ok = false, error = "Instance not found" }
+	elseif toolName == "get_selection" then
+		return { ok = true, selection = getSelectedInstanceInfo() }
+	elseif toolName == "get_current_script" then
+		local selected = Selection:Get()
+		for _, inst in ipairs(selected) do
+			if isScriptLike(inst) then
+				local ok, source = pcall(function()
+					return inst.Source
+				end)
+				if ok then
+					return {
+						ok = true,
+						name = inst.Name,
+						path = getFullNameSafe(inst),
+						source = source,
+						note = "Using selected script as current script.",
+					}
+				end
+			end
+		end
+		return {
+			ok = false,
+			error = "No selected script available. Current open editor access is limited.",
+		}
+	elseif toolName == "get_place_metadata" then
+		return {
+			ok = true,
+			metadata = {
+				game_name = game.Name,
+				place_id = game.PlaceId,
+				place_version = game.PlaceVersion,
+			},
+		}
+	elseif toolName == "snapshot_script" then
+		local ok, result = snapshotScript(arguments.name)
+		if not ok then
+			return { ok = false, error = result }
+		end
+		return { ok = true, message = result }
+	elseif toolName == "diff_script" then
+		local inst = findScriptByName(arguments.name)
+		if not inst or not isScriptLike(inst) then
+			return { ok = false, error = "Script not found" }
+		end
+
+		local snapshot = state.snapshots[arguments.name]
+		if not snapshot then
+			return { ok = false, error = "No snapshot found" }
+		end
+
+		local ok, currentSource = pcall(function()
+			return inst.Source
+		end)
+		if not ok then
+			return { ok = false, error = "Unable to read current source" }
+		end
+
+		return {
+			ok = true,
+			diff = diffLines(snapshot.source, currentSource),
+		}
+	elseif toolName == "restore_script" then
+		local ok, result = restoreScript(arguments.name)
+		if not ok then
+			return { ok = false, error = result }
+		end
+		return { ok = true, message = result }
+	else
+		return { ok = false, error = "Unknown tool: " .. tostring(toolName) }
+	end
+end
+
+local toolbar = plugin:CreateToolbar(TOOLBAR_NAME)
+local toggleButton = toolbar:CreateButton("Toggle", BUTTON_TOOLTIP, "")
+toggleButton.ClickableWhenViewportHidden = true
+
+local widgetInfo = DockWidgetPluginGuiInfo.new(
+	Enum.InitialDockState.Right,
+	true,
+	false,
+	450,
+	600,
+	300,
+	400
+)
+
+local widget = plugin:CreateDockWidgetPluginGui(WIDGET_ID, widgetInfo)
+widget.Title = PLUGIN_NAME
+
+local root = Instance.new("Frame")
+root.Size = UDim2.fromScale(1, 1)
+root.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+root.Parent = widget
+
+local statusBar = Instance.new("TextLabel")
+statusBar.Size = UDim2.new(1, 0, 0, 28)
+statusBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+statusBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+statusBar.TextXAlignment = Enum.TextXAlignment.Left
+statusBar.Text = " Status: Idle"
+statusBar.Parent = root
+
+local responseLabel = Instance.new("TextLabel")
+responseLabel.Position = UDim2.new(0, 0, 0, 30)
+responseLabel.Size = UDim2.new(1, 0, 0, 24)
+responseLabel.BackgroundTransparency = 1
+responseLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+responseLabel.TextXAlignment = Enum.TextXAlignment.Left
+responseLabel.Text = " Conversation / Activity"
+responseLabel.Parent = root
+
+local responseBox = Instance.new("TextBox")
+responseBox.Position = UDim2.new(0, 8, 0, 56)
+responseBox.Size = UDim2.new(1, -16, 0.55, -64)
+responseBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+responseBox.TextColor3 = Color3.fromRGB(240, 240, 240)
+responseBox.MultiLine = true
+responseBox.ClearTextOnFocus = false
+responseBox.TextEditable = false
+responseBox.TextWrapped = false
+responseBox.TextXAlignment = Enum.TextXAlignment.Left
+responseBox.TextYAlignment = Enum.TextYAlignment.Top
+responseBox.Text = ""
+responseBox.Parent = root
+
+local logLabel = Instance.new("TextLabel")
+logLabel.Position = UDim2.new(0, 0, 0.62, 0)
+logLabel.Size = UDim2.new(1, 0, 0, 24)
+logLabel.BackgroundTransparency = 1
+logLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+logLabel.TextXAlignment = Enum.TextXAlignment.Left
+logLabel.Text = " Tool Execution Log"
+logLabel.Parent = root
+
+local logBox = Instance.new("TextBox")
+logBox.Position = UDim2.new(0, 8, 0.62, 24)
+logBox.Size = UDim2.new(1, -16, 0.22, -24)
+logBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+logBox.TextColor3 = Color3.fromRGB(160, 255, 160)
+logBox.MultiLine = true
+logBox.ClearTextOnFocus = false
+logBox.TextEditable = false
+logBox.TextWrapped = false
+logBox.TextXAlignment = Enum.TextXAlignment.Left
+logBox.TextYAlignment = Enum.TextYAlignment.Top
+logBox.Text = ""
+logBox.Parent = root
+
+local snapshotButton = Instance.new("TextButton")
+snapshotButton.Position = UDim2.new(0, 8, 0.86, 0)
+snapshotButton.Size = UDim2.new(0.48, -12, 0, 32)
+snapshotButton.Text = "Snapshot Selected Script"
+snapshotButton.BackgroundColor3 = Color3.fromRGB(70, 70, 120)
+snapshotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+snapshotButton.Parent = root
+
+local restoreButton = Instance.new("TextButton")
+restoreButton.Position = UDim2.new(0.52, 4, 0.86, 0)
+restoreButton.Size = UDim2.new(0.48, -12, 0, 32)
+restoreButton.Text = "Restore Selected Script"
+restoreButton.BackgroundColor3 = Color3.fromRGB(120, 70, 70)
+restoreButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+restoreButton.Parent = root
+
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Position = UDim2.new(0, 8, 0.92, 0)
+infoLabel.Size = UDim2.new(1, -16, 0, 40)
+infoLabel.BackgroundTransparency = 1
+infoLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+infoLabel.TextXAlignment = Enum.TextXAlignment.Left
+infoLabel.TextYAlignment = Enum.TextYAlignment.Top
+infoLabel.TextWrapped = true
+infoLabel.Text = "Chat happens on the website. This plugin shows logs, tool execution, and snapshot controls."
+infoLabel.Parent = root
+
+local function refreshUI()
+	statusBar.Text = " Status: " .. state.status
+	responseBox.Text = table.concat(state.logs, "\n")
+	logBox.Text = table.concat(state.toolLogs, "\n")
+end
+
+toggleButton.Click:Connect(function()
+	widget.Enabled = not widget.Enabled
+end)
+
+snapshotButton.MouseButton1Click:Connect(function()
+	local selected = Selection:Get()
+	if #selected == 0 or not isScriptLike(selected[1]) then
+		pushLog("Snapshot failed: select a script first.")
+		refreshUI()
+		return
+	end
+
+	local ok, result = snapshotScript(selected[1].Name)
+	pushLog(ok and ("Snapshot created for " .. selected[1].Name) or ("Snapshot failed: " .. tostring(result)))
+	refreshUI()
+end)
+
+restoreButton.MouseButton1Click:Connect(function()
+	local selected = Selection:Get()
+	if #selected == 0 or not isScriptLike(selected[1]) then
+		pushLog("Restore failed: select a script first.")
+		refreshUI()
+		return
+	end
+
+	local ok, result = restoreScript(selected[1].Name)
+	pushLog(ok and ("Restore completed for " .. selected[1].Name) or ("Restore failed: " .. tostring(result)))
+	refreshUI()
+end)
+
+local function sendHeartbeat()
+	local payload = {
+		plugin_id = PLUGIN_ID,
+		session_id = SESSION_ID,
+		status = state.status,
+		selected_instance = getSelectedInstanceInfo(),
+	}
+
+	local ok, result = safeRequest(HEARTBEAT_ENDPOINT, "POST", payload)
+	if not ok then
+		pushToolLog("Heartbeat failed: " .. tostring(result))
+	end
+end
+
+local function pollServer()
+	setStatus("Idle")
+
+	local payload = {
+		plugin_id = PLUGIN_ID,
+		session_id = SESSION_ID,
+		selected_instance = getSelectedInstanceInfo(),
+	}
+
+	local ok, result = safeRequest(POLL_ENDPOINT, "POST", payload)
+	if not ok then
+		pushToolLog("Poll failed: " .. tostring(result))
+		refreshUI()
+		return
+	end
+
+	if not result then
+		refreshUI()
+		return
+	end
+
+	if result.status_message then
+		pushLog(result.status_message)
+	end
+
+	if result.tool_call then
+		setStatus("Executing")
+		refreshUI()
+
+		local toolName = result.tool_call.name
+		local args = result.tool_call.arguments or {}
+		local toolResult = executeTool(toolName, args)
+
+		local sendOk, sendResult = safeRequest(TOOL_RESULT_ENDPOINT, "POST", {
+			plugin_id = PLUGIN_ID,
+			session_id = SESSION_ID,
+			tool_name = toolName,
+			tool_arguments = args,
+			tool_result = toolResult,
+		})
+
+		if sendOk then
+			pushToolLog("Tool result sent: " .. toolName)
+		else
+			pushToolLog("Failed to send tool result: " .. tostring(sendResult))
+		end
+	end
+
+	setStatus("Done")
+	refreshUI()
+end
+
+task.spawn(function()
+	pushLog("Plugin started. Session ID: " .. SESSION_ID)
+	refreshUI()
+
+	while true do
+		task.wait(state.pollInterval)
+		sendHeartbeat()
+		pollServer()
+	end
+end)
