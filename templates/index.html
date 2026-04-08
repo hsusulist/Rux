@@ -700,20 +700,133 @@
 
     /* ── INPUT AREA ─────────────────────────── */
     .input-area {
-      padding: 12px 24px 18px;
+      padding: 10px 24px 18px;
       border-top: 1px solid var(--border);
       background: var(--surface);
       flex-shrink: 0;
+      position: relative;
     }
+
+    /* Model picker popup */
+    .model-picker {
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 24px;
+      right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 14px;
+      padding: 6px;
+      display: none;
+      flex-direction: column;
+      gap: 3px;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+      z-index: 50;
+    }
+
+    .model-picker.open { display: flex; }
+
+    .model-picker-header {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      padding: 6px 10px 4px;
+    }
+
+    .model-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.12s;
+      border: 1px solid transparent;
+    }
+
+    .model-option:hover { background: var(--surface3); }
+
+    .model-option.selected {
+      background: rgba(217,79,61,0.08);
+      border-color: rgba(217,79,61,0.2);
+    }
+
+    .model-option-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .model-option-icon.google   { background: rgba(66,133,244,0.12); border: 1px solid rgba(66,133,244,0.2); }
+    .model-option-icon.anthropic { background: rgba(217,79,61,0.1);  border: 1px solid rgba(217,79,61,0.2); }
+    .model-option-icon svg { width: 18px; height: 18px; }
+
+    .model-option-body { flex: 1; }
+
+    .model-option-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .model-option-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .model-option-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+
+    .badge-fast    { background: rgba(31,200,112,0.12); color: #1fcc74; border: 1px solid rgba(31,200,112,0.2); }
+    .badge-smart   { background: rgba(77,142,245,0.12); color: #4d8ef5;  border: 1px solid rgba(77,142,245,0.2); }
+    .badge-balanced{ background: rgba(217,79,61,0.12);  color: #e8685a; border: 1px solid rgba(217,79,61,0.2); }
+    .badge-powerful{ background: rgba(160,80,220,0.12); color: #c080ff; border: 1px solid rgba(160,80,220,0.2); }
+
+    /* Model selector button */
+    .model-select-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      background: var(--surface3);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      align-self: flex-end;
+      margin-bottom: 1px;
+    }
+
+    .model-select-btn:hover { color: var(--text); border-color: var(--muted); }
+    .model-select-btn.open  { border-color: var(--accent); color: var(--accent); }
+    .model-select-btn svg   { width: 11px; height: 11px; fill: currentColor; }
 
     .input-shell {
       display: flex;
       align-items: flex-end;
-      gap: 10px;
+      gap: 8px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 10px 12px;
+      padding: 8px 10px;
       transition: border-color 0.2s;
     }
 
@@ -872,7 +985,62 @@
 
     <!-- Input -->
     <div class="input-area">
+
+      <!-- Model picker popup -->
+      <div class="model-picker" id="model-picker">
+        <div class="model-picker-header">Choose a model</div>
+
+        <div class="model-option" data-key="gemini-flash" onclick="selectModel('gemini-flash')">
+          <div class="model-option-icon google">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          </div>
+          <div class="model-option-body">
+            <div class="model-option-name">Gemini 3 Fast</div>
+            <div class="model-option-desc">Lightning-fast responses · Google</div>
+          </div>
+          <div class="model-option-badge badge-fast">Fast</div>
+        </div>
+
+        <div class="model-option" data-key="gemini-pro" onclick="selectModel('gemini-pro')">
+          <div class="model-option-icon google">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          </div>
+          <div class="model-option-body">
+            <div class="model-option-name">Gemini 3 Pro</div>
+            <div class="model-option-desc">Deep reasoning · Google</div>
+          </div>
+          <div class="model-option-badge badge-smart">Smart</div>
+        </div>
+
+        <div class="model-option selected" data-key="sonnet" onclick="selectModel('sonnet')">
+          <div class="model-option-icon anthropic">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="#d94f3d"/></svg>
+          </div>
+          <div class="model-option-body">
+            <div class="model-option-name">Sonnet 4.6</div>
+            <div class="model-option-desc">Balanced speed &amp; intelligence · Anthropic</div>
+          </div>
+          <div class="model-option-badge badge-balanced">Balanced</div>
+        </div>
+
+        <div class="model-option" data-key="opus" onclick="selectModel('opus')">
+          <div class="model-option-icon anthropic">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="#d94f3d"/></svg>
+          </div>
+          <div class="model-option-body">
+            <div class="model-option-name">Opus 4.6</div>
+            <div class="model-option-desc">Maximum intelligence · Anthropic</div>
+          </div>
+          <div class="model-option-badge badge-powerful">Powerful</div>
+        </div>
+      </div>
+
       <div class="input-shell">
+        <button class="model-select-btn" id="model-select-btn" onclick="toggleModelPicker(event)">
+          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span id="model-select-label">Sonnet 4.6</span>
+          <svg viewBox="0 0 24 24" style="width:9px;height:9px;opacity:0.5"><path d="M7 10l5 5 5-5z"/></svg>
+        </button>
         <textarea id="chat-input" rows="1" placeholder="Ask about your Roblox game…"></textarea>
         <button class="send-btn" id="send-btn" onclick="sendMessage()">
           <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -895,8 +1063,16 @@ let activeConvId = null;
 let pendingSessionId = null;
 let isLoading = false;
 let conversationHistory = [];
-let currentMessages = [];   // [{role, text, toolCalls?, isToolEvent?}]
+let currentMessages = [];
 let sessionId = crypto.randomUUID();
+let selectedModel = 'sonnet';
+
+const MODEL_LABELS = {
+  'gemini-flash': 'Gemini 3 Fast',
+  'gemini-pro':   'Gemini 3 Pro',
+  'sonnet':       'Sonnet 4.6',
+  'opus':         'Opus 4.6',
+};
 
 const STORAGE_KEY = 'rux_conversations';
 
