@@ -3,193 +3,448 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rux — Roblox Studio AI</title>
+  <title>Rux</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg:       #08080c;
-      --surface:  #101016;
-      --surface2: #16161f;
-      --surface3: #1d1d28;
-      --border:   #252535;
-      --border2:  #31314a;
-      --accent:   #d94f3d;
-      --accent2:  #e8685a;
-      --accentGlow: rgba(217,79,61,0.18);
-      --green:    #1fcc74;
-      --yellow:   #f0a429;
-      --blue:     #4f8ef7;
-      --text:     #e2e2f0;
-      --text2:    #a0a0c0;
-      --muted:    #5c5c80;
-      --code:     #7ec8a4;
-      --radius:   10px;
+      --bg:        #09090e;
+      --sidebar:   #0e0e16;
+      --surface:   #13131c;
+      --surface2:  #1a1a26;
+      --surface3:  #21212f;
+      --border:    #24243a;
+      --border2:   #303050;
+      --accent:    #d94f3d;
+      --accent2:   #e96b5a;
+      --accentBg:  rgba(217,79,61,0.12);
+      --green:     #20c870;
+      --greenBg:   rgba(32,200,112,0.1);
+      --yellow:    #eda932;
+      --blue:      #4d8ef5;
+      --blueBg:    rgba(77,142,245,0.12);
+      --text:      #ddddf0;
+      --text2:     #9595b8;
+      --muted:     #55557a;
+      --code:      #78c8a0;
+      --radius:    10px;
     }
 
-    html, body {
-      height: 100%;
-    }
+    html, body { height: 100%; }
 
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       display: flex;
-      flex-direction: column;
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── TOPBAR ─────────────────────────────────── */
-    .topbar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 0 22px;
-      height: 52px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      text-decoration: none;
-    }
-
-    .logo-mark {
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
-      background: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .logo-mark svg {
-      width: 17px;
-      height: 17px;
-      fill: white;
-    }
-
-    .logo-text {
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: -0.5px;
-    }
-
-    .logo-sub {
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 400;
-      letter-spacing: 0.2px;
-    }
-
-    .topbar-spacer { flex: 1; }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .badge {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 5px 13px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      transition: border-color 0.3s, color 0.3s;
-    }
-
-    .badge.connected {
-      border-color: var(--green);
-      color: var(--green);
-    }
-
-    .badge-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: 0.5;
-    }
-
-    .badge.connected .badge-dot {
-      opacity: 1;
-      box-shadow: 0 0 5px var(--green);
-      animation: blink 2.2s ease-in-out infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.3; }
-    }
-
-    /* ── LAYOUT ─────────────────────────────────── */
-    .layout {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    /* ── SIDEBAR ────────────────────────────────── */
+    /* ════════════════════════════════════════
+       SIDEBAR
+    ════════════════════════════════════════ */
     .sidebar {
-      width: 248px;
+      width: 240px;
       flex-shrink: 0;
-      background: var(--surface);
+      background: var(--sidebar);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
-    .sb-block {
-      padding: 14px 16px 12px;
+    .sb-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 16px 14px;
       border-bottom: 1px solid var(--border);
     }
 
-    .sb-label {
-      font-size: 9.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.1px;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-
-    /* Mode switcher */
-    .mode-switch {
-      display: flex;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      padding: 3px;
-      gap: 3px;
-    }
-
-    .mode-btn {
-      flex: 1;
+    .sb-logo-mark {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 7px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sb-logo-mark svg { width: 15px; height: 15px; fill: #fff; }
+
+    .sb-logo-name {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      color: var(--text);
+    }
+
+    .sb-new-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 12px 8px;
+      padding: 9px 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .sb-new-btn:hover { background: var(--accent2); }
+    .sb-new-btn svg { width: 14px; height: 14px; fill: #fff; }
+
+    .sb-section-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      padding: 12px 16px 6px;
+    }
+
+    .sb-conv-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 8px 12px;
+    }
+
+    .sb-conv-list::-webkit-scrollbar { width: 3px; }
+    .sb-conv-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    .sb-conv-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.12s;
+      position: relative;
+      group: true;
+    }
+
+    .sb-conv-item:hover { background: var(--surface); }
+    .sb-conv-item.active { background: var(--surface2); }
+
+    .sb-conv-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sb-conv-item.active .sb-conv-icon { background: var(--accentBg); border-color: var(--accent); }
+    .sb-conv-icon svg { width: 13px; height: 13px; fill: var(--muted); }
+    .sb-conv-item.active .sb-conv-icon svg { fill: var(--accent); }
+
+    .sb-conv-meta { flex: 1; min-width: 0; }
+
+    .sb-conv-title {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sb-conv-item.active .sb-conv-title { color: var(--text); }
+
+    .sb-conv-time {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .sb-conv-del {
+      display: none;
+      width: 22px;
+      height: 22px;
+      border: none;
+      background: transparent;
+      border-radius: 5px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .sb-conv-del svg { width: 13px; height: 13px; fill: currentColor; }
+    .sb-conv-item:hover .sb-conv-del { display: flex; }
+    .sb-conv-del:hover { color: var(--accent); background: var(--accentBg); }
+
+    .sb-empty {
+      padding: 20px 16px;
+      font-size: 12px;
+      color: var(--muted);
+      font-style: italic;
+      text-align: center;
+    }
+
+    .sb-bottom {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .plugin-badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color 0.3s;
+    }
+
+    .plugin-badge.connected { color: var(--green); }
+
+    .plugin-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+
+    .plugin-badge.connected .plugin-dot {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: blink 2.4s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.25; }
+    }
+
+    /* ════════════════════════════════════════
+       MAIN AREA
+    ════════════════════════════════════════ */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    /* ── HOME SCREEN ─── */
+    .home-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      padding: 40px;
+      overflow-y: auto;
+    }
+
+    .home-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .home-mark {
+      width: 72px;
+      height: 72px;
+      background: var(--accent);
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 48px rgba(217,79,61,0.3);
+    }
+
+    .home-mark svg { width: 36px; height: 36px; fill: #fff; }
+
+    .home-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      color: var(--text);
+    }
+
+    .home-sub {
+      font-size: 14px;
+      color: var(--text2);
+      max-width: 360px;
+      line-height: 1.6;
+    }
+
+    .home-new-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 13px 28px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.12s;
+      box-shadow: 0 4px 20px rgba(217,79,61,0.3);
+    }
+
+    .home-new-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+    .home-new-btn svg { width: 16px; height: 16px; fill: #fff; }
+
+    .home-saved {
+      width: 100%;
+      max-width: 580px;
+    }
+
+    .home-saved-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .home-conv-grid {
+      display: flex;
+      flex-direction: column;
       gap: 6px;
-      padding: 7px 0;
+    }
+
+    .home-conv-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .home-conv-card:hover { border-color: var(--border2); background: var(--surface2); }
+
+    .home-conv-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .home-conv-card-icon svg { width: 16px; height: 16px; fill: var(--text2); }
+
+    .home-conv-card-body { flex: 1; min-width: 0; }
+
+    .home-conv-card-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .home-conv-card-preview {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .home-conv-card-time {
+      font-size: 10.5px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .home-empty {
+      text-align: center;
+      padding: 28px;
+      color: var(--muted);
+      font-size: 13px;
+      background: var(--surface);
+      border: 1px dashed var(--border2);
+      border-radius: 12px;
+    }
+
+    /* ── CHAT SCREEN ─── */
+    .chat-screen {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-screen.visible { display: flex; }
+
+    /* Chat topbar */
+    .chat-topbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 20px;
+      height: 52px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .chat-topbar-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Mode toggle */
+    .mode-toggle {
+      display: flex;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .mode-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
       font-size: 12px;
       font-weight: 600;
       font-family: 'Inter', sans-serif;
@@ -198,105 +453,169 @@
       cursor: pointer;
       color: var(--muted);
       background: transparent;
-      transition: background 0.2s, color 0.2s;
+      transition: all 0.15s;
     }
 
-    .mode-btn svg { width: 13px; height: 13px; fill: currentColor; }
+    .mode-btn svg { width: 12px; height: 12px; fill: currentColor; }
+    .mode-btn.active { background: var(--accent); color: #fff; }
 
-    .mode-btn.active {
-      background: var(--accent);
-      color: #fff;
+    /* Save button */
+    .save-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 13px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
     }
 
-    /* Session grid */
-    .info-grid {
+    .save-btn:hover { color: var(--text); border-color: var(--muted); }
+    .save-btn.saved { border-color: var(--green); color: var(--green); }
+    .save-btn svg { width: 13px; height: 13px; fill: currentColor; }
+
+    /* Messages area */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 0;
+      min-height: 0;
     }
 
-    .info-row {
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Message row */
+    .msg-row {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 6px 24px;
+      gap: 14px;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
     }
 
-    .info-key {
-      font-size: 11.5px;
+    .msg-row.user { flex-direction: row-reverse; }
+    .msg-row.system-row { justify-content: center; max-width: 100%; padding: 4px 24px; }
+
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .msg-avatar svg { width: 15px; height: 15px; fill: #fff; }
+    .msg-row.user .msg-avatar { background: var(--accent); }
+    .msg-row.assistant .msg-avatar { background: linear-gradient(135deg, #3a5ef0, #5040e0); }
+
+    .msg-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+
+    .msg-sender {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
       color: var(--muted);
     }
 
-    .info-val {
+    .msg-row.user .msg-sender { text-align: right; }
+
+    .msg-bubble {
+      padding: 11px 16px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .msg-row.user .msg-bubble {
+      background: var(--accent);
+      color: #fff;
+      border-top-right-radius: 4px;
+      align-self: flex-end;
+    }
+
+    .msg-row.assistant .msg-bubble {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-top-left-radius: 4px;
+    }
+
+    .system-msg {
+      font-size: 11.5px;
+      color: var(--muted);
+      font-style: italic;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    /* Tool event card — inline in chat */
+    .tool-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--blueBg);
+      border: 1px solid rgba(77,142,245,0.2);
+      border-radius: 10px;
+      margin-top: 6px;
+      width: 100%;
+    }
+
+    .tool-card-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: rgba(77,142,245,0.15);
+      border: 1px solid rgba(77,142,245,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tool-card-icon svg { width: 13px; height: 13px; fill: var(--blue); }
+
+    .tool-card-body { flex: 1; min-width: 0; }
+
+    .tool-card-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--blue);
+    }
+
+    .tool-card-args {
       font-family: 'JetBrains Mono', monospace;
       font-size: 10.5px;
       color: var(--text2);
-      max-width: 130px;
+      margin-top: 2px;
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 10.5px;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      padding: 2px 9px;
-      border-radius: 20px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-    }
-
-    .chip.idle   { color: var(--muted); border-color: var(--border2); }
-    .chip.running { color: var(--yellow); border-color: var(--yellow); }
-    .chip.done   { color: var(--green);  border-color: var(--green);  }
-    .chip.error  { color: var(--accent); border-color: var(--accent); }
-
-    /* Tool log */
-    .log-wrap {
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      padding: 14px 16px 12px;
-      min-height: 0;
-    }
-
-    .log-scroll {
-      flex: 1;
-      overflow-y: auto;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10.5px;
-      color: var(--code);
-      line-height: 1.75;
-      min-height: 0;
-    }
-
-    .log-scroll::-webkit-scrollbar { width: 3px; }
-    .log-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-    .log-line { word-break: break-all; }
-    .log-line.err  { color: #f07070; }
-    .log-line.tool { color: #7aabf7; }
-    .log-empty { color: var(--muted); font-style: italic; font-size: 11px; }
-
-    /* ── CHAT AREA ───────────────────────────────── */
-    .chat-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 0;
     }
 
     /* Plan banner */
     .plan-banner {
       display: none;
-      background: linear-gradient(180deg, #111128 0%, #0f0f22 100%);
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 16px 22px;
+      padding: 16px 24px;
     }
 
     .plan-banner.show { display: block; }
@@ -308,23 +627,20 @@
       margin-bottom: 10px;
     }
 
-    .plan-title {
-      font-size: 12.5px;
+    .plan-label {
+      font-size: 11px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
       color: var(--blue);
-      display: flex;
-      align-items: center;
-      gap: 7px;
     }
 
-    .plan-title svg { width: 14px; height: 14px; fill: var(--blue); }
-
     .plan-body {
-      font-size: 12.5px;
-      color: #b0b0d8;
-      line-height: 1.75;
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.7;
       white-space: pre-wrap;
-      max-height: 170px;
+      max-height: 160px;
       overflow-y: auto;
       border-left: 2px solid var(--blue);
       padding-left: 12px;
@@ -336,7 +652,7 @@
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
+      gap: 6px;
       padding: 8px 18px;
       border-radius: 8px;
       font-size: 12.5px;
@@ -348,133 +664,25 @@
     }
 
     .btn svg { width: 13px; height: 13px; fill: currentColor; }
-
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-primary:hover { background: var(--accent2); }
-
-    .btn-ghost {
-      background: var(--surface2);
-      color: var(--text2);
-      border: 1px solid var(--border2);
-    }
-
+    .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
     .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
 
-    /* Messages */
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      min-height: 0;
-    }
-
-    .messages::-webkit-scrollbar { width: 4px; }
-    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    /* Message rows */
-    .msg {
-      display: flex;
-      gap: 12px;
-      max-width: 780px;
-    }
-
-    .msg.user      { flex-direction: row-reverse; align-self: flex-end; }
-    .msg.assistant { align-self: flex-start; }
-    .msg.system    { align-self: center; }
-
-    .msg-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .msg-avatar svg { width: 16px; height: 16px; fill: white; }
-
-    .msg.user .msg-avatar      { background: var(--accent); }
-    .msg.assistant .msg-avatar { background: linear-gradient(135deg, #3b6ef5, #5b44e8); }
-
-    .msg-col {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .msg-sender {
-      font-size: 10.5px;
-      font-weight: 600;
-      color: var(--muted);
-      letter-spacing: 0.3px;
-    }
-
-    .msg.user .msg-sender { text-align: right; }
-
-    .msg-bubble {
-      padding: 11px 15px;
-      border-radius: 12px;
-      font-size: 13.5px;
-      line-height: 1.65;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .msg.user .msg-bubble {
-      background: var(--accent);
-      color: #fff;
-      border-top-right-radius: 4px;
-    }
-
-    .msg.assistant .msg-bubble {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-top-left-radius: 4px;
-    }
-
-    .msg.system .msg-bubble {
-      background: transparent;
-      color: var(--muted);
-      font-size: 12px;
-      font-style: italic;
-    }
-
-    .tool-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: #111128;
-      border: 1px solid #2a2a50;
-      border-radius: 6px;
-      padding: 5px 10px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: #7aabf7;
-      margin-top: 6px;
-      width: fit-content;
-    }
-
-    .tool-pill svg { width: 12px; height: 12px; fill: currentColor; opacity: 0.7; }
-
-    /* Typing */
-    .typing-wrap {
+    /* Typing indicator */
+    .typing-row {
       display: flex;
       align-items: center;
       gap: 5px;
-      padding: 13px 16px;
+      padding: 12px 16px;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       border-top-left-radius: 4px;
       width: fit-content;
     }
 
-    .typing-wrap span {
+    .typing-row span {
       width: 5px;
       height: 5px;
       border-radius: 50%;
@@ -482,92 +690,34 @@
       animation: bounce 1.2s infinite;
     }
 
-    .typing-wrap span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-wrap span:nth-child(3) { animation-delay: 0.4s; }
+    .typing-row span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-row span:nth-child(3) { animation-delay: 0.4s; }
 
     @keyframes bounce {
-      0%, 100% { transform: translateY(0);    opacity: 0.4; }
-      50%       { transform: translateY(-4px); opacity: 1;   }
+      0%, 100% { transform: translateY(0); opacity: 0.4; }
+      50%       { transform: translateY(-4px); opacity: 1; }
     }
 
-    /* Welcome screen */
-    .welcome {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      text-align: center;
-      padding: 60px 40px;
-      flex: 1;
-    }
-
-    .welcome-mark {
-      width: 64px;
-      height: 64px;
-      background: var(--accent);
-      border-radius: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 40px var(--accentGlow);
-    }
-
-    .welcome-mark svg { width: 32px; height: 32px; fill: white; }
-
-    .welcome h2 {
-      font-size: 21px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-    }
-
-    .welcome p {
-      font-size: 13.5px;
-      color: var(--text2);
-      max-width: 380px;
-      line-height: 1.65;
-    }
-
-    .tip-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-      justify-content: center;
-      margin-top: 4px;
-    }
-
-    .tip {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 12px;
-      color: var(--text2);
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
-    }
-
-    .tip:hover { border-color: var(--accent); color: var(--text); }
-
-    /* ── INPUT AREA ─────────────────────────────── */
+    /* ── INPUT AREA ─────────────────────────── */
     .input-area {
-      padding: 12px 22px 16px;
+      padding: 12px 24px 18px;
       border-top: 1px solid var(--border);
       background: var(--surface);
+      flex-shrink: 0;
     }
 
-    .input-row {
+    .input-shell {
       display: flex;
       align-items: flex-end;
       gap: 10px;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 10px 12px;
       transition: border-color 0.2s;
     }
 
-    .input-row:focus-within { border-color: var(--accent); }
+    .input-shell:focus-within { border-color: var(--accent); }
 
     #chat-input {
       flex: 1;
@@ -575,7 +725,7 @@
       border: none;
       outline: none;
       color: var(--text);
-      font-size: 13.5px;
+      font-size: 14px;
       font-family: 'Inter', sans-serif;
       resize: none;
       max-height: 130px;
@@ -587,7 +737,7 @@
     .send-btn {
       width: 34px;
       height: 34px;
-      border-radius: 8px;
+      border-radius: 9px;
       background: var(--accent);
       border: none;
       cursor: pointer;
@@ -600,7 +750,7 @@
 
     .send-btn:hover   { background: var(--accent2); }
     .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .send-btn svg { width: 15px; height: 15px; fill: white; }
+    .send-btn svg { width: 15px; height: 15px; fill: #fff; }
 
     .input-hint {
       font-size: 10.5px;
@@ -618,7 +768,7 @@
       color: var(--text2);
     }
 
-    /* ── SCROLLBARS ─────────────────────────────── */
+    /* ── SCROLLBARS ──────────────────────────── */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -626,34 +776,65 @@
 </head>
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="logo">
-    <div class="logo-mark">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">
       <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
     </div>
-    <div>
-      <div class="logo-text">Rux</div>
-      <div class="logo-sub">Roblox Studio AI</div>
-    </div>
+    <div class="sb-logo-name">Rux</div>
   </div>
-  <div class="topbar-spacer"></div>
-  <div class="topbar-right">
-    <div class="badge" id="plugin-badge">
-      <div class="badge-dot"></div>
+
+  <button class="sb-new-btn" onclick="goHome()">
+    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+    New conversation
+  </button>
+
+  <div class="sb-section-label">Conversations</div>
+
+  <div class="sb-conv-list" id="sb-conv-list">
+    <div class="sb-empty" id="sb-empty">No conversations yet</div>
+  </div>
+
+  <div class="sb-bottom">
+    <div class="plugin-badge" id="plugin-badge">
+      <div class="plugin-dot"></div>
       <span id="plugin-status-text">Studio disconnected</span>
     </div>
   </div>
 </div>
 
-<div class="layout">
+<!-- MAIN -->
+<div class="main">
 
-  <!-- SIDEBAR -->
-  <div class="sidebar">
+  <!-- HOME SCREEN -->
+  <div class="home-screen" id="home-screen">
+    <div class="home-hero">
+      <div class="home-mark">
+        <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div class="home-title">Rux</div>
+      <div class="home-sub">Your AI assistant for Roblox Studio. Chat about scripts and instances, or run agent tasks.</div>
+      <button class="home-new-btn" onclick="startNewConversation()">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        New conversation
+      </button>
+    </div>
 
-    <div class="sb-block">
-      <div class="sb-label">Mode</div>
-      <div class="mode-switch">
+    <div class="home-saved" id="home-saved" style="display:none">
+      <div class="home-saved-title">Saved conversations</div>
+      <div class="home-conv-grid" id="home-conv-grid"></div>
+    </div>
+  </div>
+
+  <!-- CHAT SCREEN -->
+  <div class="chat-screen" id="chat-screen">
+
+    <!-- Chat topbar -->
+    <div class="chat-topbar">
+      <div class="chat-topbar-title" id="chat-title">New conversation</div>
+
+      <div class="mode-toggle">
         <button class="mode-btn active" data-mode="chat" id="btn-chat">
           <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
           Chat
@@ -663,49 +844,17 @@
           Agent
         </button>
       </div>
+
+      <button class="save-btn" id="save-btn" onclick="saveConversation()">
+        <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+        Save
+      </button>
     </div>
 
-    <div class="sb-block">
-      <div class="sb-label">Session</div>
-      <div class="info-grid">
-        <div class="info-row">
-          <span class="info-key">Status</span>
-          <span class="chip idle" id="agent-status">idle</span>
-        </div>
-        <div class="info-row">
-          <span class="info-key">Steps</span>
-          <span class="info-val" id="step-count">0</span>
-        </div>
-        <div class="info-row">
-          <span class="info-key">Session</span>
-          <span class="info-val" id="session-id-disp">—</span>
-        </div>
-        <div class="info-row">
-          <span class="info-key">Selected</span>
-          <span class="info-val" id="selected-instance">—</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="log-wrap">
-      <div class="sb-label">Tool Log</div>
-      <div class="log-scroll" id="tool-log">
-        <span class="log-empty">No activity yet</span>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- CHAT -->
-  <div class="chat-area">
-
-    <!-- Plan Banner -->
+    <!-- Plan banner -->
     <div class="plan-banner" id="plan-banner">
       <div class="plan-top">
-        <div class="plan-title">
-          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
-          Execution Plan
-        </div>
+        <div class="plan-label">Execution Plan</div>
         <span style="font-size:11px;color:var(--muted)">Review before running</span>
       </div>
       <div class="plan-body" id="plan-text"></div>
@@ -719,32 +868,18 @@
     </div>
 
     <!-- Messages -->
-    <div class="messages" id="messages">
-      <div class="welcome" id="welcome">
-        <div class="welcome-mark">
-          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        </div>
-        <h2>Welcome to Rux</h2>
-        <p>Your AI assistant for Roblox Studio. Ask about scripts, instances, and game structure — or switch to Agent mode to run multi-step tasks.</p>
-        <div class="tip-row">
-          <div class="tip" onclick="fillInput('List all scripts in my game')">List all scripts</div>
-          <div class="tip" onclick="fillInput('Read the source of PlayerController')">Read a script</div>
-          <div class="tip" onclick="fillInput('Find all usages of RemoteEvent')">Find usages</div>
-          <div class="tip" onclick="fillInput('What is my current game name and place ID?')">Game metadata</div>
-        </div>
-      </div>
-    </div>
+    <div class="messages" id="messages"></div>
 
     <!-- Input -->
     <div class="input-area">
-      <div class="input-row">
+      <div class="input-shell">
         <textarea id="chat-input" rows="1" placeholder="Ask about your Roblox game…"></textarea>
         <button class="send-btn" id="send-btn" onclick="sendMessage()">
           <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
       </div>
       <div class="input-hint">
-        <kbd>Enter</kbd> to send &nbsp;&middot;&nbsp; <kbd>Shift + Enter</kbd> for new line
+        <kbd>Enter</kbd> to send &nbsp;&middot;&nbsp; <kbd>Shift+Enter</kbd> for new line
       </div>
     </div>
 
@@ -752,278 +887,522 @@
 </div>
 
 <script>
-  const SESSION_ID = crypto.randomUUID();
-  let mode = 'chat';
-  let pendingSessionId = null;
-  let conversationHistory = [];
-  let isLoading = false;
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let mode = 'chat';
+let activeConvId = null;
+let pendingSessionId = null;
+let isLoading = false;
+let conversationHistory = [];
+let currentMessages = [];   // [{role, text, toolCalls?, isToolEvent?}]
+let sessionId = crypto.randomUUID();
 
-  document.getElementById('session-id-disp').textContent = SESSION_ID.slice(0, 8) + '…';
+const STORAGE_KEY = 'rux_conversations';
 
-  // ── Mode toggle ───────────────────────────────
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      mode = btn.dataset.mode;
-      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('chat-input').placeholder =
-        mode === 'agent' ? 'Describe a task for Rux to execute…' : 'Ask about your Roblox game…';
+/* ═══════════════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════════════ */
+function loadConversations() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function saveConversations(convs) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
+}
+
+function getConvList() {
+  const convs = loadConversations();
+  return Object.values(convs).sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'Just now';
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR RENDER
+═══════════════════════════════════════════════ */
+function renderSidebar() {
+  const list = document.getElementById('sb-conv-list');
+  const empty = document.getElementById('sb-empty');
+  const convs = getConvList();
+
+  list.querySelectorAll('.sb-conv-item').forEach(el => el.remove());
+
+  if (convs.length === 0) {
+    empty.style.display = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  convs.forEach(conv => {
+    const item = document.createElement('div');
+    item.classList.add('sb-conv-item');
+    if (conv.id === activeConvId) item.classList.add('active');
+    item.dataset.id = conv.id;
+
+    item.innerHTML = `
+      <div class="sb-conv-icon">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      </div>
+      <div class="sb-conv-meta">
+        <div class="sb-conv-title">${escHtml(conv.title)}</div>
+        <div class="sb-conv-time">${timeAgo(conv.updatedAt)}</div>
+      </div>
+      <button class="sb-conv-del" title="Delete" onclick="deleteConv('${conv.id}', event)">
+        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    `;
+
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.sb-conv-del')) return;
+      openConversation(conv.id);
     });
+
+    list.appendChild(item);
   });
+}
 
-  // ── Input resize ─────────────────────────────
-  const chatInput = document.getElementById('chat-input');
-  chatInput.addEventListener('input', () => {
-    chatInput.style.height = 'auto';
-    chatInput.style.height = Math.min(chatInput.scrollHeight, 130) + 'px';
+function renderHomeConvs() {
+  const convs = getConvList();
+  const section = document.getElementById('home-saved');
+  const grid    = document.getElementById('home-conv-grid');
+
+  if (convs.length === 0) { section.style.display = 'none'; return; }
+
+  section.style.display = '';
+  grid.innerHTML = '';
+
+  convs.slice(0, 8).forEach(conv => {
+    const card = document.createElement('div');
+    card.classList.add('home-conv-card');
+    card.innerHTML = `
+      <div class="home-conv-card-icon">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      </div>
+      <div class="home-conv-card-body">
+        <div class="home-conv-card-title">${escHtml(conv.title)}</div>
+        <div class="home-conv-card-preview">${escHtml(conv.preview || '')}</div>
+      </div>
+      <div class="home-conv-card-time">${timeAgo(conv.updatedAt)}</div>
+    `;
+    card.onclick = () => openConversation(conv.id);
+    grid.appendChild(card);
   });
-  chatInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+/* ═══════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════ */
+function goHome() {
+  activeConvId = null;
+  document.getElementById('home-screen').style.display = '';
+  document.getElementById('chat-screen').classList.remove('visible');
+  document.getElementById('plan-banner').classList.remove('show');
+  renderSidebar();
+  renderHomeConvs();
+}
+
+function startNewConversation() {
+  activeConvId = 'new-' + Date.now();
+  sessionId = crypto.randomUUID();
+  conversationHistory = [];
+  currentMessages = [];
+  pendingSessionId = null;
+  mode = 'chat';
+  updateModeUI();
+
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('chat-title').textContent = 'New conversation';
+  document.getElementById('save-btn').classList.remove('saved');
+  document.getElementById('plan-banner').classList.remove('show');
+  document.getElementById('home-screen').style.display = 'none';
+  document.getElementById('chat-screen').classList.add('visible');
+  renderSidebar();
+  document.getElementById('chat-input').focus();
+}
+
+function openConversation(id) {
+  const convs = loadConversations();
+  const conv = convs[id];
+  if (!conv) return;
+
+  activeConvId = id;
+  sessionId = conv.sessionId || crypto.randomUUID();
+  conversationHistory = conv.history || [];
+  currentMessages = conv.messages || [];
+  pendingSessionId = conv.pendingSessionId || null;
+  mode = conv.mode || 'chat';
+  updateModeUI();
+
+  document.getElementById('chat-title').textContent = conv.title;
+  document.getElementById('save-btn').classList.add('saved');
+  document.getElementById('plan-banner').classList.remove('show');
+  document.getElementById('home-screen').style.display = 'none';
+  document.getElementById('chat-screen').classList.add('visible');
+
+  const msgs = document.getElementById('messages');
+  msgs.innerHTML = '';
+  currentMessages.forEach(m => renderMessage(m));
+  msgs.scrollTop = msgs.scrollHeight;
+
+  renderSidebar();
+}
+
+function deleteConv(id, e) {
+  e.stopPropagation();
+  const convs = loadConversations();
+  delete convs[id];
+  saveConversations(convs);
+  if (activeConvId === id) goHome();
+  else { renderSidebar(); renderHomeConvs(); }
+}
+
+/* ═══════════════════════════════════════════════
+   SAVE CONVERSATION
+═══════════════════════════════════════════════ */
+function saveConversation() {
+  if (!currentMessages.length) return;
+  const btn = document.getElementById('save-btn');
+
+  const firstUserMsg = currentMessages.find(m => m.role === 'user');
+  const title = firstUserMsg ? firstUserMsg.text.slice(0, 48) : 'Conversation';
+  const lastAssistant = [...currentMessages].reverse().find(m => m.role === 'assistant');
+  const preview = lastAssistant ? lastAssistant.text.slice(0, 80) : '';
+
+  const convId = activeConvId && !activeConvId.startsWith('new-') ? activeConvId : 'conv-' + Date.now();
+  activeConvId = convId;
+
+  const convs = loadConversations();
+  convs[convId] = {
+    id: convId,
+    title,
+    preview,
+    sessionId,
+    history: conversationHistory,
+    messages: currentMessages,
+    pendingSessionId,
+    mode,
+    updatedAt: Date.now(),
+  };
+
+  saveConversations(convs);
+  document.getElementById('chat-title').textContent = title;
+  btn.classList.add('saved');
+  btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Saved`;
+  setTimeout(() => {
+    btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg> Save`;
+  }, 2000);
+  renderSidebar();
+}
+
+/* ═══════════════════════════════════════════════
+   MODE TOGGLE
+═══════════════════════════════════════════════ */
+function updateModeUI() {
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
   });
+  document.getElementById('chat-input').placeholder =
+    mode === 'agent' ? 'Describe a task for Rux to execute…' : 'Ask about your Roblox game…';
+}
 
-  function fillInput(text) {
-    chatInput.value = text;
-    chatInput.focus();
-    chatInput.dispatchEvent(new Event('input'));
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    mode = btn.dataset.mode;
+    updateModeUI();
+  });
+});
+
+/* ═══════════════════════════════════════════════
+   INPUT
+═══════════════════════════════════════════════ */
+const chatInput = document.getElementById('chat-input');
+chatInput.addEventListener('input', () => {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 130) + 'px';
+});
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+/* ═══════════════════════════════════════════════
+   RENDER MESSAGES
+═══════════════════════════════════════════════ */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const userSVG = `<svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>`;
+const botSVG  = `<svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`;
+const toolSVG = `<svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>`;
+
+function renderMessage(msgData) {
+  const msgs = document.getElementById('messages');
+  const { role, text, toolCalls, isToolEvent } = msgData;
+
+  if (role === 'system') {
+    const row = document.createElement('div');
+    row.classList.add('msg-row', 'system-row');
+    const span = document.createElement('div');
+    span.classList.add('system-msg');
+    span.textContent = text;
+    row.appendChild(span);
+    msgs.appendChild(row);
+    return row;
   }
 
-  // ── Tool log ─────────────────────────────────
-  function addLog(text, type) {
-    const log = document.getElementById('tool-log');
-    const empty = log.querySelector('.log-empty');
-    if (empty) empty.remove();
-    const line = document.createElement('div');
-    line.classList.add('log-line');
-    if (type) line.classList.add(type);
-    line.textContent = text;
-    log.appendChild(line);
-    log.scrollTop = log.scrollHeight;
-  }
-
-  // ── Status helpers ────────────────────────────
-  function setStatus(s) {
-    const chip = document.getElementById('agent-status');
-    chip.className = 'chip ' + (s || 'idle');
-    chip.textContent = s || 'idle';
-  }
-
-  function setSteps(n) {
-    document.getElementById('step-count').textContent = n;
-  }
-
-  // ── Plugin status poll ────────────────────────
-  async function checkPlugin() {
-    try {
-      const r = await fetch('/status');
-      const d = await r.json();
-      const badge = document.getElementById('plugin-badge');
-      const txt   = document.getElementById('plugin-status-text');
-      if (d.plugin_connected) {
-        badge.classList.add('connected');
-        txt.textContent = 'Studio connected';
-        if (d.selected_instance?.name)
-          document.getElementById('selected-instance').textContent = d.selected_instance.name;
-      } else {
-        badge.classList.remove('connected');
-        txt.textContent = 'Studio disconnected';
-        document.getElementById('selected-instance').textContent = '—';
-      }
-      if (d.status)      setStatus(d.status);
-      if (d.step_count !== undefined) setSteps(d.step_count);
-    } catch {}
-  }
-
-  setInterval(checkPlugin, 3000);
-  checkPlugin();
-
-  // ── Messages ─────────────────────────────────
-  const userAvatarSVG = `<svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>`;
-  const botAvatarSVG  = `<svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`;
-
-  function addMessage(role, text, toolCalls) {
-    const welcome = document.getElementById('welcome');
-    if (welcome) welcome.remove();
-
-    const msgs = document.getElementById('messages');
-    const wrap = document.createElement('div');
-    wrap.classList.add('msg', role);
-
-    if (role !== 'system') {
-      const av = document.createElement('div');
-      av.classList.add('msg-avatar');
-      av.innerHTML = role === 'user' ? userAvatarSVG : botAvatarSVG;
-      wrap.appendChild(av);
-    }
-
-    const col = document.createElement('div');
-    col.classList.add('msg-col');
-
-    if (role !== 'system') {
-      const sender = document.createElement('div');
-      sender.classList.add('msg-sender');
-      sender.textContent = role === 'user' ? 'You' : 'Rux';
-      col.appendChild(sender);
-    }
-
-    const bubble = document.createElement('div');
-    bubble.classList.add('msg-bubble');
-    bubble.textContent = text;
-    col.appendChild(bubble);
-
-    if (toolCalls?.length) {
-      toolCalls.forEach(tc => {
-        const pill = document.createElement('div');
-        pill.classList.add('tool-pill');
-        pill.innerHTML = `<svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg><strong>${tc.name}</strong> ${JSON.stringify(tc.arguments).slice(0,60)}`;
-        col.appendChild(pill);
-      });
-    }
-
-    wrap.appendChild(col);
-    msgs.appendChild(wrap);
-    msgs.scrollTop = msgs.scrollHeight;
-  }
-
-  function addTyping() {
-    const welcome = document.getElementById('welcome');
-    if (welcome) welcome.remove();
-    const msgs = document.getElementById('messages');
-
-    const wrap = document.createElement('div');
-    wrap.classList.add('msg', 'assistant');
-    wrap.id = 'typing-wrap-msg';
-
+  if (isToolEvent) {
+    const row = document.createElement('div');
+    row.classList.add('msg-row', 'assistant');
     const av = document.createElement('div');
     av.classList.add('msg-avatar');
-    av.innerHTML = botAvatarSVG;
+    av.style.background = 'linear-gradient(135deg,#3a5ef0,#5040e0)';
+    av.innerHTML = botSVG;
 
-    const col = document.createElement('div');
-    col.classList.add('msg-col');
+    const body = document.createElement('div');
+    body.classList.add('msg-body');
 
     const sender = document.createElement('div');
     sender.classList.add('msg-sender');
     sender.textContent = 'Rux';
 
-    const tw = document.createElement('div');
-    tw.classList.add('typing-wrap');
-    tw.innerHTML = '<span></span><span></span><span></span>';
+    const card = document.createElement('div');
+    card.classList.add('tool-card');
+    card.innerHTML = `
+      <div class="tool-card-icon">${toolSVG}</div>
+      <div class="tool-card-body">
+        <div class="tool-card-name">${escHtml(msgData.toolName || '')}</div>
+        <div class="tool-card-args">${escHtml(msgData.toolArgs || '')}</div>
+      </div>
+    `;
 
-    col.appendChild(sender);
-    col.appendChild(tw);
-    wrap.appendChild(av);
-    wrap.appendChild(col);
-    msgs.appendChild(wrap);
+    body.appendChild(sender);
+    body.appendChild(card);
+    row.appendChild(av);
+    row.appendChild(body);
+    msgs.appendChild(row);
     msgs.scrollTop = msgs.scrollHeight;
+    return row;
   }
 
-  function removeTyping() {
-    const el = document.getElementById('typing-wrap-msg');
-    if (el) el.remove();
+  const row = document.createElement('div');
+  row.classList.add('msg-row', role);
+
+  const av = document.createElement('div');
+  av.classList.add('msg-avatar');
+  av.innerHTML = role === 'user' ? userSVG : botSVG;
+
+  const body = document.createElement('div');
+  body.classList.add('msg-body');
+
+  const sender = document.createElement('div');
+  sender.classList.add('msg-sender');
+  sender.textContent = role === 'user' ? 'You' : 'Rux';
+
+  const bubble = document.createElement('div');
+  bubble.classList.add('msg-bubble');
+  bubble.textContent = text;
+
+  body.appendChild(sender);
+  body.appendChild(bubble);
+  row.appendChild(av);
+  row.appendChild(body);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+  return row;
+}
+
+function pushMsg(msgData) {
+  currentMessages.push(msgData);
+  renderMessage(msgData);
+}
+
+function addTyping() {
+  const msgs = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.classList.add('msg-row', 'assistant');
+  row.id = 'typing-row';
+
+  const av = document.createElement('div');
+  av.classList.add('msg-avatar');
+  av.style.background = 'linear-gradient(135deg,#3a5ef0,#5040e0)';
+  av.innerHTML = botSVG;
+
+  const body = document.createElement('div');
+  body.classList.add('msg-body');
+
+  const sender = document.createElement('div');
+  sender.classList.add('msg-sender');
+  sender.textContent = 'Rux';
+
+  const typing = document.createElement('div');
+  typing.classList.add('typing-row');
+  typing.innerHTML = '<span></span><span></span><span></span>';
+
+  body.appendChild(sender);
+  body.appendChild(typing);
+  row.appendChild(av);
+  row.appendChild(body);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-row');
+  if (el) el.remove();
+}
+
+/* ═══════════════════════════════════════════════
+   PLAN BANNER
+═══════════════════════════════════════════════ */
+function showPlan(plan) {
+  document.getElementById('plan-text').textContent = plan;
+  document.getElementById('plan-banner').classList.add('show');
+}
+
+function hidePlan() {
+  document.getElementById('plan-banner').classList.remove('show');
+}
+
+document.getElementById('reject-plan-btn').addEventListener('click', () => {
+  hidePlan();
+  pendingSessionId = null;
+  pushMsg({ role: 'system', text: 'Plan discarded.' });
+});
+
+document.getElementById('approve-btn').addEventListener('click', async () => {
+  hidePlan();
+  if (!pendingSessionId) return;
+  pushMsg({ role: 'system', text: 'Plan approved — starting execution…' });
+  addTyping();
+
+  try {
+    const res = await fetch('/ai/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: pendingSessionId, message: 'The plan is approved. Begin execution.' })
+    });
+    const data = await res.json();
+    removeTyping();
+    handleResponse(data);
+  } catch (e) {
+    removeTyping();
+    pushMsg({ role: 'assistant', text: 'Failed to start agent: ' + e.message });
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   HANDLE AI RESPONSE
+═══════════════════════════════════════════════ */
+function handleResponse(data) {
+  if (data.session_id) pendingSessionId = data.session_id;
+
+  if (data.plan && data.status === 'awaiting_approval') {
+    showPlan(data.plan);
+    pushMsg({ role: 'assistant', text: 'I have drafted an execution plan. Review it above before I proceed.' });
+    return;
   }
 
-  // ── Plan banner ───────────────────────────────
-  function showPlan(plan) {
-    document.getElementById('plan-text').textContent = plan;
-    document.getElementById('plan-banner').classList.add('show');
-  }
-
-  function hidePlan() {
-    document.getElementById('plan-banner').classList.remove('show');
-  }
-
-  document.getElementById('reject-plan-btn').addEventListener('click', () => {
-    hidePlan();
-    pendingSessionId = null;
-    setStatus('idle');
-    addMessage('system', 'Plan discarded.');
-  });
-
-  document.getElementById('approve-btn').addEventListener('click', async () => {
-    hidePlan();
-    if (!pendingSessionId) return;
-    addMessage('system', 'Plan approved. Starting execution…');
-    setStatus('running');
-    addLog('[AGENT] Execution started', 'tool');
-    addTyping();
-
-    try {
-      const res = await fetch('/ai/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: pendingSessionId, message: 'The plan is approved. Begin execution.' })
+  if (data.tool_calls?.length) {
+    data.tool_calls.forEach(tc => {
+      pushMsg({
+        role: 'assistant',
+        text: '',
+        isToolEvent: true,
+        toolName: tc.name,
+        toolArgs: JSON.stringify(tc.arguments).slice(0, 120),
       });
-      const data = await res.json();
-      removeTyping();
-      handleResponse(data);
-    } catch (e) {
-      removeTyping();
-      addMessage('assistant', 'Failed to start agent: ' + e.message);
-    }
-  });
-
-  // ── Handle response ───────────────────────────
-  function handleResponse(data) {
-    if (data.session_id) pendingSessionId = data.session_id;
-    if (data.status)     setStatus(data.status);
-
-    if (data.plan && data.status === 'awaiting_approval') {
-      showPlan(data.plan);
-      addMessage('assistant', 'I have created an execution plan. Please review it above before I proceed.');
-      return;
-    }
-
-    if (data.tool_calls?.length) {
-      data.tool_calls.forEach(tc => addLog(`[TOOL] ${tc.name}`, 'tool'));
-    }
-
-    if (data.reply) {
-      addMessage('assistant', data.reply, data.tool_calls?.length ? data.tool_calls : null);
-    }
-
-    if (data.status === 'done') addLog('[DONE] Task complete', '');
-
-    conversationHistory.push({ role: 'assistant', content: data.reply || '' });
+    });
   }
 
-  // ── Send ──────────────────────────────────────
-  async function sendMessage() {
-    const text = chatInput.value.trim();
-    if (!text || isLoading) return;
-
-    isLoading = true;
-    chatInput.value = '';
-    chatInput.style.height = 'auto';
-    document.getElementById('send-btn').disabled = true;
-
-    conversationHistory.push({ role: 'user', content: text });
-    addMessage('user', text);
-    addTyping();
-    setStatus('running');
-
-    try {
-      const res = await fetch('/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: SESSION_ID,
-          mode,
-          message: text,
-          conversation_history: conversationHistory.slice(-20),
-        })
-      });
-
-      const data = await res.json();
-      removeTyping();
-      handleResponse(data);
-    } catch (e) {
-      removeTyping();
-      addMessage('assistant', 'Connection error: ' + e.message);
-      setStatus('error');
-    } finally {
-      isLoading = false;
-      document.getElementById('send-btn').disabled = false;
-    }
+  if (data.reply) {
+    pushMsg({ role: 'assistant', text: data.reply });
+    conversationHistory.push({ role: 'assistant', content: data.reply });
   }
+}
+
+/* ═══════════════════════════════════════════════
+   SEND MESSAGE
+═══════════════════════════════════════════════ */
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text || isLoading) return;
+
+  if (!document.getElementById('chat-screen').classList.contains('visible')) {
+    startNewConversation();
+  }
+
+  isLoading = true;
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  document.getElementById('send-btn').disabled = true;
+
+  conversationHistory.push({ role: 'user', content: text });
+  pushMsg({ role: 'user', text });
+  addTyping();
+
+  try {
+    const res = await fetch('/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        mode,
+        message: text,
+        conversation_history: conversationHistory.slice(-20),
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    handleResponse(data);
+  } catch (e) {
+    removeTyping();
+    pushMsg({ role: 'assistant', text: 'Connection error: ' + e.message });
+  } finally {
+    isLoading = false;
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   PLUGIN STATUS
+═══════════════════════════════════════════════ */
+async function checkPlugin() {
+  try {
+    const r = await fetch('/status');
+    const d = await r.json();
+    const badge = document.getElementById('plugin-badge');
+    const txt   = document.getElementById('plugin-status-text');
+    if (d.plugin_connected) {
+      badge.classList.add('connected');
+      txt.textContent = 'Studio connected';
+    } else {
+      badge.classList.remove('connected');
+      txt.textContent = 'Studio disconnected';
+    }
+  } catch {}
+}
+
+setInterval(checkPlugin, 3000);
+checkPlugin();
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+renderSidebar();
+renderHomeConvs();
 </script>
 </body>
 </html>
