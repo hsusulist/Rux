@@ -416,16 +416,34 @@ def ai():
     mi = resolve_model(model_key)
     mid, prov = mi["id"], mi["provider"]
 
+    session["accumulated_reply"] = ""
+
     try:
         if mode == "chat":
             msgs = build_chat_messages(session, user_message, context)
             if prov == "anthropic":
-                r = call_anthropic(mid, msgs)
-                reply = "".join(b.text for b in r.content if b.type == "text")
+                r = call_anthropic(mid, msgs, tools=TOOL_DEFINITIONS)
+                tc = None
+                reply_text = ""
+                for b in r.content:
+                    if b.type == "tool_use":
+                        tc = {"id": b.id, "name": b.name, "arguments": b.input}
+                    elif b.type == "text":
+                        reply_text += b.text
+                if tc:
+                    session["pending_tool_call"] = tc
+                    session["agent_messages"] = msgs + [{"role": "assistant", "content": r.content}]
+                    session["status"] = "running"
+                    session["latest_reply"] = ""
+                    return jsonify({"session_id": session_id, "reply": reply_text or "", "tool_calls": [tc], "plan": None, "status": "tool_requested", "model": mi["label"], "credits": balance - 1})
+                session["latest_reply"] = reply_text
+                session["status"] = "done"
+                return jsonify({"session_id": session_id, "reply": reply_text, "tool_calls": [], "plan": None, "status": "done", "model": mi["label"], "credits": balance - 1})
             else:
                 reply = call_gemini(mid, msgs)
-            session["latest_reply"] = reply
-            return jsonify({"session_id": session_id, "reply": reply, "tool_calls": [], "plan": None, "status": "done", "model": mi["label"], "credits": balance - 1})
+                session["latest_reply"] = reply
+                session["status"] = "done"
+                return jsonify({"session_id": session_id, "reply": reply, "tool_calls": [], "plan": None, "status": "done", "model": mi["label"], "credits": balance - 1})
 
         elif mode == "agent":
             if prov == "google":
@@ -444,6 +462,19 @@ def ai():
     except Exception as e:
         return jsonify({"session_id": session_id, "reply": f"Failed: {e}", "tool_calls": [], "plan": None, "status": "error", "credits": balance - 1}), 500
 
+@app.route("/ai/result/<session_id>", methods=["GET"])
+@require_auth
+def ai_result(session_id):
+    session = get_session(session_id)
+    tc = session.get("pending_tool_call")
+    return jsonify({
+        "session_id": session_id,
+        "status": session.get("status", "idle"),
+        "reply": session.get("latest_reply", ""),
+        "pending_tool_call": tc,
+        "tool_calls": [tc] if tc else [],
+    })
+
 @app.route("/ai/approve", methods=["POST"])
 @require_auth
 def approve_agent():
@@ -455,6 +486,7 @@ def approve_agent():
         session["model_key"] = am
     session["approved"] = True
     session["status"] = "running"
+    session["accumulated_reply"] = ""
     mi = resolve_model(session.get("model_key", DEFAULT_MODEL))
     if mi["provider"] == "google":
         session["status"] = "error"
@@ -536,13 +568,17 @@ def plugin_tool_result():
                 nt = {"id": b.id, "name": b.name, "arguments": b.input}
             elif b.type == "text":
                 ft += b.text
+        if ft:
+            session["accumulated_reply"] = session.get("accumulated_reply", "") + ft
         if nt:
             session["pending_tool_call"] = nt
             session["status"] = "running"
             return jsonify({"reply": ft or "Tool processed.", "status": "tool_requested", "tool_call": nt})
         session["status"] = "done"
-        session["latest_reply"] = ft
-        return jsonify({"reply": ft, "status": "done"})
+        final_reply = session.get("accumulated_reply", "") or ft
+        session["latest_reply"] = final_reply
+        session["accumulated_reply"] = ""
+        return jsonify({"reply": final_reply, "status": "done"})
     except Exception as e:
         session["status"] = "error"
         return jsonify({"reply": f"Failed: {e}", "status": "error"}), 500

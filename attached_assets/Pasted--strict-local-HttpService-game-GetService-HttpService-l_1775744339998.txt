@@ -1,0 +1,724 @@
+--!strict
+local HttpService = game:GetService("HttpService")
+local Selection = game:GetService("Selection")
+
+local PUBLIC_URL = "https://rux--ruxm7984.replit.app" -- CHANGE THIS TO YOURS
+
+local PLUGIN_ID = "rux-" .. HttpService:GenerateGUID(false)
+local session_id = nil
+local connected = false
+local activities = {}
+local snapshots = {}
+local pollInterval = 3
+
+local C = {
+	bg = Color3.fromRGB(12, 12, 12),
+	surface = Color3.fromRGB(20, 20, 20),
+	border = Color3.fromRGB(32, 32, 32),
+	text = Color3.fromRGB(240, 240, 240),
+	text2 = Color3.fromRGB(150, 150, 150),
+	muted = Color3.fromRGB(80, 80, 80),
+	white = Color3.fromRGB(255, 255, 255),
+}
+
+local function jsonEncode(data)
+	local ok, r = pcall(HttpService.JSONEncode, HttpService, data)
+	return ok and r or "{}"
+end
+
+local function jsonDecode(str)
+	local ok, r = pcall(HttpService.JSONDecode, HttpService, str)
+	return ok and r or nil
+end
+
+local function doRequest(url, method, body)
+	local headers = {["Content-Type"] = "application/json"}
+	local b = body and jsonEncode(body) or nil
+	local ok, res = pcall(function()
+		return HttpService:RequestAsync({Url = url, Method = method or "GET", Headers = headers, Body = b})
+	end)
+	if not ok then return false, tostring(res) end
+	if not res.Success then return false, "HTTP " .. tostring(res.StatusCode) end
+	if res.Body and res.Body ~= "" then
+		local decoded = jsonDecode(res.Body)
+		if decoded then return true, decoded end
+	end
+	return true, nil
+end
+
+local function getFullName(inst)
+	local ok, r = pcall(function() return inst:GetFullName() end)
+	return ok and r or inst.Name
+end
+
+local function isScript(inst)
+	return inst:IsA("Script") or inst:IsA("LocalScript") or inst:IsA("ModuleScript")
+end
+
+local function findScript(name)
+	for _, inst in ipairs(game:GetDescendants()) do
+		if isScript(inst) and inst.Name == name then return inst end
+	end
+	return nil
+end
+
+local function findByPath(path)
+	local parts = string.split(path, ".")
+	local current = game
+	local start = parts[1] == "game" and 2 or 1
+	for i = start, #parts do
+		local found = current:FindFirstChild(parts[i])
+		if not found then return nil end
+		current = found
+	end
+	return current
+end
+
+local function getSelectedInfo()
+	local sel = Selection:Get()
+	if #sel == 0 then return {name = nil, path = nil, className = nil} end
+	local inst = sel[1]
+	return {name = inst.Name, path = getFullName(inst), className = inst.ClassName}
+end
+
+local function executeTool(name, args)
+	local function ok(data) return {success = true, data = data} end
+	local function err(msg) return {success = false, error = msg} end
+
+	if name == "read_script" then
+		local inst = findScript(args.name)
+		if not inst then return err("Script not found: " .. tostring(args.name)) end
+		local rok, src = pcall(function() return inst.Source end)
+		if not rok then return err("Cannot read source") end
+		return ok({name = inst.Name, path = getFullName(inst), source = src})
+
+	elseif name == "write_script" then
+		local inst = findScript(args.name)
+		if not inst then return err("Script not found: " .. tostring(args.name)) end
+		local sok, src = pcall(function() return inst.Source end)
+		if sok then snapshots[args.name] = {source = src, time = os.time()} end
+		local wok, werr = pcall(function() inst.Source = args.code end)
+		if not wok then return err("Write failed: " .. tostring(werr)) end
+		return ok({message = "Script updated", name = inst.Name, snapshot_saved = true})
+
+	elseif name == "create_script" then
+		local parent = findByPath(args.parent)
+		if not parent then return err("Parent not found: " .. tostring(args.parent)) end
+		local cls = args.type == "LocalScript" and "LocalScript"
+			or args.type == "ModuleScript" and "ModuleScript"
+			or "Script"
+		local s = Instance.new(cls)
+		s.Name = args.name
+		s.Parent = parent
+		return ok({name = s.Name, path = getFullName(s), className = s.ClassName})
+
+	elseif name == "delete_script" then
+		local inst = findScript(args.name)
+		if not inst then return err("Script not found: " .. tostring(args.name)) end
+		local sok, src = pcall(function() return inst.Source end)
+		if sok then snapshots[args.name] = {source = src, time = os.time()} end
+		inst:Destroy()
+		return ok({message = "Script deleted", snapshot_saved = true})
+
+	elseif name == "list_scripts" then
+		local list = {}
+		for _, inst in ipairs(game:GetDescendants()) do
+			if isScript(inst) then table.insert(list, inst.Name) end
+		end
+		return ok({scripts = list})
+
+	elseif name == "get_script_tree" then
+		local tree = {}
+		for _, inst in ipairs(game:GetDescendants()) do
+			if isScript(inst) then
+				table.insert(tree, {name = inst.Name, className = inst.ClassName, path = getFullName(inst)})
+			end
+		end
+		return ok({tree = tree})
+
+	elseif name == "check_errors" then
+		local inst = findScript(args.name)
+		if not inst then return err("Script not found: " .. tostring(args.name)) end
+		local cok, src = pcall(function() return inst.Source end)
+		if not cok then return err("Cannot read source") end
+		return ok({message = "Basic check passed.", source_length = #src})
+
+	elseif name == "get_output_log" then
+		return ok({message = "Plugin log:", logs = {}})
+
+	elseif name == "get_error_log" then
+		local errors = {}
+		for _, a in ipairs(activities) do
+			if a.error then table.insert(errors, a.text) end
+		end
+		return ok({errors = errors})
+
+	elseif name == "search_code" then
+		local results = {}
+		local query = string.lower(tostring(args.query))
+		local count = 0
+		for _, inst in ipairs(game:GetDescendants()) do
+			if isScript(inst) and count < 50 then
+				local sok, src = pcall(function() return inst.Source end)
+				if sok then
+					local lineNum = 0
+					for line in string.gmatch(src, "([^\n]*)\n?") do
+						lineNum += 1
+						if string.find(string.lower(line), query, 1, true) then
+							table.insert(results, {script = inst.Name, path = getFullName(inst), line = lineNum, content = line})
+							count += 1
+						end
+					end
+				end
+			end
+		end
+		return ok({matches = results})
+
+	elseif name == "find_usages" then
+		return executeTool("search_code", {query = args.variable_name})
+
+	elseif name == "get_instance_tree" then
+		local function walk(node, depth)
+			if depth > 4 then
+				return {name = node.Name, className = node.ClassName, path = getFullName(node), children = {"..."}}
+			end
+			local children = {}
+			for _, child in ipairs(node:GetChildren()) do
+				table.insert(children, walk(child, depth + 1))
+			end
+			return {name = node.Name, className = node.ClassName, path = getFullName(node), children = children}
+		end
+		return ok({tree = walk(game, 0)})
+
+	elseif name == "get_properties" then
+		local inst = findByPath(args.instance_path)
+		if not inst then return err("Instance not found: " .. tostring(args.instance_path)) end
+		return ok({Name = inst.Name, ClassName = inst.ClassName, Parent = inst.Parent and getFullName(inst.Parent) or nil})
+
+	elseif name == "set_property" then
+		local inst = findByPath(args.instance_path)
+		if not inst then return err("Instance not found: " .. tostring(args.instance_path)) end
+		local pok, perr = pcall(function() inst[args.property] = args.value end)
+		if not pok then return err("Failed to set " .. tostring(args.property) .. ": " .. tostring(perr)) end
+		return ok({message = args.property .. " updated"})
+
+	elseif name == "find_instance" then
+		for _, inst in ipairs(game:GetDescendants()) do
+			if inst.Name == args.name then
+				return ok({name = inst.Name, path = getFullName(inst), className = inst.ClassName})
+			end
+		end
+		return err("Instance not found: " .. tostring(args.name))
+
+	elseif name == "get_selection" then
+		return ok({selection = getSelectedInfo()})
+
+	elseif name == "get_current_script" then
+		local sel = Selection:Get()
+		for _, inst in ipairs(sel) do
+			if isScript(inst) then
+				local cok, src = pcall(function() return inst.Source end)
+				if cok then return ok({name = inst.Name, path = getFullName(inst), source = src}) end
+			end
+		end
+		return err("No script selected")
+
+	elseif name == "get_place_metadata" then
+		return ok({metadata = {game_name = game.Name, place_id = game.PlaceId, place_version = game.PlaceVersion}})
+
+	elseif name == "snapshot_script" then
+		local inst = findScript(args.name)
+		if not inst then return err("Script not found: " .. tostring(args.name)) end
+		local sok, src = pcall(function() return inst.Source end)
+		if not sok then return err("Cannot read source") end
+		snapshots[args.name] = {source = src, time = os.time()}
+		return ok({message = "Snapshot saved for " .. args.name})
+
+	elseif name == "diff_script" then
+		local inst = findScript(args.name)
+		if not inst then return err("Script not found: " .. tostring(args.name)) end
+		local snap = snapshots[args.name]
+		if not snap then return err("No snapshot for " .. args.name) end
+		local dok, cur = pcall(function() return inst.Source end)
+		if not dok then return err("Cannot read current source") end
+		local oldLines = string.split(snap.source, "\n")
+		local newLines = string.split(cur, "\n")
+		local diffs = {}
+		for i = 1, math.max(#oldLines, #newLines) do
+			if oldLines[i] ~= newLines[i] then
+				table.insert(diffs, {line = i, before = oldLines[i], after = newLines[i]})
+			end
+		end
+		return ok({diff = diffs})
+
+	elseif name == "restore_script" then
+		local snap = snapshots[args.name]
+		if not snap then return err("No snapshot for " .. args.name) end
+		local inst = findScript(args.name)
+		if not inst then return err("Script not found: " .. tostring(args.name)) end
+		local rok, rerr = pcall(function() inst.Source = snap.source end)
+		if not rok then return err("Restore failed: " .. tostring(rerr)) end
+		return ok({message = "Restored " .. args.name})
+
+	else
+		return err("Unknown tool: " .. tostring(name))
+	end
+end
+
+-- ── UI ──
+local function makeElement(class, props)
+	local el = Instance.new(class)
+	for k, v in pairs(props) do
+		if k ~= "Parent" and k ~= "Children" then
+			el[k] = v
+		end
+	end
+	return el
+end
+
+local function makeCorner(r)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, r)
+	return c
+end
+
+local function makePadding(t, r, b, l)
+	local p = Instance.new("UIPadding")
+	p.PaddingTop = UDim.new(0, t or 0)
+	p.PaddingRight = UDim.new(0, r or 0)
+	p.PaddingBottom = UDim.new(0, b or 0)
+	p.PaddingLeft = UDim.new(0, l or 0)
+	return p
+end
+
+local function buildUI()
+	local ok, err = pcall(function()
+		local widgetInfo = DockWidgetPluginGuiInfo.new(
+			Enum.InitialDockState.Right,
+			true, false, 380, 520, 280, 360
+		)
+		local widget = plugin:CreateDockWidgetPluginGui("RuxWidget", widgetInfo)
+		widget.Title = "Rux"
+
+		-- FIX: root frame fills widget properly
+		local root = Instance.new("Frame")
+		root.Size = UDim2.fromScale(1, 1)
+		root.BackgroundColor3 = C.bg
+		root.BorderSizePixel = 0
+		root.ClipsDescendants = true
+		root.Parent = widget
+
+		-- FIX: use absolute positioning instead of UIListLayout on root
+		-- Header
+		local header = Instance.new("Frame")
+		header.Size = UDim2.new(1, 0, 0, 44)
+		header.Position = UDim2.new(0, 0, 0, 0)
+		header.BackgroundColor3 = C.surface
+		header.BorderSizePixel = 0
+		header.Parent = root
+		makePadding(0, 14, 0, 14).Parent = header
+
+		local hList = Instance.new("UIListLayout")
+		hList.FillDirection = Enum.FillDirection.Horizontal
+		hList.VerticalAlignment = Enum.VerticalAlignment.Center
+		hList.Padding = UDim.new(0, 10)
+		hList.Parent = header
+
+		local logoBox = Instance.new("Frame")
+		logoBox.Size = UDim2.fromOffset(22, 22)
+		logoBox.BackgroundColor3 = C.bg
+		logoBox.BorderColor3 = C.border
+		logoBox.BorderSizePixel = 1
+		logoBox.Parent = header
+		makeCorner(5).Parent = logoBox
+
+		local titleLabel = Instance.new("TextLabel")
+		titleLabel.Size = UDim2.new(0, 30, 0, 22)
+		titleLabel.BackgroundTransparency = 1
+		titleLabel.Text = "Rux"
+		titleLabel.TextColor3 = C.text
+		titleLabel.TextSize = 14
+		titleLabel.Font = Enum.Font.GothamBold
+		titleLabel.Parent = header
+
+		local spacer = Instance.new("Frame")
+		spacer.Size = UDim2.new(1, 0, 0, 0)
+		spacer.BackgroundTransparency = 1
+		spacer.Parent = header
+
+		local statusDot = Instance.new("Frame")
+		statusDot.Size = UDim2.fromOffset(8, 8)
+		statusDot.BackgroundColor3 = C.muted
+		statusDot.BorderSizePixel = 0
+		statusDot.Parent = header
+		makeCorner(4).Parent = statusDot
+
+		local statusLabel = Instance.new("TextLabel")
+		statusLabel.Size = UDim2.new(0, 100, 0, 22)
+		statusLabel.BackgroundTransparency = 1
+		statusLabel.Text = "Disconnected"
+		statusLabel.TextColor3 = C.muted
+		statusLabel.TextSize = 11
+		statusLabel.Font = Enum.Font.GothamMedium
+		statusLabel.Parent = header
+
+		-- Connect section
+		local connectSection = Instance.new("Frame")
+		connectSection.Size = UDim2.new(1, 0, 0, 160)
+		connectSection.Position = UDim2.new(0, 0, 0, 44)
+		connectSection.BackgroundColor3 = C.bg
+		connectSection.BorderSizePixel = 0
+		connectSection.Parent = root
+		makePadding(20, 14, 0, 14).Parent = connectSection
+
+		local cList = Instance.new("UIListLayout")
+		cList.SortOrder = Enum.SortOrder.LayoutOrder
+		cList.Padding = UDim.new(0, 10)
+		cList.Parent = connectSection
+
+		local hintLabel = Instance.new("TextLabel")
+		hintLabel.Size = UDim2.new(1, 0, 0, 16)
+		hintLabel.BackgroundTransparency = 1
+		hintLabel.Text = "Enter code from rux.app/app"
+		hintLabel.TextColor3 = C.text2
+		hintLabel.TextSize = 12
+		hintLabel.Font = Enum.Font.GothamMedium
+		hintLabel.LayoutOrder = 0
+		hintLabel.Parent = connectSection
+
+		-- FIX: input + button in a row frame
+		local inputRow = Instance.new("Frame")
+		inputRow.Size = UDim2.new(1, 0, 0, 36)
+		inputRow.BackgroundTransparency = 1
+		inputRow.LayoutOrder = 1
+		inputRow.Parent = connectSection
+
+		local codeInput = Instance.new("TextBox")
+		codeInput.Size = UDim2.new(1, -60, 1, 0)
+		codeInput.Position = UDim2.new(0, 0, 0, 0)
+		codeInput.BackgroundColor3 = C.surface
+		codeInput.BorderSizePixel = 0
+		codeInput.TextColor3 = C.text
+		codeInput.TextSize = 16
+		codeInput.Font = Enum.Font.Code
+		codeInput.PlaceholderText = "RX7K"
+		codeInput.PlaceholderColor3 = C.muted
+		codeInput.TextXAlignment = Enum.TextXAlignment.Center
+		codeInput.ClearTextOnFocus = false
+		codeInput.Parent = inputRow
+		makeCorner(6).Parent = codeInput
+
+		local connectBtn = Instance.new("TextButton")
+		connectBtn.Size = UDim2.new(0, 52, 1, 0)
+		connectBtn.Position = UDim2.new(1, -52, 0, 0)
+		connectBtn.BackgroundColor3 = C.white
+		connectBtn.BorderSizePixel = 0
+		connectBtn.TextColor3 = C.bg
+		connectBtn.Text = "Go"
+		connectBtn.TextSize = 13
+		connectBtn.Font = Enum.Font.GothamBold
+		connectBtn.Parent = inputRow
+		makeCorner(6).Parent = connectBtn
+
+		local connectError = Instance.new("TextLabel")
+		connectError.Size = UDim2.new(1, 0, 0, 14)
+		connectError.BackgroundTransparency = 1
+		connectError.Text = ""
+		connectError.TextColor3 = Color3.fromRGB(200, 120, 120)
+		connectError.TextSize = 11
+		connectError.Font = Enum.Font.Gotham
+		connectError.Visible = false
+		connectError.LayoutOrder = 2
+		connectError.Parent = connectSection
+
+		local autoLabel = Instance.new("TextLabel")
+		autoLabel.Size = UDim2.new(1, 0, 0, 14)
+		autoLabel.BackgroundTransparency = 1
+		autoLabel.Text = "Auto-connects if you registered your Roblox ID"
+		autoLabel.TextColor3 = C.muted
+		autoLabel.TextSize = 10
+		autoLabel.Font = Enum.Font.Gotham
+		autoLabel.LayoutOrder = 3
+		autoLabel.Parent = connectSection
+
+		-- Activity section
+		local activitySection = Instance.new("Frame")
+		activitySection.Size = UDim2.new(1, 0, 1, -96)
+		activitySection.Position = UDim2.new(0, 0, 0, 44)
+		activitySection.BackgroundColor3 = C.bg
+		activitySection.BorderSizePixel = 0
+		activitySection.Visible = false
+		activitySection.Parent = root
+		makePadding(10, 14, 0, 14).Parent = activitySection
+
+		local actTitle = Instance.new("TextLabel")
+		actTitle.Size = UDim2.new(1, 0, 0, 14)
+		actTitle.BackgroundTransparency = 1
+		actTitle.Text = "ACTIVITY"
+		actTitle.TextColor3 = C.muted
+		actTitle.TextSize = 10
+		actTitle.Font = Enum.Font.GothamBold
+		actTitle.Parent = activitySection
+
+		local actScroll = Instance.new("ScrollingFrame")
+		actScroll.Size = UDim2.new(1, 0, 1, -24)
+		actScroll.Position = UDim2.new(0, 0, 0, 24)
+		actScroll.BackgroundTransparency = 1
+		actScroll.BorderSizePixel = 0
+		actScroll.ScrollBarThickness = 3
+		actScroll.ScrollBarImageColor3 = C.border
+		actScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		actScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+		actScroll.Parent = activitySection
+
+		local actList = Instance.new("UIListLayout")
+		actList.SortOrder = Enum.SortOrder.LayoutOrder
+		actList.Padding = UDim.new(0, 4)
+		actList.Parent = actScroll
+
+		-- Bottom buttons
+		local bottomSection = Instance.new("Frame")
+		bottomSection.Size = UDim2.new(1, 0, 0, 52)
+		bottomSection.Position = UDim2.new(0, 0, 1, -52)
+		bottomSection.BackgroundColor3 = C.surface
+		bottomSection.BorderSizePixel = 0
+		bottomSection.Parent = root
+		makePadding(10, 14, 10, 14).Parent = bottomSection
+
+		local bList = Instance.new("UIListLayout")
+		bList.FillDirection = Enum.FillDirection.Horizontal
+		bList.Padding = UDim.new(0, 8)
+		bList.VerticalAlignment = Enum.VerticalAlignment.Center
+		bList.Parent = bottomSection
+
+		local snapBtn = Instance.new("TextButton")
+		snapBtn.Size = UDim2.new(0.5, -4, 0, 32)
+		snapBtn.BackgroundColor3 = C.bg
+		snapBtn.BorderSizePixel = 1
+		snapBtn.BorderColor3 = C.border
+		snapBtn.TextColor3 = C.text2
+		snapBtn.Text = "Snapshot Selected"
+		snapBtn.TextSize = 11
+		snapBtn.Font = Enum.Font.GothamMedium
+		snapBtn.Parent = bottomSection
+		makeCorner(6).Parent = snapBtn
+
+		local restoreBtn = Instance.new("TextButton")
+		restoreBtn.Size = UDim2.new(0.5, -4, 0, 32)
+		restoreBtn.BackgroundColor3 = C.bg
+		restoreBtn.BorderSizePixel = 1
+		restoreBtn.BorderColor3 = C.border
+		restoreBtn.TextColor3 = C.text2
+		restoreBtn.Text = "Restore Selected"
+		restoreBtn.TextSize = 11
+		restoreBtn.Font = Enum.Font.GothamMedium
+		restoreBtn.Parent = bottomSection
+		makeCorner(6).Parent = restoreBtn
+
+		-- ── State functions ──
+		local function setStatus(text, isOn)
+			connected = isOn
+			statusLabel.Text = text
+			statusDot.BackgroundColor3 = isOn and C.white or C.muted
+		end
+
+		local function showConnect()
+			connectSection.Visible = true
+			activitySection.Visible = false
+		end
+
+		local function showActivity()
+			connectSection.Visible = false
+			activitySection.Visible = true
+		end
+
+		local function addActivity(text, isError)
+			local entry = Instance.new("Frame")
+			entry.Size = UDim2.new(1, 0, 0, 28)
+			entry.BackgroundTransparency = 1
+			entry.LayoutOrder = #actScroll:GetChildren()
+			entry.Parent = actScroll
+
+			local lbl = Instance.new("TextLabel")
+			lbl.Size = UDim2.new(1, 0, 1, 0)
+			lbl.BackgroundTransparency = 1
+			lbl.Text = text
+			lbl.TextColor3 = isError and Color3.fromRGB(200, 120, 120) or C.text2
+			lbl.TextSize = 11
+			lbl.Font = Enum.Font.Gotham
+			lbl.TextXAlignment = Enum.TextXAlignment.Left
+			lbl.TextWrapped = true
+			lbl.Parent = entry
+
+			table.insert(activities, {text = text, error = isError})
+			while #actScroll:GetChildren() > 41 do -- 40 entries + UIListLayout
+				local first = actScroll:FindFirstChildOfClass("Frame")
+				if first then first:Destroy() end
+			end
+		end
+
+		local function flashError(msg)
+			connectError.Text = msg
+			connectError.Visible = true
+			task.delay(3, function()
+				connectError.Visible = false
+			end)
+		end
+
+		-- Connect
+		local function doConnect()
+			local code = string.upper(string.gsub(codeInput.Text, "%s", ""))
+			if #code < 2 then
+				flashError("Enter a code from the website")
+				return
+			end
+			setStatus("Connecting...", false)
+			connectBtn.Text = "..."
+			connectBtn.Active = false
+
+			task.spawn(function()
+				local rok, result = doRequest(PUBLIC_URL .. "/plugin/connect", "POST", {
+					plugin_id = PLUGIN_ID,
+					creator_id = game.CreatorId,
+					code = code,
+				})
+				connectBtn.Text = "Go"
+				connectBtn.Active = true
+				if not rok then
+					flashError("Request failed: " .. tostring(result))
+					setStatus("Disconnected", false)
+					return
+				end
+				if not result or not result.ok then
+					flashError(result and tostring(result.error) or "Invalid code")
+					setStatus("Disconnected", false)
+					return
+				end
+				session_id = result.session_id
+				setStatus("Connected", true)
+				showActivity()
+				addActivity("Connected" .. (result.method == "auto" and " (auto)" or " via code"), false)
+				pollInterval = 2
+			end)
+		end
+
+		connectBtn.MouseButton1Click:Connect(doConnect)
+
+		-- Snapshot / Restore
+		snapBtn.MouseButton1Click:Connect(function()
+			local sel = Selection:Get()
+			if #sel == 0 or not isScript(sel[1]) then
+				addActivity("Select a script to snapshot", true)
+				return
+			end
+			local name = sel[1].Name
+			local sok, src = pcall(function() return sel[1].Source end)
+			if sok then
+				snapshots[name] = {source = src, time = os.time()}
+				addActivity("Snapshot: " .. name, false)
+			else
+				addActivity("Snapshot failed: " .. name, true)
+			end
+		end)
+
+		restoreBtn.MouseButton1Click:Connect(function()
+			local sel = Selection:Get()
+			if #sel == 0 or not isScript(sel[1]) then
+				addActivity("Select a script to restore", true)
+				return
+			end
+			local name = sel[1].Name
+			local snap = snapshots[name]
+			if not snap then
+				addActivity("No snapshot for " .. name, true)
+				return
+			end
+			local rok, rerr = pcall(function() sel[1].Source = snap.source end)
+			if rok then
+				addActivity("Restored: " .. name, false)
+			else
+				addActivity("Restore failed: " .. tostring(rerr), true)
+			end
+		end)
+
+		-- Toolbar
+		local toolbar = plugin:CreateToolbar("Rux")
+		local toggleBtn = toolbar:CreateButton("Rux", "Toggle Rux panel", "")
+		toggleBtn.ClickableWhenViewportHidden = true
+		toggleBtn.Click:Connect(function()
+			widget.Enabled = not widget.Enabled
+		end)
+
+		-- Poll loop
+		-- FIX: safe wait - never negative
+		local function safePoll()
+			local waitTime = math.max(pollInterval, 1)
+			task.wait(waitTime)
+		end
+
+		task.spawn(function()
+			while true do
+				safePoll()
+
+				if not session_id then
+					local aok, aresult = doRequest(PUBLIC_URL .. "/plugin/connect", "POST", {
+						plugin_id = PLUGIN_ID,
+						creator_id = game.CreatorId,
+					})
+					if aok and aresult and aresult.ok then
+						session_id = aresult.session_id
+						setStatus("Connected", true)
+						showActivity()
+						addActivity("Connected (auto)", false)
+						pollInterval = 2
+					end
+				else
+					doRequest(PUBLIC_URL .. "/plugin/heartbeat", "POST", {
+						plugin_id = PLUGIN_ID,
+						session_id = session_id,
+						status = "connected",
+						selected_instance = getSelectedInfo(),
+					})
+
+					local pok, presult = doRequest(PUBLIC_URL .. "/plugin/poll", "POST", {
+						plugin_id = PLUGIN_ID,
+						session_id = session_id,
+					})
+
+					if not pok or not presult then
+						addActivity("Poll failed", true)
+						setStatus("Reconnecting...", false)
+						pollInterval = math.min(pollInterval + 2, 10)
+					elseif presult.tool_call then
+						local tc = presult.tool_call
+						addActivity("Tool: " .. tostring(tc.name), false)
+						setStatus("Exec: " .. tostring(tc.name), true)
+						local toolResult = executeTool(tc.name, tc.arguments or {})
+						local trok, trresult = doRequest(PUBLIC_URL .. "/plugin/tool_result", "POST", {
+							plugin_id = PLUGIN_ID,
+							session_id = session_id,
+							tool_name = tc.name,
+							tool_result = toolResult,
+						})
+						if trok then
+							addActivity("  " .. (toolResult.success and "OK" or tostring(toolResult.error)), not toolResult.success)
+							pollInterval = 1
+						else
+							addActivity("  Failed to send result", true)
+							pollInterval = 3
+						end
+					else
+						setStatus("Connected", true)
+						pollInterval = math.min(pollInterval + 1, 6)
+					end
+				end
+			end
+		end)
+	end)
+
+	if not ok then
+		print("[Rux] Plugin error: " .. tostring(err))
+	end
+end
+
+buildUI()
