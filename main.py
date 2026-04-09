@@ -7,44 +7,54 @@ from anthropic import Anthropic
 from threading import Lock
 
 try:
-    import google.generativeai as genai
+    from google import genai as google_genai
+    from google.genai import types as google_genai_types
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
 
 app = Flask(__name__)
 
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-GOOGLE_API_KEY    = os.environ.get("GOOGLE_API_KEY")
+# Replit AI Integrations — no personal API keys required, billed to Replit credits
+anthropic_client = Anthropic(
+    api_key=os.environ.get("AI_INTEGRATIONS_ANTHROPIC_API_KEY"),
+    base_url=os.environ.get("AI_INTEGRATIONS_ANTHROPIC_BASE_URL"),
+)
 
-anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
-
-if GEMINI_AVAILABLE and GOOGLE_API_KEY:
-    genai.configure(api_key=GOOGLE_API_KEY)
+if GEMINI_AVAILABLE:
+    gemini_client = google_genai.Client(
+        api_key=os.environ.get("AI_INTEGRATIONS_GEMINI_API_KEY"),
+        http_options={
+            "api_version": "",
+            "base_url": os.environ.get("AI_INTEGRATIONS_GEMINI_BASE_URL"),
+        },
+    )
+else:
+    gemini_client = None
 
 MAX_AGENT_STEPS = 20
 
 MODELS = {
     "gemini-flash": {
-        "id":       "gemini-3-flash",
+        "id":       "gemini-2.5-flash",
         "provider": "google",
         "label":    "Gemini Flash",
         "badge":    "Fast",
     },
     "gemini-pro": {
-        "id":       "gemini-3-pro",
+        "id":       "gemini-2.5-pro",
         "provider": "google",
         "label":    "Gemini Pro",
         "badge":    "Smart",
     },
     "sonnet": {
-        "id":       "claude-sonnet-4.5",
+        "id":       "claude-sonnet-4-6",
         "provider": "anthropic",
         "label":    "Claude Sonnet",
         "badge":    "Balanced",
     },
     "opus": {
-        "id":       "claude-4.5",
+        "id":       "claude-opus-4-6",
         "provider": "anthropic",
         "label":    "Claude Opus",
         "badge":    "Powerful",
@@ -148,8 +158,6 @@ def build_chat_messages(session, user_message, context):
 
 
 def call_anthropic_chat(model_id, messages, max_tokens=1500, tools=None):
-    if not anthropic_client:
-        raise Exception("ANTHROPIC_API_KEY is not set. Add it to your Secrets to use Claude models.")
     kwargs = dict(model=model_id, max_tokens=max_tokens, system=SYSTEM_PROMPT, messages=messages)
     if tools:
         kwargs["tools"] = tools
@@ -157,22 +165,25 @@ def call_anthropic_chat(model_id, messages, max_tokens=1500, tools=None):
 
 
 def call_gemini_chat(model_id, messages, tools=None):
-    if not GEMINI_AVAILABLE or not GOOGLE_API_KEY:
-        raise Exception("Google API key not configured. Add GOOGLE_API_KEY to your secrets.")
+    if not GEMINI_AVAILABLE or not gemini_client:
+        raise Exception("Gemini is not available in this environment.")
 
-    g_model = genai.GenerativeModel(
-        model_name=model_id,
-        system_instruction=SYSTEM_PROMPT,
-    )
-
-    history = []
-    for m in messages[:-1]:
+    contents = []
+    for m in messages:
         role = "user" if m["role"] == "user" else "model"
-        history.append({"role": role, "parts": [str(m["content"])]})
+        contents.append(google_genai_types.Content(
+            role=role,
+            parts=[google_genai_types.Part(text=str(m["content"]))],
+        ))
 
-    chat = g_model.start_chat(history=history)
-    last_msg = messages[-1]["content"] if messages else ""
-    response = chat.send_message(str(last_msg))
+    response = gemini_client.models.generate_content(
+        model=model_id,
+        contents=contents,
+        config=google_genai_types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            max_output_tokens=8192,
+        ),
+    )
     return response.text
 
 
