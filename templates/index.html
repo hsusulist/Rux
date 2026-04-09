@@ -857,6 +857,88 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── ANIMATIONS ── */
+
+    /* Sidebar fade-in */
+    .sidebar {
+      animation: sidebarIn 0.4s ease both;
+    }
+    @keyframes sidebarIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Home screen elements stagger */
+    .home-mark   { animation: fadeUp 0.5s ease both 0.1s; }
+    .home-title  { animation: fadeUp 0.5s ease both 0.18s; }
+    .home-sub    { animation: fadeUp 0.5s ease both 0.28s; }
+    .home-new-btn{ animation: fadeUp 0.5s ease both 0.36s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Message rows slide in */
+    .msg-row {
+      animation: msgIn 0.3s ease both;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Sidebar conversation items */
+    .sb-conv-item {
+      animation: fadeIn 0.2s ease both;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* Send button pulse on hover */
+    .send-btn:not(:disabled):hover {
+      transform: scale(1.08);
+    }
+    .send-btn { transition: background 0.15s, opacity 0.15s, transform 0.15s; }
+
+    /* Home new conversation button hover lift */
+    .home-new-btn {
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+    .home-new-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255,255,255,0.08);
+    }
+
+    /* Model picker slide up */
+    .model-picker.open {
+      animation: pickerIn 0.18s ease both;
+    }
+    @keyframes pickerIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Plan banner slide down */
+    .plan-banner.show {
+      animation: bannerIn 0.25s ease both;
+    }
+    @keyframes bannerIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Chat screen fade in */
+    .chat-screen.visible {
+      animation: chatIn 0.2s ease both;
+    }
+    @keyframes chatIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
   </style>
 </head>
 <body>

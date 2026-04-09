@@ -675,6 +675,137 @@
       .preview-sidebar { width: 0; display: none; }
       footer { padding: 24px 20px; }
     }
+
+    /* ── ANIMATIONS ── */
+
+    /* Animated grid background */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 40%, transparent 100%);
+      animation: gridShift 20s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes gridShift {
+      0%   { background-position: 0 0, 0 0; }
+      100% { background-position: 60px 60px, 60px 60px; }
+    }
+
+    /* Glow orb behind hero title */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 300px;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      animation: orbPulse 6s ease-in-out infinite;
+    }
+
+    @keyframes orbPulse {
+      0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+      50%       { opacity: 1;   transform: translateX(-50%) scale(1.15); }
+    }
+
+    /* Hero content fade-in stagger */
+    .hero-badge  { animation: fadeUp 0.7s ease both; animation-delay: 0.1s; }
+    .hero-title  { animation: fadeUp 0.7s ease both; animation-delay: 0.2s; }
+    .hero-sub    { animation: fadeUp 0.7s ease both; animation-delay: 0.35s; }
+    .hero-divider{ animation: fadeUp 0.7s ease both; animation-delay: 0.45s; }
+    .hero-actions{ animation: fadeUp 0.7s ease both; animation-delay: 0.55s; }
+    .hero-preview{ animation: fadeUp 0.9s ease both; animation-delay: 0.7s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Scroll-reveal base state */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Stagger for grid children */
+    .feature-card:nth-child(1) { transition-delay: 0.05s; }
+    .feature-card:nth-child(2) { transition-delay: 0.12s; }
+    .feature-card:nth-child(3) { transition-delay: 0.19s; }
+    .feature-card:nth-child(4) { transition-delay: 0.26s; }
+    .feature-card:nth-child(5) { transition-delay: 0.33s; }
+    .feature-card:nth-child(6) { transition-delay: 0.40s; }
+
+    .step:nth-child(1) { transition-delay: 0.05s; }
+    .step:nth-child(2) { transition-delay: 0.15s; }
+    .step:nth-child(3) { transition-delay: 0.25s; }
+    .step:nth-child(4) { transition-delay: 0.35s; }
+
+    /* Feature card hover lift */
+    .feature-card {
+      transition: transform 0.25s ease, border-color 0.25s ease, opacity 0.65s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border2);
+    }
+
+    /* Feature icon pulse on hover */
+    .feature-card:hover .feature-icon {
+      background: rgba(255,255,255,0.06);
+      transition: background 0.25s ease;
+    }
+
+    /* Nav fade-in on load */
+    nav {
+      animation: navIn 0.5s ease both;
+    }
+    @keyframes navIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hero preview subtle float */
+    .hero-preview {
+      animation: fadeUp 0.9s ease both, floatPreview 6s ease-in-out 1.6s infinite;
+    }
+    @keyframes floatPreview {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-6px); }
+    }
+
+    /* CTA section reveal */
+    .cta-section .cta-inner {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .cta-section .cta-inner.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Step number animated border */
+    .step-num {
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+    .step:hover .step-num {
+      background: var(--text);
+      color: #000;
+    }
   </style>
 </head>
 <body>
@@ -776,42 +907,42 @@
     <h2 class="section-title">Everything you need to build faster</h2>
     <p class="section-sub">Rux gives your AI full access to your Roblox Studio session through a secure plugin bridge.</p>
     <div class="features-grid">
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
         </div>
         <div class="feature-title">Script read and write</div>
         <div class="feature-desc">Read, create, edit, and delete any script in your game with automatic snapshots before every change.</div>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
         </div>
         <div class="feature-title">Agent mode</div>
         <div class="feature-desc">Give the AI a multi-step task. It drafts a plan for your review, then executes it tool-by-tool inside Studio.</div>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
         </div>
         <div class="feature-title">Code search</div>
         <div class="feature-desc">Search across every script for variables, functions, or patterns. Find usages and explain context.</div>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8l8 5 8-5v10zm-8-7L4 6h16l-8 5z"/></svg>
         </div>
         <div class="feature-title">Multi-model AI</div>
         <div class="feature-desc">Switch between Gemini Flash, Gemini Pro, Claude Sonnet, and Claude Opus per conversation.</div>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
         </div>
         <div class="feature-title">Saved conversations</div>
         <div class="feature-desc">Conversations are saved locally in your browser. Resume any past session from the sidebar.</div>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 3.21-1.81 6-4.72 7.72L13 17v5h5l-1.22-1.22C19.91 19.07 22 15.76 22 12c0-5.18-3.95-9.45-9-9.95zM11 2.05C5.95 2.55 2 6.82 2 12c0 3.76 2.09 7.07 5.22 8.78L6 22h5v-5l-2.28 2.28C7.28 18.06 6 15.19 6 12c0-4.08 3.05-7.44 7-7.93V2.05z"/></svg>
         </div>
@@ -828,14 +959,14 @@
     <h2 class="section-title">Up and running in minutes</h2>
     <p class="section-sub">Install the Studio plugin, connect it to your Rux URL, and start chatting.</p>
     <div class="steps-list">
-      <div class="step">
+      <div class="step reveal">
         <div class="step-num">1</div>
         <div class="step-body">
           <div class="step-title">Install the Roblox Studio plugin</div>
           <div class="step-desc">Add the Rux plugin script to your Roblox Studio. It runs in the background and establishes a connection to the server.</div>
         </div>
       </div>
-      <div class="step">
+      <div class="step reveal">
         <div class="step-num">2</div>
         <div class="step-body">
           <div class="step-title">Set your server URL in the plugin</div>
@@ -843,14 +974,14 @@
           <div class="step-code"><code>local SERVER_BASE_URL = "https://your-rux.app"</code></div>
         </div>
       </div>
-      <div class="step">
+      <div class="step reveal">
         <div class="step-num">3</div>
         <div class="step-body">
-          <div class="step-title">Add your API keys</div>
-          <div class="step-desc">Set <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--text)">ANTHROPIC_API_KEY</code> and optionally <code style="font-family:'JetBrains Mono';font-size:12px;color:var(--text)">GOOGLE_API_KEY</code> in your environment secrets.</div>
+          <div class="step-title">AI is ready — no keys needed</div>
+          <div class="step-desc">Rux uses Replit's built-in AI integrations. Claude and Gemini work out of the box, billed to your Replit credits.</div>
         </div>
       </div>
-      <div class="step">
+      <div class="step reveal">
         <div class="step-num">4</div>
         <div class="step-body">
           <div class="step-title">Start chatting</div>
@@ -882,5 +1013,47 @@
   <div class="footer-copy">Roblox Studio AI Bridge</div>
 </footer>
 
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  const ctaObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        ctaObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.cta-inner').forEach(el => ctaObserver.observe(el));
+
+  const sectionHeadings = document.querySelectorAll('.section-eyebrow, .section-title, .section-sub');
+  sectionHeadings.forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+  });
+  const headingObserver = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => {
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'translateY(0)';
+        }, i * 80);
+        headingObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.2 });
+  sectionHeadings.forEach(el => headingObserver.observe(el));
+</script>
 </body>
 </html>
