@@ -26,27 +26,27 @@ MAX_AGENT_STEPS = 20
 
 MODELS = {
     "gemini-flash": {
-        "id":       "gemini-2.0-flash",
+        "id":       "gemini-3-flash",
         "provider": "google",
-        "label":    "Gemini 3 Fast",
+        "label":    "Gemini Flash",
         "badge":    "Fast",
     },
     "gemini-pro": {
-        "id":       "gemini-2.5-pro-preview-05-06",
+        "id":       "gemini-3-pro",
         "provider": "google",
-        "label":    "Gemini 3 Pro",
+        "label":    "Gemini Pro",
         "badge":    "Smart",
     },
     "sonnet": {
-        "id":       "claude-sonnet-4-20250514",
+        "id":       "claude-sonnet-4.5",
         "provider": "anthropic",
-        "label":    "Sonnet 4.6",
+        "label":    "Claude Sonnet",
         "badge":    "Balanced",
     },
     "opus": {
-        "id":       "claude-3-opus-20240229",
+        "id":       "claude-4.5",
         "provider": "anthropic",
-        "label":    "Opus 4.6",
+        "label":    "Claude Opus",
         "badge":    "Powerful",
     },
 }
@@ -249,7 +249,7 @@ def ai():
             plan_text = "".join(b.text for b in response.content if b.type == "text")
 
             session["plan"] = plan_text
-            session["agent_messages"] = planning_messages
+            session["agent_messages"] = planning_messages + [{"role": "assistant", "content": response.content}]
             session["latest_reply"] = plan_text
 
             return jsonify({
@@ -281,6 +281,11 @@ def approve_agent():
     session_id = data.get("session_id")
     session = get_session(session_id)
 
+    # Allow model override on approve
+    approve_model = data.get("model")
+    if approve_model:
+        session["model_key"] = approve_model
+
     session["approved"] = True
     session["status"] = "running"
 
@@ -288,15 +293,24 @@ def approve_agent():
     model_info = resolve_model(model_key)
     model_id   = model_info["id"]
 
-    user_message = data.get("message", "The plan is approved. Begin execution.")
-    context = session.get("latest_context", {})
+    if model_info["provider"] == "google":
+        session["status"] = "error"
+        return jsonify({
+            "session_id": session_id,
+            "reply": "Agent mode is only supported for Claude models. Switch to Sonnet or Opus.",
+            "tool_calls": [],
+            "plan": session.get("plan"),
+            "status": "error",
+        }), 400
 
     try:
-        messages = build_chat_messages(session, user_message, context)
-        messages.append({"role": "user", "content": "The plan is approved. Start executing now. Use one tool at a time."})
+        # FIX: Use the stored agent_messages from planning phase so Claude
+        # retains full context of the plan it wrote
+        prior_messages = session.get("agent_messages", [])
+        prior_messages.append({"role": "user", "content": "The plan is approved. Start executing now. Use one tool at a time."})
 
-        response = call_anthropic_chat(model_id, messages, tools=TOOL_DEFINITIONS)
-        session["agent_messages"] = messages + [{"role": "assistant", "content": response.content}]
+        response = call_anthropic_chat(model_id, prior_messages, tools=TOOL_DEFINITIONS)
+        session["agent_messages"] = prior_messages + [{"role": "assistant", "content": response.content}]
 
         tool_call = None
         final_text = ""
@@ -378,6 +392,14 @@ def plugin_tool_result():
     session_id = data.get("session_id")
     session = get_session(session_id)
 
+    # Guard: only Claude models support tool-use loop
+    model_key = session.get("model_key", DEFAULT_MODEL)
+    model_info = resolve_model(model_key)
+    if model_info["provider"] == "google":
+        session["status"] = "error"
+        session["pending_tool_call"] = None
+        return jsonify({"reply": "Tool execution is not supported for Google models.", "status": "error"}), 400
+
     if session["step_count"] >= MAX_AGENT_STEPS:
         session["status"] = "error"
         session["pending_tool_call"] = None
@@ -393,9 +415,7 @@ def plugin_tool_result():
     session["step_count"] += 1
     session["pending_tool_call"] = None
 
-    model_key  = session.get("model_key", DEFAULT_MODEL)
-    model_info = resolve_model(model_key)
-    model_id   = model_info["id"]
+    model_id = model_info["id"]
 
     try:
         prior_messages = session.get("agent_messages", [])
