@@ -17,7 +17,7 @@ app = Flask(__name__)
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 GOOGLE_API_KEY    = os.environ.get("GOOGLE_API_KEY")
 
-anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
+anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
 
 if GEMINI_AVAILABLE and GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -148,6 +148,8 @@ def build_chat_messages(session, user_message, context):
 
 
 def call_anthropic_chat(model_id, messages, max_tokens=1500, tools=None):
+    if not anthropic_client:
+        raise Exception("ANTHROPIC_API_KEY is not set. Add it to your Secrets to use Claude models.")
     kwargs = dict(model=model_id, max_tokens=max_tokens, system=SYSTEM_PROMPT, messages=messages)
     if tools:
         kwargs["tools"] = tools
