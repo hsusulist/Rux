@@ -2,9 +2,22 @@ import os
 import json
 import uuid
 import time
+import re
+import secrets
 from flask import Flask, request, jsonify, render_template
-from anthropic import Anthropic
 from threading import Lock
+
+try:
+    import bcrypt
+    HAS_BCRYPT = True
+except ImportError:
+    HAS_BCRYPT = False
+
+try:
+    import replit
+    HAS_REPLIT = True
+except ImportError:
+    HAS_REPLIT = False
 
 try:
     from google import genai as google_genai
@@ -13,9 +26,10 @@ try:
 except ImportError:
     GEMINI_AVAILABLE = False
 
+from anthropic import Anthropic
+
 app = Flask(__name__)
 
-# Replit AI Integrations — no personal API keys required, billed to Replit credits
 anthropic_client = Anthropic(
     api_key=os.environ.get("AI_INTEGRATIONS_ANTHROPIC_API_KEY"),
     base_url=os.environ.get("AI_INTEGRATIONS_ANTHROPIC_BASE_URL"),
@@ -33,49 +47,183 @@ else:
     gemini_client = None
 
 MAX_AGENT_STEPS = 20
+MAX_CREDITS = 10
+CREDIT_INTERVAL_MS = 6 * 60 * 60 * 1000
+CODE_EXPIRY_MS = 5 * 60 * 1000
+CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 MODELS = {
-    "gemini-flash": {
-        "id":       "gemini-2.5-flash",
-        "provider": "google",
-        "label":    "Gemini Flash",
-        "badge":    "Fast",
-    },
-    "gemini-pro": {
-        "id":       "gemini-2.5-pro",
-        "provider": "google",
-        "label":    "Gemini Pro",
-        "badge":    "Smart",
-    },
-    "sonnet": {
-        "id":       "claude-sonnet-4-6",
-        "provider": "anthropic",
-        "label":    "Claude Sonnet",
-        "badge":    "Balanced",
-    },
-    "opus": {
-        "id":       "claude-opus-4-6",
-        "provider": "anthropic",
-        "label":    "Claude Opus",
-        "badge":    "Powerful",
-    },
+    "gemini-flash": {"id": "gemini-2.5-flash", "provider": "google", "label": "Gemini Flash", "badge": "Fast"},
+    "gemini-pro": {"id": "gemini-2.5-pro", "provider": "google", "label": "Gemini Pro", "badge": "Smart"},
+    "sonnet": {"id": "claude-sonnet-4-6", "provider": "anthropic", "label": "Claude Sonnet", "badge": "Balanced"},
+    "opus": {"id": "claude-opus-4-6", "provider": "anthropic", "label": "Claude Opus", "badge": "Powerful"},
 }
-
 DEFAULT_MODEL = "sonnet"
 
+# ═══ KV HELPER ═══
+class KV:
+    def __init__(self):
+        self._mem = {}
+    def get(self, key):
+        if HAS_REPLIT:
+            try:
+                val = replit.db[key]
+                return json.loads(val)
+            except Exception:
+                return None
+        return self._mem.get(key)
+    def set(self, key, value):
+        if HAS_REPLIT:
+            replit.db[key] = json.dumps(value)
+        self._mem[key] = value
+    def delete(self, key):
+        if HAS_REPLIT:
+            try: del replit.db[key]
+            except Exception: pass
+        self._mem.pop(key, None)
+
+kv = KV()
+
+# ═══ IN-MEMORY STATE ═══
 sessions = {}
 sessions_lock = Lock()
 plugin_registry = {}
 plugin_registry_lock = Lock()
+pending_connections = {}
+pending_connections_lock = Lock()
 
+# ═══ AUTH HELPERS ═══
+def hash_password(password):
+    if not HAS_BCRYPT:
+        return password
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
-def log_json(label, data):
-    print(f"\n=== {label} ===")
+def verify_password(password, hashed):
+    if not HAS_BCRYPT:
+        return password == hashed
     try:
-        print(json.dumps(data, indent=2))
+        return bcrypt.checkpw(password.encode(), hashed.encode())
     except Exception:
-        print(str(data))
+        return False
 
+def get_user_from_token(token):
+    if not token:
+        return None
+    s = kv.get(f"session:{token}")
+    if not s:
+        return None
+    return kv.get(f"user:id:{s['user_id']}")
+
+def require_auth(f):
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        user = get_user_from_token(token)
+        if not user:
+            return jsonify({"error": "Unauthorized"}), 401
+        request.user = user
+        return f(*args, **kwargs)
+    wrapper.__name__ = f.__name__
+    return wrapper
+
+# ═══ CREDIT HELPERS ═══
+def get_credits(user_id):
+    data = kv.get(f"credits:{user_id}")
+    if not data:
+        return MAX_CREDITS, 0
+    balance = data.get("balance", 0)
+    last_updated = data.get("last_updated", 0)
+    now = int(time.time() * 1000)
+    if last_updated > 0 and balance < MAX_CREDITS:
+        elapsed = now - last_updated
+        if elapsed >= CREDIT_INTERVAL_MS:
+            add = min(int(elapsed // CREDIT_INTERVAL_MS), MAX_CREDITS - balance)
+            balance += add
+            last_updated += add * CREDIT_INTERVAL_MS
+            kv.set(f"credits:{user_id}", {"balance": balance, "last_updated": last_updated})
+    return balance, last_updated
+
+def use_credit(user_id):
+    balance, last_updated = get_credits(user_id)
+    if balance < 1:
+        return False, balance, last_updated
+    balance -= 1
+    kv.set(f"credits:{user_id}", {"balance": balance, "last_updated": last_updated})
+    return True, balance, last_updated
+
+# ═══ CONNECTION HELPERS ═══
+def generate_code():
+    return ''.join(secrets.choice(CODE_CHARS) for _ in range(4))
+
+def clean_expired_codes():
+    now = int(time.time() * 1000)
+    expired = [k for k, v in pending_connections.items() if now - v["created_at"] > CODE_EXPIRY_MS]
+    for k in expired:
+        del pending_connections[k]
+
+# ═══ SESSION HELPERS ═══
+def get_session(session_id):
+    with sessions_lock:
+        if session_id not in sessions:
+            sessions[session_id] = {
+                "conversation": [], "agent_messages": [], "pending_tool_call": None,
+                "plan": None, "approved": False, "step_count": 0, "status": "idle",
+                "plugin_id": None, "logs": [], "latest_reply": "",
+                "latest_context": {}, "model_key": DEFAULT_MODEL,
+            }
+        return sessions[session_id]
+
+def append_log(session, message):
+    session["logs"].append(message)
+
+def build_context(data):
+    return {
+        "current_script_name": data.get("current_script_name"),
+        "current_script_source": data.get("current_script_source"),
+        "selected_instance": data.get("selected_instance"),
+    }
+
+def build_chat_messages(session, user_message, context):
+    content = f"User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"
+    messages = list(session["conversation"])
+    messages.append({"role": "user", "content": content})
+    return messages
+
+def resolve_model(key):
+    return MODELS.get(key, MODELS[DEFAULT_MODEL])
+
+# ═══ AI HELPERS ═══
+def call_anthropic(model_id, messages, max_tokens=1500, tools=None):
+    kw = dict(model=model_id, max_tokens=max_tokens, system=SYSTEM_PROMPT, messages=messages)
+    if tools:
+        kw["tools"] = tools
+    return anthropic_client.messages.create(**kw)
+
+def call_gemini(model_id, messages):
+    if not GEMINI_AVAILABLE or not gemini_client:
+        raise Exception("Gemini not available")
+    contents = []
+    for m in messages:
+        role = "user" if m["role"] == "user" else "model"
+        contents.append(google_genai_types.Content(role=role, parts=[google_genai_types.Part(text=str(m["content"]))]))
+    resp = gemini_client.models.generate_content(
+        model=model_id, contents=contents,
+        config=google_genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT, max_output_tokens=8192),
+    )
+    return resp.text
+
+SYSTEM_PROMPT = """You are Rux, a Roblox Studio and Luau expert AI assistant connected to a local Roblox Studio plugin.
+Rules:
+- Be precise, safe, and incremental.
+- In agent mode, first produce a numbered plan before using tools.
+- Use one tool at a time.
+- Wait for tool results before continuing.
+- Prefer inspection before writing.
+- Before editing scripts, use snapshot_script if one does not already exist.
+- Keep changes minimal and explain what changed.
+- Respect the tool result exactly as returned.
+- If a tool fails, recover gracefully and choose the next best step.
+- Stop when the task is complete and provide a concise final summary.
+"""
 
 TOOL_DEFINITIONS = [
     {"name": "read_script", "description": "Find a script by name and return its source code.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
@@ -101,406 +249,327 @@ TOOL_DEFINITIONS = [
     {"name": "restore_script", "description": "Restore a script to the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
 ]
 
-SYSTEM_PROMPT = """You are Rux, a Roblox Studio and Luau expert AI assistant connected to a local Roblox Studio plugin.
-
-Rules:
-- Be precise, safe, and incremental.
-- In agent mode, first produce a numbered plan before using tools.
-- Use one tool at a time.
-- Wait for tool results before continuing.
-- Prefer inspection before writing.
-- Before editing scripts, use snapshot_script if one does not already exist.
-- Keep changes minimal and explain what changed.
-- Respect the tool result exactly as returned.
-- If a tool fails, recover gracefully and choose the next best step.
-- Stop when the task is complete and provide a concise final summary.
-"""
-
-
-def get_session(session_id: str):
-    with sessions_lock:
-        if session_id not in sessions:
-            sessions[session_id] = {
-                "conversation": [],
-                "agent_messages": [],
-                "pending_tool_call": None,
-                "plan": None,
-                "approved": False,
-                "step_count": 0,
-                "status": "idle",
-                "plugin_id": None,
-                "logs": [],
-                "latest_reply": "",
-                "latest_context": {},
-                "model_key": DEFAULT_MODEL,
-            }
-        return sessions[session_id]
-
-
-def append_log(session, message: str):
-    session["logs"].append(message)
-    print(message)
-
-
-def build_context_from_request(data):
-    return {
-        "current_script_name": data.get("current_script_name"),
-        "current_script_source": data.get("current_script_source"),
-        "selected_instance": data.get("selected_instance"),
-    }
-
-
-def build_chat_messages(session, user_message, context):
-    content = f"""User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"""
-    messages = list(session["conversation"])
-    messages.append({"role": "user", "content": content})
-    return messages
-
-
-def call_anthropic_chat(model_id, messages, max_tokens=1500, tools=None):
-    kwargs = dict(model=model_id, max_tokens=max_tokens, system=SYSTEM_PROMPT, messages=messages)
-    if tools:
-        kwargs["tools"] = tools
-    return anthropic_client.messages.create(**kwargs)
-
-
-def call_gemini_chat(model_id, messages, tools=None):
-    if not GEMINI_AVAILABLE or not gemini_client:
-        raise Exception("Gemini is not available in this environment.")
-
-    contents = []
-    for m in messages:
-        role = "user" if m["role"] == "user" else "model"
-        contents.append(google_genai_types.Content(
-            role=role,
-            parts=[google_genai_types.Part(text=str(m["content"]))],
-        ))
-
-    response = gemini_client.models.generate_content(
-        model=model_id,
-        contents=contents,
-        config=google_genai_types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            max_output_tokens=8192,
-        ),
-    )
-    return response.text
-
-
-def resolve_model(model_key):
-    return MODELS.get(model_key, MODELS[DEFAULT_MODEL])
-
-
-@app.route("/models", methods=["GET"])
-def get_models():
-    return jsonify(MODELS)
-
-
-@app.route("/ai", methods=["POST"])
-def ai():
+# ═══ AUTH ROUTES ═══
+@app.route("/auth/register", methods=["POST"])
+def auth_register():
     data = request.get_json(force=True)
-    log_json("REQUEST /ai", data)
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    roblox_id = data.get("roblox_id") or ""
 
-    session_id   = data.get("session_id") or str(uuid.uuid4())
-    mode         = data.get("mode", "chat")
+    if not email or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return jsonify({"error": "Invalid email"}), 400
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+    existing = kv.get(f"user:email:{email}")
+    if existing:
+        return jsonify({"error": "Email already registered"}), 400
+
+    user_id = str(uuid.uuid4())
+    kv.set(f"user:id:{user_id}", {
+        "id": user_id, "email": email,
+        "password_hash": hash_password(password),
+        "roblox_id": roblox_id, "created_at": int(time.time()),
+    })
+    kv.set(f"user:email:{email}", {"id": user_id})
+    if roblox_id:
+        kv.set(f"user:roblox:{roblox_id}", {"id": user_id, "email": email})
+    kv.set(f"credits:{user_id}", {"balance": MAX_CREDITS, "last_updated": 0})
+
+    token = str(uuid.uuid4())
+    kv.set(f"session:{token}", {"user_id": user_id, "created_at": int(time.time())})
+
+    return jsonify({"token": token, "user": {"id": user_id, "email": email}})
+
+@app.route("/auth/login", methods=["POST"])
+def auth_login():
+    data = request.get_json(force=True)
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    user = kv.get(f"user:email:{email}")
+    if not user:
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    full = kv.get(f"user:id:{user['id']}")
+    if not full or not verify_password(password, full["password_hash"]):
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    token = str(uuid.uuid4())
+    kv.set(f"session:{token}", {"user_id": full["id"], "created_at": int(time.time())})
+
+    return jsonify({"token": token, "user": {"id": full["id"], "email": full["email"]}})
+
+@app.route("/auth/me", methods=["GET"])
+@require_auth
+def auth_me():
+    user = request.user
+    balance, last_updated = get_credits(user["id"])
+    next_at = last_updated + CREDIT_INTERVAL_MS if last_updated > 0 else 0
+
+    active_session = kv.get(f"user_plugin:{user['id']}")
+    session_id = None
+    now = time.time()
+    if active_session:
+        pid = active_session.get("plugin_id")
+        with plugin_registry_lock:
+            if pid and pid in plugin_registry and now - plugin_registry[pid]["last_seen"] < 15:
+                session_id = active_session.get("session_id")
+
+    return jsonify({
+        "user": {"id": user["id"], "email": user["email"]},
+        "credits": {"balance": balance, "max": MAX_CREDITS, "next_credit_at": next_at},
+        "session_id": session_id,
+    })
+
+@app.route("/auth/logout", methods=["POST"])
+@require_auth
+def auth_logout():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    kv.delete(f"session:{token}")
+    return jsonify({"ok": True})
+
+# ═══ CONNECTION ROUTES ═══
+@app.route("/connect/code", methods=["GET"])
+@require_auth
+def connect_code():
+    clean_expired_codes()
+    code = generate_code()
+    session_id = str(uuid.uuid4())
+    with pending_connections_lock:
+        pending_connections[code] = {
+            "user_id": request.user["id"],
+            "session_id": session_id,
+            "created_at": int(time.time() * 1000),
+        }
+    return jsonify({"code": code, "session_id": session_id})
+
+@app.route("/plugin/connect", methods=["POST"])
+def plugin_connect():
+    data = request.get_json(force=True)
+    plugin_id = data.get("plugin_id")
+    creator_id = data.get("creator_id")
+    code = (data.get("code") or "").strip().upper()
+    if not plugin_id:
+        return jsonify({"ok": False, "error": "Missing plugin_id"}), 400
+
+    session_id = None
+    method = None
+
+    if creator_id:
+        u = kv.get(f"user:roblox:{str(creator_id)}")
+        if u:
+            session_id = str(uuid.uuid4())
+            method = "auto"
+            kv.set(f"user_plugin:{u['id']}", {"plugin_id": plugin_id, "session_id": session_id})
+
+    if not session_id and code:
+        clean_expired_codes()
+        with pending_connections_lock:
+            pending = pending_connections.get(code)
+            if pending:
+                now = int(time.time() * 1000)
+                if now - pending["created_at"] <= CODE_EXPIRY_MS:
+                    session_id = pending["session_id"]
+                    method = "code"
+                    kv.set(f"user_plugin:{pending['user_id']}", {"plugin_id": plugin_id, "session_id": session_id})
+                    del pending_connections[code]
+
+    if not session_id:
+        return jsonify({"ok": False, "error": "Invalid or expired code"}), 400
+
+    with plugin_registry_lock:
+        plugin_registry[plugin_id] = {
+            "session_id": session_id, "plugin_id": plugin_id,
+            "last_seen": time.time(), "status": "connected",
+        }
+
+    return jsonify({"ok": True, "session_id": session_id, "method": method})
+
+# ═══ AI ROUTES ═══
+@app.route("/ai", methods=["POST"])
+@require_auth
+def ai():
+    user = request.user
+    ok, balance, _ = use_credit(user["id"])
+    if not ok:
+        _, _, next_at = get_credits(user["id"])
+        return jsonify({
+            "error": "no_credits", "balance": 0,
+            "next_credit_at": next_at,
+        }), 403
+
+    data = request.get_json(force=True)
+    session_id = data.get("session_id") or str(uuid.uuid4())
+    mode = data.get("mode", "chat")
     user_message = data.get("message", "")
-    model_key    = data.get("model", DEFAULT_MODEL)
+    model_key = data.get("model", DEFAULT_MODEL)
     conversation_history = data.get("conversation_history", [])
-    context = build_context_from_request(data)
+    context = build_context(data)
 
     session = get_session(session_id)
     session["conversation"] = conversation_history
     session["latest_context"] = context
     session["model_key"] = model_key
 
-    model_info = resolve_model(model_key)
-    model_id   = model_info["id"]
-    provider   = model_info["provider"]
+    mi = resolve_model(model_key)
+    mid, prov = mi["id"], mi["provider"]
 
     try:
         if mode == "chat":
-            messages = build_chat_messages(session, user_message, context)
-
-            if provider == "anthropic":
-                response = call_anthropic_chat(model_id, messages)
-                reply_text = "".join(b.text for b in response.content if b.type == "text")
+            msgs = build_chat_messages(session, user_message, context)
+            if prov == "anthropic":
+                r = call_anthropic(mid, msgs)
+                reply = "".join(b.text for b in r.content if b.type == "text")
             else:
-                reply_text = call_gemini_chat(model_id, messages)
-
-            session["latest_reply"] = reply_text
-            append_log(session, f"[CHAT/{model_info['label']}] {reply_text[:80]}")
-
-            return jsonify({
-                "session_id": session_id,
-                "reply": reply_text,
-                "tool_calls": [],
-                "plan": None,
-                "status": "done",
-                "model": model_info["label"],
-            })
+                reply = call_gemini(mid, msgs)
+            session["latest_reply"] = reply
+            return jsonify({"session_id": session_id, "reply": reply, "tool_calls": [], "plan": None, "status": "done", "model": mi["label"], "credits": balance - 1})
 
         elif mode == "agent":
-            if provider == "google":
-                return jsonify({
-                    "session_id": session_id,
-                    "reply": "Agent mode with tool execution is only supported for Claude models (Sonnet / Opus). Please switch to a Claude model.",
-                    "tool_calls": [],
-                    "plan": None,
-                    "status": "done",
-                    "model": model_info["label"],
-                })
-
+            if prov == "google":
+                return jsonify({"session_id": session_id, "reply": "Agent mode requires Claude models.", "tool_calls": [], "plan": None, "status": "done", "model": mi["label"], "credits": balance - 1})
             session["approved"] = False
             session["step_count"] = 0
             session["pending_tool_call"] = None
             session["status"] = "planning"
-
-            planning_messages = build_chat_messages(session, user_message, context)
-            planning_messages.append({"role": "user", "content": "Produce a numbered execution plan only. Do not call any tools yet."})
-
-            response = call_anthropic_chat(model_id, planning_messages, max_tokens=1200)
-            plan_text = "".join(b.text for b in response.content if b.type == "text")
-
-            session["plan"] = plan_text
-            session["agent_messages"] = planning_messages + [{"role": "assistant", "content": response.content}]
-            session["latest_reply"] = plan_text
-
-            return jsonify({
-                "session_id": session_id,
-                "reply": "Plan generated. Awaiting approval.",
-                "tool_calls": [],
-                "plan": plan_text,
-                "status": "awaiting_approval",
-                "model": model_info["label"],
-            })
-
-        return jsonify({"error": "Invalid mode"}), 400
-
+            pm = build_chat_messages(session, user_message, context)
+            pm.append({"role": "user", "content": "Produce a numbered execution plan only. Do not call any tools yet."})
+            r = call_anthropic(mid, pm, max_tokens=1200)
+            plan = "".join(b.text for b in r.content if b.type == "text")
+            session["plan"] = plan
+            session["agent_messages"] = pm + [{"role": "assistant", "content": r.content}]
+            return jsonify({"session_id": session_id, "reply": "Plan generated.", "tool_calls": [], "plan": plan, "status": "awaiting_approval", "model": mi["label"], "credits": balance - 1})
     except Exception as e:
-        error_message = f"Request failed: {str(e)}"
-        append_log(session, error_message)
-        return jsonify({
-            "session_id": session_id,
-            "reply": error_message,
-            "tool_calls": [],
-            "plan": None,
-            "status": "error",
-        }), 500
-
+        return jsonify({"session_id": session_id, "reply": f"Failed: {e}", "tool_calls": [], "plan": None, "status": "error", "credits": balance - 1}), 500
 
 @app.route("/ai/approve", methods=["POST"])
+@require_auth
 def approve_agent():
     data = request.get_json(force=True)
     session_id = data.get("session_id")
     session = get_session(session_id)
-
-    # Allow model override on approve
-    approve_model = data.get("model")
-    if approve_model:
-        session["model_key"] = approve_model
-
+    am = data.get("model")
+    if am:
+        session["model_key"] = am
     session["approved"] = True
     session["status"] = "running"
-
-    model_key  = session.get("model_key", DEFAULT_MODEL)
-    model_info = resolve_model(model_key)
-    model_id   = model_info["id"]
-
-    if model_info["provider"] == "google":
+    mi = resolve_model(session.get("model_key", DEFAULT_MODEL))
+    if mi["provider"] == "google":
         session["status"] = "error"
-        return jsonify({
-            "session_id": session_id,
-            "reply": "Agent mode is only supported for Claude models. Switch to Sonnet or Opus.",
-            "tool_calls": [],
-            "plan": session.get("plan"),
-            "status": "error",
-        }), 400
-
+        return jsonify({"session_id": session_id, "reply": "Agent requires Claude.", "tool_calls": [], "plan": session.get("plan"), "status": "error"}), 400
     try:
-        # FIX: Use the stored agent_messages from planning phase so Claude
-        # retains full context of the plan it wrote
-        prior_messages = session.get("agent_messages", [])
-        prior_messages.append({"role": "user", "content": "The plan is approved. Start executing now. Use one tool at a time."})
-
-        response = call_anthropic_chat(model_id, prior_messages, tools=TOOL_DEFINITIONS)
-        session["agent_messages"] = prior_messages + [{"role": "assistant", "content": response.content}]
-
-        tool_call = None
-        final_text = ""
-        for block in response.content:
-            if block.type == "tool_use":
-                tool_call = {"id": block.id, "name": block.name, "arguments": block.input}
-            elif block.type == "text":
-                final_text += block.text
-
-        if tool_call:
-            session["pending_tool_call"] = tool_call
-            append_log(session, f"[AGENT TOOL] {tool_call['name']}")
-            return jsonify({
-                "session_id": session_id,
-                "reply": final_text or "Executing first step.",
-                "tool_calls": [tool_call],
-                "plan": session["plan"],
-                "status": "tool_requested",
-            })
-
-        session["latest_reply"] = final_text
+        prior = session.get("agent_messages", [])
+        prior.append({"role": "user", "content": "The plan is approved. Start executing now. Use one tool at a time."})
+        r = call_anthropic(mi["id"], prior, tools=TOOL_DEFINITIONS)
+        session["agent_messages"] = prior + [{"role": "assistant", "content": r.content}]
+        tc = None
+        ft = ""
+        for b in r.content:
+            if b.type == "tool_use":
+                tc = {"id": b.id, "name": b.name, "arguments": b.input}
+            elif b.type == "text":
+                ft += b.text
+        if tc:
+            session["pending_tool_call"] = tc
+            return jsonify({"session_id": session_id, "reply": ft or "Executing.", "tool_calls": [tc], "plan": session["plan"], "status": "tool_requested"})
+        session["latest_reply"] = ft
         session["status"] = "done"
-        return jsonify({
-            "session_id": session_id,
-            "reply": final_text,
-            "tool_calls": [],
-            "plan": session["plan"],
-            "status": "done",
-        })
-
+        return jsonify({"session_id": session_id, "reply": ft, "tool_calls": [], "plan": session["plan"], "status": "done"})
     except Exception as e:
-        error_message = f"Approval/start failed: {str(e)}"
-        append_log(session, error_message)
-        return jsonify({
-            "session_id": session_id,
-            "reply": error_message,
-            "tool_calls": [],
-            "plan": session.get("plan"),
-            "status": "error",
-        }), 500
+        return jsonify({"session_id": session_id, "reply": f"Failed: {e}", "tool_calls": [], "plan": session.get("plan"), "status": "error"}), 500
 
-
+# ═══ PLUGIN ROUTES ═══
 @app.route("/plugin/heartbeat", methods=["POST"])
 def plugin_heartbeat():
     data = request.get_json(force=True)
-    session_id = data.get("session_id")
-    plugin_id  = data.get("plugin_id")
-    session = get_session(session_id)
-    session["plugin_id"]     = plugin_id
-    session["plugin_status"] = data.get("status")
-    session["selected_instance"] = data.get("selected_instance")
-
-    with plugin_registry_lock:
-        plugin_registry[plugin_id] = {
-            "session_id": session_id,
-            "plugin_id":  plugin_id,
-            "last_seen":  time.time(),
-            "status":     data.get("status"),
-            "selected_instance": data.get("selected_instance"),
-        }
-
+    pid = data.get("plugin_id")
+    sid = data.get("session_id")
+    if pid:
+        with plugin_registry_lock:
+            if pid not in plugin_registry:
+                plugin_registry[pid] = {"session_id": sid, "plugin_id": pid, "last_seen": 0, "status": "connected"}
+            plugin_registry[pid]["last_seen"] = time.time()
+            plugin_registry[pid]["status"] = data.get("status", "connected")
+            plugin_registry[pid]["selected_instance"] = data.get("selected_instance")
     return jsonify({"ok": True})
-
 
 @app.route("/plugin/poll", methods=["POST"])
 def plugin_poll():
     data = request.get_json(force=True)
-    session_id = data.get("session_id")
-    session = get_session(session_id)
-    return jsonify({
-        "status_message": session["status"],
-        "tool_call":      session.get("pending_tool_call"),
-    })
-
+    sid = data.get("session_id")
+    session = get_session(sid)
+    return jsonify({"status_message": session["status"], "tool_call": session.get("pending_tool_call")})
 
 @app.route("/plugin/tool_result", methods=["POST"])
 def plugin_tool_result():
     data = request.get_json(force=True)
-    session_id = data.get("session_id")
-    session = get_session(session_id)
-
-    # Guard: only Claude models support tool-use loop
-    model_key = session.get("model_key", DEFAULT_MODEL)
-    model_info = resolve_model(model_key)
-    if model_info["provider"] == "google":
+    sid = data.get("session_id")
+    session = get_session(sid)
+    mk = session.get("model_key", DEFAULT_MODEL)
+    mi = resolve_model(mk)
+    if mi["provider"] == "google":
         session["status"] = "error"
         session["pending_tool_call"] = None
-        return jsonify({"reply": "Tool execution is not supported for Google models.", "status": "error"}), 400
-
+        return jsonify({"reply": "Tools not supported for Google models.", "status": "error"}), 400
     if session["step_count"] >= MAX_AGENT_STEPS:
         session["status"] = "error"
         session["pending_tool_call"] = None
-        return jsonify({"reply": "Max agent step limit reached.", "status": "error"}), 400
-
-    tool_name    = data.get("tool_name")
-    tool_result  = data.get("tool_result")
-    pending_call = session.get("pending_tool_call")
-
-    if not pending_call:
+        return jsonify({"reply": "Max steps reached.", "status": "error"}), 400
+    pc = session.get("pending_tool_call")
+    if not pc:
         return jsonify({"reply": "No pending tool call.", "status": "error"}), 400
-
     session["step_count"] += 1
     session["pending_tool_call"] = None
-
-    model_id = model_info["id"]
-
     try:
-        prior_messages = session.get("agent_messages", [])
-        assistant_content = [{"type": "tool_use", "id": pending_call["id"], "name": pending_call["name"], "input": pending_call["arguments"]}]
-        tool_result_content = {"type": "tool_result", "tool_use_id": pending_call["id"], "content": json.dumps(tool_result)}
-        continued_messages = prior_messages + [
-            {"role": "assistant", "content": assistant_content},
-            {"role": "user", "content": [tool_result_content]},
-        ]
-
-        response = call_anthropic_chat(model_id, continued_messages, tools=TOOL_DEFINITIONS)
-        session["agent_messages"] = continued_messages + [{"role": "assistant", "content": response.content}]
-
-        next_tool  = None
-        final_text = ""
-        for block in response.content:
-            if block.type == "tool_use":
-                next_tool = {"id": block.id, "name": block.name, "arguments": block.input}
-            elif block.type == "text":
-                final_text += block.text
-
-        if next_tool:
-            session["pending_tool_call"] = next_tool
+        prior = session.get("agent_messages", [])
+        ac = [{"type": "tool_use", "id": pc["id"], "name": pc["name"], "input": pc["arguments"]}]
+        tr = {"type": "tool_result", "tool_use_id": pc["id"], "content": json.dumps(data.get("tool_result"))}
+        cont = prior + [{"role": "assistant", "content": ac}, {"role": "user", "content": [tr]}]
+        r = call_anthropic(mi["id"], cont, tools=TOOL_DEFINITIONS)
+        session["agent_messages"] = cont + [{"role": "assistant", "content": r.content}]
+        nt = None
+        ft = ""
+        for b in r.content:
+            if b.type == "tool_use":
+                nt = {"id": b.id, "name": b.name, "arguments": b.input}
+            elif b.type == "text":
+                ft += b.text
+        if nt:
+            session["pending_tool_call"] = nt
             session["status"] = "running"
-            return jsonify({"reply": final_text or f"Tool {tool_name} processed.", "status": "tool_requested", "tool_call": next_tool})
-
+            return jsonify({"reply": ft or "Tool processed.", "status": "tool_requested", "tool_call": nt})
         session["status"] = "done"
-        session["latest_reply"] = final_text
-        return jsonify({"reply": final_text, "status": "done"})
-
+        session["latest_reply"] = ft
+        return jsonify({"reply": ft, "status": "done"})
     except Exception as e:
         session["status"] = "error"
-        return jsonify({"reply": f"Tool loop failed: {str(e)}", "status": "error"}), 500
-
+        return jsonify({"reply": f"Failed: {e}", "status": "error"}), 500
 
 @app.route("/status", methods=["GET"])
 def get_status():
     now = time.time()
     with plugin_registry_lock:
-        active = [p for p in plugin_registry.values() if now - p["last_seen"] < 10]
+        active = [p for p in plugin_registry.values() if now - p["last_seen"] < 15]
     latest = active[0] if active else None
     return jsonify({
         "plugin_connected": bool(active),
-        "plugin_count":     len(active),
+        "plugin_count": len(active),
         "selected_instance": latest["selected_instance"] if latest else None,
-        "plugin_status":     latest["status"] if latest else None,
-        "status": "idle",
     })
 
-
-@app.route("/session/<session_id>", methods=["GET"])
-def get_session_state(session_id):
-    session = get_session(session_id)
-    return jsonify({
-        "status":            session.get("status"),
-        "plan":              session.get("plan"),
-        "latest_reply":      session.get("latest_reply"),
-        "pending_tool_call": session.get("pending_tool_call"),
-        "logs":              session.get("logs", []),
-        "step_count":        session.get("step_count", 0),
-    })
-
+@app.route("/models", methods=["GET"])
+def get_models():
+    return jsonify(MODELS)
 
 @app.route("/")
 def landing():
     return render_template("landing.html")
 
-
 @app.route("/app")
 def chat_app():
     return render_template("index.html")
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
