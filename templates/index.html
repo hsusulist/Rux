@@ -13,6 +13,10 @@
     html,body{height:100%}
     body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;overflow:hidden;-webkit-font-smoothing:antialiased}
 
+    /* Hide chat until auth check finishes */
+    .chat-screen { display: none !important; }
+    body.ready .chat-screen.visible { display: flex !important; }
+
     .sidebar{width:240px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
     .sb-logo{display:flex;align-items:center;gap:10px;padding:18px 16px 14px;border-bottom:1px solid var(--border)}
     .sb-logo-mark{width:26px;height:26px;border:1px solid var(--border2);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -50,30 +54,6 @@
 
     .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 
-    /* AUTH SCREENS */
-    .auth-screen{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
-    .auth-box{width:340px}
-    .auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
-    .auth-logo-mark{width:32px;height:32px;border:1px solid var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center}
-    .auth-logo-mark svg{width:16px;height:16px;fill:var(--text)}
-    .auth-logo-name{font-size:18px;font-weight:800;letter-spacing:-.4px}
-    .auth-title{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
-    .auth-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5}
-    .auth-field{margin-bottom:14px}
-    .auth-label{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block}
-    .auth-input{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
-    .auth-input:focus{border-color:var(--border2)}
-    .auth-input::placeholder{color:var(--muted)}
-    .auth-btn{width:100%;padding:10px;background:var(--text);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:background .15s;margin-top:4px}
-    .auth-btn:hover{background:#e0e0e0}
-    .auth-btn:disabled{opacity:.4;cursor:not-allowed}
-    .auth-error{font-size:12px;color:var(--text2);margin-top:10px;display:none}
-    .auth-error.show{display:block}
-    .auth-link{font-size:12px;color:var(--text2);margin-top:16px;text-align:center}
-    .auth-link a{color:var(--text);text-decoration:none;font-weight:600}
-    .auth-link a:hover{text-decoration:underline}
-    .auth-hint{font-size:10px;color:var(--muted);margin-top:4px}
-
     /* COMPACT CONNECT MODAL */
     .connect-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
     .connect-modal-overlay.open{opacity:1;pointer-events:all}
@@ -95,7 +75,6 @@
     .connect-modal-tip{font-size:10px;color:#333;max-width:180px;line-height:1.5}
     .connect-modal-refresh{font-size:11px;color:#444;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;text-decoration:underline;transition:color .15s}
     .connect-modal-refresh:hover{color:#888}
-    /* Sidebar connect btn */
     .sb-connect-btn{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
     .sb-connect-btn:hover{color:var(--text);border-color:var(--border2)}
     .sb-connect-btn svg{width:11px;height:11px;fill:currentColor}
@@ -158,7 +137,6 @@
     .typing-row span:nth-child(3){animation-delay:.4s}
     @keyframes bounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-3px);opacity:1}}
 
-    /* INPUT */
     .input-area{padding:10px 24px 18px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;position:relative}
     .no-credits{padding:16px 24px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;text-align:center}
     .no-credits-text{font-size:13px;color:var(--text2);margin-bottom:4px}
@@ -231,60 +209,7 @@
 </div>
 
 <div class="main">
-
-  <!-- LOGIN -->
-  <div class="auth-screen" id="screen-login">
-    <div class="auth-box">
-      <div class="auth-logo">
-        <div class="auth-logo-mark"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-        <div class="auth-logo-name">Rux</div>
-      </div>
-      <div class="auth-title">Sign in</div>
-      <div class="auth-sub">Access your AI assistant for Roblox Studio.</div>
-      <div class="auth-field">
-        <label class="auth-label">Email</label>
-        <input class="auth-input" id="login-email" type="email" placeholder="you@example.com" autocomplete="email">
-      </div>
-      <div class="auth-field">
-        <label class="auth-label">Password</label>
-        <input class="auth-input" id="login-password" type="password" placeholder="Password" autocomplete="current-password">
-      </div>
-      <button class="auth-btn" id="login-btn">Sign in</button>
-      <div class="auth-error" id="login-error"></div>
-      <div class="auth-link">Don't have an account? <a href="#" onclick="showScreen('register')">Register</a></div>
-    </div>
-  </div>
-
-  <!-- REGISTER -->
-  <div class="auth-screen" id="screen-register" style="display:none">
-    <div class="auth-box">
-      <div class="auth-logo">
-        <div class="auth-logo-mark"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-        <div class="auth-logo-name">Rux</div>
-      </div>
-      <div class="auth-title">Create account</div>
-      <div class="auth-sub">10 free credits per day. No payment required.</div>
-      <div class="auth-field">
-        <label class="auth-label">Email</label>
-        <input class="auth-input" id="reg-email" type="email" placeholder="you@example.com" autocomplete="email">
-      </div>
-      <div class="auth-field">
-        <label class="auth-label">Password</label>
-        <input class="auth-input" id="reg-password" type="password" placeholder="Min 6 characters" autocomplete="new-password">
-      </div>
-      <div class="auth-field">
-        <label class="auth-label">Roblox User ID <span style="color:var(--muted)">(optional)</span></label>
-        <input class="auth-input" id="reg-roblox-id" type="text" placeholder="Enables auto-connect in Studio">
-        <div class="auth-hint">Find at roblox.com &rarr; your profile &rarr; the number in the URL</div>
-      </div>
-      <button class="auth-btn" id="reg-btn">Create account</button>
-      <div class="auth-error" id="reg-error"></div>
-      <div class="auth-link">Already have an account? <a href="#" onclick="showScreen('login')">Sign in</a></div>
-    </div>
-  </div>
-
-
-  <!-- CHAT -->
+  <!-- CHAT ONLY — no auth screens -->
   <div class="chat-screen" id="screen-chat">
     <div class="chat-topbar">
       <div class="chat-topbar-title" id="chat-title">New conversation</div>
@@ -293,7 +218,6 @@
         <button class="mode-btn" data-mode="agent"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg> Agent</button>
       </div>
       <div class="topbar-actions">
-        <button class="icon-btn" id="save-btn" title="Save"><svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg></button>
         <button class="icon-btn" id="logout-btn" title="Sign out"><svg viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg></button>
       </div>
     </div>
@@ -326,7 +250,6 @@
       <div class="no-credits-time" id="no-credits-time"></div>
     </div>
   </div>
-
 </div>
 
 <!-- COMPACT CONNECT MODAL -->
@@ -362,17 +285,6 @@ let lastShownToolId=null;
 function getToken(){return localStorage.getItem(TOKEN_KEY)}
 function setToken(t){token=t;localStorage.setItem(TOKEN_KEY,t)}
 
-/* SCREENS */
-function showScreen(name){
-  ['screen-login','screen-register','screen-chat'].forEach(id=>{
-    document.getElementById(id).style.display='none';
-  });
-  const el=document.getElementById('screen-'+name);
-  if(el)el.style.display='flex';
-  if(name==='chat')el.classList.add('visible');
-  else document.getElementById('screen-chat').classList.remove('visible');
-}
-
 /* AUTH */
 async function api(path,opts={}){
   const headers=opts.headers||{};
@@ -382,34 +294,6 @@ async function api(path,opts={}){
   if(res.status===401){doLogout();return null}
   return{ok:res.ok,status:res.status,data};
 }
-
-function showAuthError(id,msg){
-  const el=document.getElementById(id);
-  el.textContent=msg;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),4000);
-}
-
-document.getElementById('login-btn').addEventListener('click',async()=>{
-  const email=document.getElementById('login-email').value.trim();
-  const pw=document.getElementById('login-password').value;
-  if(!email||!pw)return showAuthError('login-error','Fill in all fields');
-  const r=await api('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
-  if(!r)return;
-  if(!r.ok)return showAuthError('login-error',r.data.error||'Login failed');
-  setToken(r.data.token);userData=r.data.user;enterApp();
-});
-
-document.getElementById('reg-btn').addEventListener('click',async()=>{
-  const email=document.getElementById('reg-email').value.trim();
-  const pw=document.getElementById('reg-password').value;
-  const rid=document.getElementById('reg-roblox-id').value.trim();
-  if(!email||!pw)return showAuthError('reg-error','Email and password required');
-  if(pw.length<6)return showAuthError('reg-error','Password must be at least 6 characters');
-  const r=await api('/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw,roblox_id:rid||null})});
-  if(!r)return;
-  if(!r.ok)return showAuthError('reg-error',r.data.error||'Registration failed');
-  setToken(r.data.token);userData=r.data.user;enterApp();
-});
 
 function doLogout(){
   localStorage.removeItem(TOKEN_KEY);token=null;userData=null;
@@ -429,13 +313,13 @@ async function enterApp(){
   sessionId=r.data.session_id;
   updateCreditUI();
   if(sessionId)pluginConnected=true;
+  updatePluginUI();
   enterChat();
 }
 
 function updateCreditUI(){
   document.getElementById('credit-text').textContent=credits.balance+' / '+credits.max;
-  const row=document.getElementById('credit-row');
-  row.classList.toggle('active',credits.balance>0);
+  document.getElementById('credit-row').classList.toggle('active',credits.balance>0);
 }
 
 /* COMPACT CONNECT MODAL */
@@ -456,7 +340,7 @@ async function generateCode(){
   sessionId=r.data.session_id;
   document.getElementById('cm-code').textContent=r.data.code;
   const user=await api('/auth/me');
-  if(user&&user.data.user.roblox_id){
+  if(user&&user.data&&user.data.user&&user.data.user.roblox_id){
     document.getElementById('cm-tip').textContent='Registered Roblox ID detected — plugin may auto-connect.';
   }else{
     document.getElementById('cm-tip').textContent='Register with your Roblox ID for auto-connect.';
@@ -464,8 +348,7 @@ async function generateCode(){
 }
 
 document.getElementById('cm-copy-btn').addEventListener('click',()=>{
-  const code=document.getElementById('cm-code').textContent;
-  navigator.clipboard.writeText(code);
+  navigator.clipboard.writeText(document.getElementById('cm-code').textContent);
   const btn=document.getElementById('cm-copy-btn');
   btn.textContent='Copied';
   setTimeout(()=>btn.textContent='Copy',1500);
@@ -476,33 +359,32 @@ document.getElementById('cm-refresh-btn').addEventListener('click',()=>generateC
 function startConnectPoll(){
   if(connectPoll)clearInterval(connectPoll);
   connectPoll=setInterval(async()=>{
-    const r=await fetch('/status');
-    if(!r.ok)return;
-    const d=await r.json();
-    if(d.plugin_connected){
-      clearInterval(connectPoll);connectPoll=null;
-      pluginConnected=true;
-      updatePluginUI();
-      closeConnectModal();
-      updateInputState();
-    }
+    try{
+      const r=await fetch('/status');
+      if(!r.ok)return;
+      const d=await r.json();
+      if(d.plugin_connected){
+        clearInterval(connectPoll);connectPoll=null;
+        pluginConnected=true;
+        updatePluginUI();
+        closeConnectModal();
+        updateInputState();
+      }
+    }catch(e){}
   },2000);
 }
 
 function updatePluginUI(){
-  const row=document.getElementById('plugin-row');
-  const txt=document.getElementById('plugin-text');
-  row.classList.toggle('active',pluginConnected);
-  txt.textContent=pluginConnected?'Studio connected':'Studio disconnected';
+  document.getElementById('plugin-row').classList.toggle('active',pluginConnected);
+  document.getElementById('plugin-text').textContent=pluginConnected?'Studio connected':'Studio disconnected';
   const lbl=document.getElementById('sb-connect-label');
   if(lbl)lbl.textContent=pluginConnected?'Studio connected':'Connect Studio';
-  const btn=document.getElementById('sb-connect-btn');
-  if(btn)btn.style.color=pluginConnected?'var(--text2)':'';
 }
 
 /* CHAT */
 function enterChat(){
-  showScreen('chat');
+  document.body.classList.add('ready');
+  document.getElementById('screen-chat').classList.add('visible');
   document.getElementById('sb-new-btn').disabled=false;
   updateInputState();
   startStatusPoll();
@@ -511,12 +393,14 @@ function enterChat(){
 function startStatusPoll(){
   if(statusPoll)clearInterval(statusPoll);
   statusPoll=setInterval(async()=>{
-    const r=await fetch('/status');
-    if(!r.ok)return;
-    const d=await r.json();
-    pluginConnected=d.plugin_connected;
-    updatePluginUI();
-    if(!pluginConnected)updateInputState();
+    try{
+      const r=await fetch('/status');
+      if(!r.ok)return;
+      const d=await r.json();
+      pluginConnected=d.plugin_connected;
+      updatePluginUI();
+      if(!pluginConnected)updateInputState();
+    }catch(e){}
   },5000);
 }
 
@@ -576,7 +460,6 @@ function openConv(id){
   updateModelUI();updateModeUI();
   document.getElementById('chat-title').textContent=c.title;
   document.getElementById('plan-banner').classList.remove('show');
-  showScreen('chat');
   const msgs=document.getElementById('messages');msgs.innerHTML='';
   currentMessages.forEach(m=>renderMessage(m));
   msgs.scrollTop=msgs.scrollHeight;
@@ -596,7 +479,6 @@ function startNewConv(){
   document.getElementById('messages').innerHTML='';
   document.getElementById('chat-title').textContent='New conversation';
   document.getElementById('plan-banner').classList.remove('show');
-  showScreen('chat');
   renderSidebar();
   document.getElementById('chat-input').focus();
 }
@@ -607,18 +489,14 @@ function saveConv(){
   if(!currentMessages.length)return;
   const first=currentMessages.find(m=>m.role==='user');
   const title=first?first.text.slice(0,48):'Conversation';
-  const last=[...currentMessages].reverse().find(m=>m.role==='assistant'&&!m.isToolEvent);
-  const preview=last?last.text.slice(0,80):'';
   const cid=activeConvId&&!activeConvId.startsWith('new-')?activeConvId:'conv-'+Date.now();
   activeConvId=cid;
   const convs=loadConvs();
-  convs[cid]={id:cid,title,preview,sessionId,history:conversationHistory,messages:currentMessages,pendingSessionId,mode,model:selectedModel,updatedAt:Date.now()};
+  convs[cid]={id:cid,title,sessionId,history:conversationHistory,messages:currentMessages,pendingSessionId,mode,model:selectedModel,updatedAt:Date.now()};
   saveConvs(convs);
   document.getElementById('chat-title').textContent=title;
   renderSidebar();
 }
-
-document.getElementById('save-btn').addEventListener('click',saveConv);
 
 /* MODE */
 function updateModeUI(){
@@ -628,7 +506,7 @@ function updateModeUI(){
 document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;updateModeUI()}));
 
 /* MODEL PICKER */
-function toggleModelPicker(e){e.stopPropagation();const p=document.getElementById('model-picker');const b=document.getElementById('model-select-btn');const o=p.classList.contains('open');p.classList.toggle('open',!o);b.classList.toggle('open',!o)}
+function toggleModelPicker(e){e.stopPropagation();const p=document.getElementById('model-picker');const b=document.getElementById('model-select-btn');p.classList.toggle('open');b.classList.toggle('open')}
 function selectModel(k){selectedModel=k;updateModelUI();document.getElementById('model-picker').classList.remove('open');document.getElementById('model-select-btn').classList.remove('open')}
 function updateModelUI(){document.getElementById('model-select-label').textContent=MODEL_LABELS[selectedModel]||'Claude Sonnet';document.querySelectorAll('.model-option').forEach(o=>o.classList.toggle('selected',o.dataset.key===selectedModel))}
 document.addEventListener('click',e=>{if(!e.target.closest('.model-picker')&&!e.target.closest('.model-select-btn')){document.getElementById('model-picker').classList.remove('open');document.getElementById('model-select-btn').classList.remove('open')}});
@@ -679,21 +557,20 @@ function handleResponse(d){
   if(d.session_id)pendingSessionId=d.session_id;
   if(d.credits!=null){credits.balance=d.credits;updateCreditUI();updateInputState()}
   if(d.error==='no_credits'){credits.balance=0;credits.next_credit_at=d.next_credit_at;updateCreditUI();updateInputState();pushMsg({role:'system',text:'No credits remaining.'});return}
-  if(d.plan&&d.status==='awaiting_approval'){showPlan(d.plan);pushMsg({role:'assistant',text:'I drafted an execution plan. Review it above.'});return}
+  if(d.plan&&d.status==='awaiting_approval'){showPlan(d.plan);pushMsg({role:'assistant',text:'I drafted an execution plan. Review it above.'});saveConv();return}
   if(d.tool_calls&&d.tool_calls.length){
     d.tool_calls.forEach(tc=>{
       lastShownToolId=tc.id;
       pushMsg({role:'assistant',text:'',isToolEvent:true,toolName:tc.name,toolArgs:JSON.stringify(tc.arguments).slice(0,120)});
     });
   }
-  if(d.reply&&d.status==='done'){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply})}
+  if(d.reply&&d.status==='done'){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply});saveConv()}
 }
 
 /* POLL FOR TOOL RESULT */
 async function pollForResult(sid){
   addTyping();
-  const maxAttempts=90;
-  for(let i=0;i<maxAttempts;i++){
+  for(let i=0;i<90;i++){
     await new Promise(r=>setTimeout(r,2000));
     try{
       const r=await api('/ai/result/'+sid);
@@ -706,27 +583,27 @@ async function pollForResult(sid){
         addTyping();
       }
       if(d.status==='done'){
-        removeTyping();
-        lastShownToolId=null;
+        removeTyping();lastShownToolId=null;
         if(d.reply){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply})}
-        return;
+        saveConv();return;
       }
       if(d.status==='error'){
         removeTyping();lastShownToolId=null;
         pushMsg({role:'assistant',text:'Execution failed. Check Studio is connected.'});
-        return;
+        saveConv();return;
       }
     }catch(e){break}
   }
   removeTyping();lastShownToolId=null;
   pushMsg({role:'system',text:'Timed out waiting for Studio to respond.'});
+  saveConv();
 }
 
 /* SEND */
 async function sendMessage(){
   const text=chatInput.value.trim();if(!text||isLoading||credits.balance<1)return;
   if(!pluginConnected){openConnectModal();return;}
-  if(!document.getElementById('screen-chat').classList.contains('visible'))startNewConv();
+  startNewConv();
   isLoading=true;chatInput.value='';chatInput.style.height='auto';
   document.getElementById('send-btn').disabled=true;
   conversationHistory.push({role:'user',content:text});pushMsg({role:'user',text});addTyping();
@@ -739,7 +616,7 @@ async function sendMessage(){
   finally{isLoading=false;document.getElementById('send-btn').disabled=false}
 }
 
-/* INIT */
+/* INIT — check auth, redirect to landing if not logged in */
 (async function(){
   const t=getToken();
   if(t){
@@ -749,6 +626,7 @@ async function sendMessage(){
       userData=r.data.user;credits=r.data.credits;sessionId=r.data.session_id;
       updateCreditUI();
       if(sessionId)pluginConnected=true;
+      updatePluginUI();
       enterChat();
       return;
     }
