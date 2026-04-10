@@ -191,6 +191,18 @@ def build_chat_messages(session, user_message, context):
 def resolve_model(key):
     return MODELS.get(key, MODELS[DEFAULT_MODEL])
 
+def content_blocks_to_dicts(blocks):
+    result = []
+    for b in blocks:
+        if hasattr(b, 'type'):
+            if b.type == "text":
+                result.append({"type": "text", "text": b.text})
+            elif b.type == "tool_use":
+                result.append({"type": "tool_use", "id": b.id, "name": b.name, "input": b.input})
+        elif isinstance(b, dict):
+            result.append(b)
+    return result
+
 # ═══ AI HELPERS ═══
 def call_anthropic(model_id, messages, max_tokens=1500, tools=None):
     kw = dict(model=model_id, max_tokens=max_tokens, system=SYSTEM_PROMPT, messages=messages)
@@ -438,7 +450,7 @@ def ai():
                         reply_text += b.text
                 if tc:
                     session["pending_tool_call"] = tc
-                    session["agent_messages"] = msgs + [{"role": "assistant", "content": r.content}]
+                    session["agent_messages"] = msgs + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
                     session["status"] = "running"
                     session["latest_reply"] = ""
                     return jsonify({"session_id": session_id, "reply": reply_text or "", "tool_calls": [tc], "plan": None, "status": "tool_requested", "model": mi["label"], "credits": balance - 1})
@@ -501,7 +513,7 @@ def approve_agent():
         prior = session.get("agent_messages", [])
         prior.append({"role": "user", "content": "The plan is approved. Start executing now. Use one tool at a time."})
         r = call_anthropic(mi["id"], prior, tools=TOOL_DEFINITIONS)
-        session["agent_messages"] = prior + [{"role": "assistant", "content": r.content}]
+        session["agent_messages"] = prior + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
         tc = None
         ft = ""
         for b in r.content:
@@ -562,11 +574,10 @@ def plugin_tool_result():
     session["pending_tool_call"] = None
     try:
         prior = session.get("agent_messages", [])
-        ac = [{"type": "tool_use", "id": pc["id"], "name": pc["name"], "input": pc["arguments"]}]
         tr = {"type": "tool_result", "tool_use_id": pc["id"], "content": json.dumps(data.get("tool_result"))}
-        cont = prior + [{"role": "assistant", "content": ac}, {"role": "user", "content": [tr]}]
+        cont = prior + [{"role": "user", "content": [tr]}]
         r = call_anthropic(mi["id"], cont, tools=TOOL_DEFINITIONS)
-        session["agent_messages"] = cont + [{"role": "assistant", "content": r.content}]
+        session["agent_messages"] = cont + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
         nt = None
         ft = ""
         for b in r.content:
