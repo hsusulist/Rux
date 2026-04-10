@@ -338,6 +338,7 @@ let token=null,userData=null,credits={balance:10,max:10,next_credit_at:0};
 let sessionId=null,mode='chat',activeConvId=null,pendingSessionId=null;
 let isLoading=false,conversationHistory=[],currentMessages=[],selectedModel='sonnet';
 let pluginConnected=false,statusPoll=null,connectPoll=null;
+let lastShownToolId=null;
 
 function getToken(){return localStorage.getItem(TOKEN_KEY)}
 function setToken(t){token=t;localStorage.setItem(TOKEN_KEY,t)}
@@ -643,10 +644,12 @@ function hidePlan(){document.getElementById('plan-banner').classList.remove('sho
 document.getElementById('reject-plan-btn').addEventListener('click',()=>{hidePlan();pendingSessionId=null;pushMsg({role:'system',text:'Plan discarded.'})});
 document.getElementById('approve-btn').addEventListener('click',async()=>{
   hidePlan();if(!pendingSessionId)return;
-  pushMsg({role:'system',text:'Plan approved -- starting execution...'});addTyping();
-  try{const r=await api('/ai/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:pendingSessionId,model:selectedModel})});
-  if(!r){removeTyping();pushMsg({role:'assistant',text:'Failed to start agent.'});return}
-  removeTyping();handleResponse(r.data);
+  pushMsg({role:'system',text:'Plan approved — starting execution...'});addTyping();
+  try{
+    const r=await api('/ai/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:pendingSessionId,model:selectedModel})});
+    if(!r){removeTyping();pushMsg({role:'assistant',text:'Failed to start agent.'});return}
+    removeTyping();handleResponse(r.data);
+    if(r.data.status==='tool_requested'){await pollForResult(pendingSessionId)}
   }catch(e){removeTyping();pushMsg({role:'assistant',text:'Error: '+e.message})}
 });
 
@@ -656,8 +659,46 @@ function handleResponse(d){
   if(d.credits!=null){credits.balance=d.credits;updateCreditUI();updateInputState()}
   if(d.error==='no_credits'){credits.balance=0;credits.next_credit_at=d.next_credit_at;updateCreditUI();updateInputState();pushMsg({role:'system',text:'No credits remaining.'});return}
   if(d.plan&&d.status==='awaiting_approval'){showPlan(d.plan);pushMsg({role:'assistant',text:'I drafted an execution plan. Review it above.'});return}
-  if(d.tool_calls&&d.tool_calls.length){d.tool_calls.forEach(tc=>{pushMsg({role:'assistant',text:'',isToolEvent:true,toolName:tc.name,toolArgs:JSON.stringify(tc.arguments).slice(0,120)})})}
-  if(d.reply){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply})}
+  if(d.tool_calls&&d.tool_calls.length){
+    d.tool_calls.forEach(tc=>{
+      lastShownToolId=tc.id;
+      pushMsg({role:'assistant',text:'',isToolEvent:true,toolName:tc.name,toolArgs:JSON.stringify(tc.arguments).slice(0,120)});
+    });
+  }
+  if(d.reply&&d.status==='done'){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply})}
+}
+
+/* POLL FOR TOOL RESULT */
+async function pollForResult(sid){
+  addTyping();
+  const maxAttempts=90;
+  for(let i=0;i<maxAttempts;i++){
+    await new Promise(r=>setTimeout(r,2000));
+    try{
+      const r=await api('/ai/result/'+sid);
+      if(!r)break;
+      const d=r.data;
+      if(d.pending_tool_call&&d.pending_tool_call.id!==lastShownToolId){
+        removeTyping();
+        lastShownToolId=d.pending_tool_call.id;
+        pushMsg({role:'assistant',text:'',isToolEvent:true,toolName:d.pending_tool_call.name,toolArgs:JSON.stringify(d.pending_tool_call.arguments).slice(0,120)});
+        addTyping();
+      }
+      if(d.status==='done'){
+        removeTyping();
+        lastShownToolId=null;
+        if(d.reply){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply})}
+        return;
+      }
+      if(d.status==='error'){
+        removeTyping();lastShownToolId=null;
+        pushMsg({role:'assistant',text:'Execution failed. Check Studio is connected.'});
+        return;
+      }
+    }catch(e){break}
+  }
+  removeTyping();lastShownToolId=null;
+  pushMsg({role:'system',text:'Timed out waiting for Studio to respond.'});
 }
 
 /* SEND */
@@ -671,6 +712,7 @@ async function sendMessage(){
     const r=await api('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,mode,message:text,model:selectedModel,conversation_history:conversationHistory.slice(-20)})});
     removeTyping();if(!r){pushMsg({role:'assistant',text:'Connection error.'});return}
     handleResponse(r.data);
+    if(r.data.status==='tool_requested'){await pollForResult(r.data.session_id||sessionId)}
   }catch(e){removeTyping();pushMsg({role:'assistant',text:'Error: '+e.message})}
   finally{isLoading=false;document.getElementById('send-btn').disabled=false}
 }
