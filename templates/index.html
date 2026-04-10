@@ -74,22 +74,31 @@
     .auth-link a:hover{text-decoration:underline}
     .auth-hint{font-size:10px;color:var(--muted);margin-top:4px}
 
-    /* CONNECT SCREEN */
-    .connect-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:20px}
-    .connect-screen.visible{display:flex}
-    .connect-mark{width:56px;height:56px;border:1px solid var(--border2);border-radius:16px;display:flex;align-items:center;justify-content:center}
-    .connect-mark svg{width:24px;height:24px;fill:var(--text)}
-    .connect-title{font-size:20px;font-weight:700;letter-spacing:-.4px}
-    .connect-sub{font-size:13px;color:var(--text2);text-align:center;max-width:320px;line-height:1.6}
-    .connect-code-box{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--surface);border:1px solid var(--border2);border-radius:12px}
-    .connect-code{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:500;letter-spacing:6px;color:var(--text)}
-    .connect-copy{padding:6px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
-    .connect-copy:hover{color:var(--text);border-color:var(--muted)}
-    .connect-waiting{font-size:12px;color:var(--muted);animation:pulse 2s infinite}
+    /* COMPACT CONNECT MODAL */
+    .connect-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
+    .connect-modal-overlay.open{opacity:1;pointer-events:all}
+    .connect-modal{background:#0a0a0a;border:1px solid #222;border-radius:16px;padding:28px 32px;width:100%;max-width:330px;position:relative;transform:translateY(12px);transition:transform .2s ease}
+    .connect-modal-overlay.open .connect-modal{transform:translateY(0)}
+    .connect-modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#555;font-size:18px;cursor:pointer;line-height:1;transition:color .15s}
+    .connect-modal-close:hover{color:#fff}
+    .connect-modal-icon{width:42px;height:42px;border:1px solid #222;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+    .connect-modal-icon svg{width:19px;height:19px;fill:#fff}
+    .connect-modal-title{font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:5px}
+    .connect-modal-sub{font-size:12px;color:#666;line-height:1.6;margin-bottom:18px}
+    .connect-modal-code-box{display:flex;align-items:center;gap:10px;padding:11px 15px;background:#0f0f0f;border:1px solid #1e1e1e;border-radius:10px;margin-bottom:12px}
+    .connect-modal-code{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;letter-spacing:5px;flex:1}
+    .connect-modal-copy{padding:4px 10px;background:#161616;border:1px solid #222;border-radius:6px;font-size:11px;font-weight:600;color:#666;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+    .connect-modal-copy:hover{color:#fff;border-color:#444}
+    .connect-modal-status{font-size:11.5px;color:#444;animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-    .connect-refresh{font-size:11px;color:var(--muted);cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;text-decoration:underline}
-    .connect-refresh:hover{color:var(--text2)}
-    .connect-tip{font-size:11px;color:var(--muted);max-width:280px;text-align:center;line-height:1.5}
+    .connect-modal-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+    .connect-modal-tip{font-size:10px;color:#333;max-width:180px;line-height:1.5}
+    .connect-modal-refresh{font-size:11px;color:#444;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;text-decoration:underline;transition:color .15s}
+    .connect-modal-refresh:hover{color:#888}
+    /* Sidebar connect btn */
+    .sb-connect-btn{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+    .sb-connect-btn:hover{color:var(--text);border-color:var(--border2)}
+    .sb-connect-btn svg{width:11px;height:11px;fill:currentColor}
 
     /* CHAT SCREEN */
     .chat-screen{flex:1;display:none;flex-direction:column;overflow:hidden}
@@ -206,6 +215,10 @@
     <div class="sb-empty" id="sb-empty">No conversations yet</div>
   </div>
   <div class="sb-bottom">
+    <button class="sb-connect-btn" id="sb-connect-btn" onclick="openConnectModal()">
+      <svg viewBox="0 0 24 24"><path d="M17 7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h10c2.76 0 5-2.24 5-5s-2.24-5-5-5zM7 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
+      <span id="sb-connect-label">Connect Studio</span>
+    </button>
     <div class="sb-info-row" id="credit-row">
       <div class="sb-dot"></div>
       <span id="credit-text">-- / 10</span>
@@ -270,19 +283,6 @@
     </div>
   </div>
 
-  <!-- CONNECT -->
-  <div class="connect-screen" id="screen-connect">
-    <div class="connect-mark"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-    <div class="connect-title">Connect your Studio</div>
-    <div class="connect-sub">Enter this code in the Rux plugin inside Roblox Studio.</div>
-    <div class="connect-code-box">
-      <div class="connect-code" id="connect-code">----</div>
-      <button class="connect-copy" id="connect-copy-btn">Copy</button>
-    </div>
-    <div class="connect-waiting" id="connect-waiting">Waiting for plugin...</div>
-    <button class="connect-refresh" id="connect-refresh-btn">Generate new code</button>
-    <div class="connect-tip" id="connect-tip"></div>
-  </div>
 
   <!-- CHAT -->
   <div class="chat-screen" id="screen-chat">
@@ -329,6 +329,25 @@
 
 </div>
 
+<!-- COMPACT CONNECT MODAL -->
+<div class="connect-modal-overlay" id="connect-modal-overlay">
+  <div class="connect-modal">
+    <button class="connect-modal-close" onclick="closeConnectModal()">&#10005;</button>
+    <div class="connect-modal-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+    <div class="connect-modal-title">Connect Roblox Studio</div>
+    <div class="connect-modal-sub">Enter this code in the Rux plugin inside Studio to link your session.</div>
+    <div class="connect-modal-code-box">
+      <div class="connect-modal-code" id="cm-code">----</div>
+      <button class="connect-modal-copy" id="cm-copy-btn">Copy</button>
+    </div>
+    <div class="connect-modal-status" id="cm-status">Waiting for plugin...</div>
+    <div class="connect-modal-footer">
+      <div class="connect-modal-tip" id="cm-tip"></div>
+      <button class="connect-modal-refresh" id="cm-refresh-btn">New code</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const TOKEN_KEY='rux_token';
 const CONV_KEY='rux_conversations';
@@ -345,11 +364,11 @@ function setToken(t){token=t;localStorage.setItem(TOKEN_KEY,t)}
 
 /* SCREENS */
 function showScreen(name){
-  ['screen-login','screen-register','screen-connect','screen-chat'].forEach(id=>{
+  ['screen-login','screen-register','screen-chat'].forEach(id=>{
     document.getElementById(id).style.display='none';
   });
   const el=document.getElementById('screen-'+name);
-  if(el)el.style.display=name==='connect'?'flex':name==='chat'?'flex':'flex';
+  if(el)el.style.display='flex';
   if(name==='chat')el.classList.add('visible');
   else document.getElementById('screen-chat').classList.remove('visible');
 }
@@ -393,11 +412,11 @@ document.getElementById('reg-btn').addEventListener('click',async()=>{
 });
 
 function doLogout(){
-  setToken('');token=null;userData=null;
+  localStorage.removeItem(TOKEN_KEY);token=null;userData=null;
   if(statusPoll)clearInterval(statusPoll);
   if(connectPoll)clearInterval(connectPoll);
   pluginConnected=false;
-  showScreen('login');
+  window.location.href='/';
 }
 
 document.getElementById('logout-btn').addEventListener('click',doLogout);
@@ -409,8 +428,8 @@ async function enterApp(){
   credits=r.data.credits;
   sessionId=r.data.session_id;
   updateCreditUI();
-  if(sessionId){pluginConnected=true;enterChat()}
-  else{showConnectScreen()}
+  if(sessionId)pluginConnected=true;
+  enterChat();
 }
 
 function updateCreditUI(){
@@ -419,37 +438,40 @@ function updateCreditUI(){
   row.classList.toggle('active',credits.balance>0);
 }
 
-/* CONNECT SCREEN */
-async function showConnectScreen(){
-  showScreen('connect');
-  pluginConnected=false;
-  updatePluginUI();
+/* COMPACT CONNECT MODAL */
+async function openConnectModal(){
+  document.getElementById('connect-modal-overlay').classList.add('open');
   await generateCode();
   startConnectPoll();
+}
+
+function closeConnectModal(){
+  document.getElementById('connect-modal-overlay').classList.remove('open');
+  if(connectPoll){clearInterval(connectPoll);connectPoll=null;}
 }
 
 async function generateCode(){
   const r=await api('/connect/code');
   if(!r)return;
   sessionId=r.data.session_id;
-  document.getElementById('connect-code').textContent=r.data.code;
+  document.getElementById('cm-code').textContent=r.data.code;
   const user=await api('/auth/me');
   if(user&&user.data.user.roblox_id){
-    document.getElementById('connect-tip').textContent='Tip: If you registered with your Roblox ID and own this place, the plugin will auto-connect.';
+    document.getElementById('cm-tip').textContent='Registered Roblox ID detected — plugin may auto-connect.';
   }else{
-    document.getElementById('connect-tip').textContent='Tip: Register with your Roblox ID for auto-connect in the future.';
+    document.getElementById('cm-tip').textContent='Register with your Roblox ID for auto-connect.';
   }
 }
 
-document.getElementById('connect-copy-btn').addEventListener('click',()=>{
-  const code=document.getElementById('connect-code').textContent;
+document.getElementById('cm-copy-btn').addEventListener('click',()=>{
+  const code=document.getElementById('cm-code').textContent;
   navigator.clipboard.writeText(code);
-  const btn=document.getElementById('connect-copy-btn');
+  const btn=document.getElementById('cm-copy-btn');
   btn.textContent='Copied';
   setTimeout(()=>btn.textContent='Copy',1500);
 });
 
-document.getElementById('connect-refresh-btn').addEventListener('click',()=>generateCode());
+document.getElementById('cm-refresh-btn').addEventListener('click',()=>generateCode());
 
 function startConnectPoll(){
   if(connectPoll)clearInterval(connectPoll);
@@ -458,10 +480,11 @@ function startConnectPoll(){
     if(!r.ok)return;
     const d=await r.json();
     if(d.plugin_connected){
-      clearInterval(connectPoll);
+      clearInterval(connectPoll);connectPoll=null;
       pluginConnected=true;
       updatePluginUI();
-      enterChat();
+      closeConnectModal();
+      updateInputState();
     }
   },2000);
 }
@@ -471,6 +494,10 @@ function updatePluginUI(){
   const txt=document.getElementById('plugin-text');
   row.classList.toggle('active',pluginConnected);
   txt.textContent=pluginConnected?'Studio connected':'Studio disconnected';
+  const lbl=document.getElementById('sb-connect-label');
+  if(lbl)lbl.textContent=pluginConnected?'Studio connected':'Connect Studio';
+  const btn=document.getElementById('sb-connect-btn');
+  if(btn)btn.style.color=pluginConnected?'var(--text2)':'';
 }
 
 /* CHAT */
@@ -496,13 +523,6 @@ function startStatusPoll(){
 function updateInputState(){
   const inputArea=document.getElementById('input-area');
   const noCredits=document.getElementById('no-credits');
-  if(!pluginConnected){
-    inputArea.style.display='';
-    noCredits.style.display='none';
-    document.getElementById('send-btn').disabled=true;
-    document.getElementById('chat-input').placeholder='Connect Studio plugin to chat';
-    return;
-  }
   if(credits.balance<1){
     inputArea.style.display='none';
     noCredits.style.display='';
@@ -519,7 +539,8 @@ function updateInputState(){
   inputArea.style.display='';
   noCredits.style.display='none';
   document.getElementById('send-btn').disabled=false;
-  document.getElementById('chat-input').placeholder=mode==='agent'?'Describe a task for Rux to execute...':'Ask about your Roblox game...';
+  const ph=!pluginConnected?'Send a message — you\'ll connect Studio first':(mode==='agent'?'Describe a task for Rux to execute...':'Ask about your Roblox game...');
+  document.getElementById('chat-input').placeholder=ph;
 }
 
 /* CONVERSATIONS */
@@ -564,8 +585,8 @@ function openConv(id){
 
 function deleteConv(id,e){
   e.stopPropagation();const c=loadConvs();delete c[id];saveConvs(c);
-  if(activeConvId===id){activeConvId=null;showConnectScreen()}
-  else renderSidebar();
+  if(activeConvId===id){activeConvId=null;document.getElementById('messages').innerHTML='';document.getElementById('chat-title').textContent='New conversation';}
+  renderSidebar();
 }
 
 function startNewConv(){
@@ -703,7 +724,8 @@ async function pollForResult(sid){
 
 /* SEND */
 async function sendMessage(){
-  const text=chatInput.value.trim();if(!text||isLoading||!pluginConnected||credits.balance<1)return;
+  const text=chatInput.value.trim();if(!text||isLoading||credits.balance<1)return;
+  if(!pluginConnected){openConnectModal();return;}
   if(!document.getElementById('screen-chat').classList.contains('visible'))startNewConv();
   isLoading=true;chatInput.value='';chatInput.style.height='auto';
   document.getElementById('send-btn').disabled=true;
@@ -720,8 +742,18 @@ async function sendMessage(){
 /* INIT */
 (async function(){
   const t=getToken();
-  if(t){token=t;const r=await api('/auth/me');if(r&&r.ok){userData=r.data.user;credits=r.data.credits;sessionId=r.data.session_id;updateCreditUI();if(sessionId){pluginConnected=true;enterChat()}else{showConnectScreen()}return}}
-  showScreen('login');
+  if(t){
+    token=t;
+    const r=await api('/auth/me');
+    if(r&&r.ok){
+      userData=r.data.user;credits=r.data.credits;sessionId=r.data.session_id;
+      updateCreditUI();
+      if(sessionId)pluginConnected=true;
+      enterChat();
+      return;
+    }
+  }
+  window.location.href='/';
 })();
 </script>
 </body>

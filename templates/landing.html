@@ -103,11 +103,130 @@
       border-radius: 8px;
       text-decoration: none;
       transition: background 0.15s, transform 0.12s;
-      margin-left: 8px;
+      margin-left: 4px;
+      cursor: pointer;
+      border: none;
+      font-family: 'Inter', sans-serif;
     }
 
     .nav-cta:hover { background: #e0e0e0; transform: translateY(-1px); }
     .nav-cta svg { width: 13px; height: 13px; fill: #000; }
+
+    .nav-cta-ghost {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: color 0.15s, background 0.15s;
+      margin-left: 4px;
+    }
+    .nav-cta-ghost:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+    /* AUTH MODAL */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .auth-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .auth-modal {
+      background: #0a0a0a;
+      border: 1px solid #222;
+      border-radius: 16px;
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 380px;
+      position: relative;
+      transform: translateY(16px);
+      transition: transform 0.2s ease;
+    }
+    .auth-overlay.open .auth-modal { transform: translateY(0); }
+    .auth-modal-close {
+      position: absolute;
+      top: 16px; right: 18px;
+      background: none; border: none;
+      color: #555; font-size: 20px;
+      cursor: pointer; line-height: 1;
+      transition: color 0.15s;
+    }
+    .auth-modal-close:hover { color: #fff; }
+    .auth-modal-logo {
+      display: flex; align-items: center; gap: 9px;
+      margin-bottom: 28px;
+    }
+    .auth-modal-mark {
+      width: 30px; height: 30px;
+      border: 1px solid #222; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .auth-modal-mark svg { width: 14px; height: 14px; fill: #fff; }
+    .auth-modal-name { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+    .auth-tabs {
+      display: flex; gap: 0;
+      background: #111; border: 1px solid #1a1a1a;
+      border-radius: 9px; padding: 3px; margin-bottom: 24px;
+    }
+    .auth-tab {
+      flex: 1; padding: 7px; text-align: center;
+      font-size: 12.5px; font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      border: none; border-radius: 7px;
+      cursor: pointer; background: transparent;
+      color: #555; transition: all 0.15s;
+    }
+    .auth-tab.active { background: #fff; color: #000; }
+    .auth-tab-panel { display: none; }
+    .auth-tab-panel.active { display: block; }
+    .auth-field { margin-bottom: 13px; }
+    .auth-label-sm {
+      font-size: 11px; font-weight: 600; color: #666;
+      margin-bottom: 5px; display: block;
+    }
+    .auth-input-sm {
+      width: 100%; padding: 9px 12px;
+      background: #111; border: 1px solid #1e1e1e;
+      border-radius: 8px; color: #fff;
+      font-size: 13px; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color 0.15s;
+    }
+    .auth-input-sm:focus { border-color: #333; }
+    .auth-input-sm::placeholder { color: #444; }
+    .auth-hint-sm { font-size: 10px; color: #444; margin-top: 3px; }
+    .auth-submit {
+      width: 100%; padding: 10px;
+      background: #fff; color: #000;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer; transition: background 0.15s;
+      margin-top: 4px;
+    }
+    .auth-submit:hover { background: #e0e0e0; }
+    .auth-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+    .auth-err {
+      font-size: 12px; color: #888;
+      margin-top: 10px; display: none;
+    }
+    .auth-err.show { display: block; }
 
     /* HERO */
     .hero {
@@ -821,10 +940,10 @@
   <div class="nav-links">
     <a class="nav-link" href="#features">Features</a>
     <a class="nav-link" href="#how">How it works</a>
-    <a class="nav-cta" href="/app">
-      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      Open Rux
-    </a>
+    <button class="nav-cta-ghost" onclick="openAuthModal('login')">Log in</button>
+    <button class="nav-cta" onclick="openAuthModal('register')">
+      Create account
+    </button>
   </div>
 </nav>
 
@@ -833,10 +952,10 @@
   <p class="hero-sub">Connect an AI assistant to your Roblox Studio plugin. Read, write, and manage scripts and instances through conversation.</p>
   <div class="hero-divider"></div>
   <div class="hero-actions">
-    <a class="btn-hero btn-hero-primary" href="/app">
+    <button class="btn-hero btn-hero-primary" onclick="openAuthModal('register')">
       <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       Start for free
-    </a>
+    </button>
     <a class="btn-hero btn-hero-ghost" href="#how">How it works</a>
   </div>
 
@@ -995,11 +1114,11 @@
 <section class="cta-section">
   <div class="cta-inner">
     <h2 class="cta-title">Ready to build smarter?</h2>
-    <p class="cta-sub">Open Rux and start your first conversation. No signup required.</p>
-    <a class="btn-hero btn-hero-primary" href="/app">
+    <p class="cta-sub">Create a free account and start your first conversation in seconds.</p>
+    <button class="btn-hero btn-hero-primary" onclick="openAuthModal('register')">
       <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      Open Rux
-    </a>
+      Get started free
+    </button>
   </div>
 </section>
 
@@ -1054,6 +1173,125 @@
     });
   }, { threshold: 0.2 });
   sectionHeadings.forEach(el => headingObserver.observe(el));
+</script>
+
+<!-- AUTH MODAL -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-modal" id="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()">&#10005;</button>
+    <div class="auth-modal-logo">
+      <div class="auth-modal-mark"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <div class="auth-modal-name">Rux</div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign in</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Create account</button>
+    </div>
+
+    <!-- Login panel -->
+    <div class="auth-tab-panel active" id="panel-login">
+      <div class="auth-field">
+        <label class="auth-label-sm">Email</label>
+        <input class="auth-input-sm" id="m-login-email" type="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label-sm">Password</label>
+        <input class="auth-input-sm" id="m-login-pw" type="password" placeholder="Password" autocomplete="current-password">
+      </div>
+      <button class="auth-submit" id="m-login-btn">Sign in</button>
+      <div class="auth-err" id="m-login-err"></div>
+    </div>
+
+    <!-- Register panel -->
+    <div class="auth-tab-panel" id="panel-register">
+      <div class="auth-field">
+        <label class="auth-label-sm">Email</label>
+        <input class="auth-input-sm" id="m-reg-email" type="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label-sm">Password</label>
+        <input class="auth-input-sm" id="m-reg-pw" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label-sm">Roblox User ID <span style="color:#444">(optional)</span></label>
+        <input class="auth-input-sm" id="m-reg-rbx" type="text" placeholder="Enables auto-connect in Studio">
+        <div class="auth-hint-sm">Find at roblox.com &rarr; your profile &rarr; number in the URL</div>
+      </div>
+      <button class="auth-submit" id="m-reg-btn">Create account</button>
+      <div class="auth-err" id="m-reg-err"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openAuthModal(tab) {
+  switchAuthTab(tab || 'login');
+  document.getElementById('auth-overlay').classList.add('open');
+}
+function closeAuthModal() {
+  document.getElementById('auth-overlay').classList.remove('open');
+}
+function switchAuthTab(tab) {
+  ['login','register'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+  });
+}
+document.getElementById('auth-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeAuthModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuthModal(); });
+
+async function authApi(path, body) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return { ok: res.ok, data: await res.json() };
+}
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+document.getElementById('m-login-btn').addEventListener('click', async () => {
+  const email = document.getElementById('m-login-email').value.trim();
+  const pw = document.getElementById('m-login-pw').value;
+  if (!email || !pw) return showErr('m-login-err', 'Fill in all fields');
+  const btn = document.getElementById('m-login-btn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const r = await authApi('/auth/login', { email, password: pw });
+  btn.disabled = false; btn.textContent = 'Sign in';
+  if (!r.ok) return showErr('m-login-err', r.data.error || 'Login failed');
+  localStorage.setItem('rux_token', r.data.token);
+  window.location.href = '/app';
+});
+
+document.getElementById('m-reg-btn').addEventListener('click', async () => {
+  const email = document.getElementById('m-reg-email').value.trim();
+  const pw = document.getElementById('m-reg-pw').value;
+  const rbx = document.getElementById('m-reg-rbx').value.trim();
+  if (!email || !pw) return showErr('m-reg-err', 'Email and password required');
+  if (pw.length < 6) return showErr('m-reg-err', 'Password must be at least 6 characters');
+  const btn = document.getElementById('m-reg-btn');
+  btn.disabled = true; btn.textContent = 'Creating...';
+  const r = await authApi('/auth/register', { email, password: pw, roblox_id: rbx || null });
+  btn.disabled = false; btn.textContent = 'Create account';
+  if (!r.ok) return showErr('m-reg-err', r.data.error || 'Registration failed');
+  localStorage.setItem('rux_token', r.data.token);
+  window.location.href = '/app';
+});
+
+[document.getElementById('m-login-pw'), document.getElementById('m-reg-pw')].forEach(inp => {
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const panel = inp.closest('.auth-tab-panel');
+      panel.querySelector('.auth-submit').click();
+    }
+  });
+});
 </script>
 </body>
 </html>
