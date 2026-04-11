@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#000;--sidebar:#060606;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--text:#fff;--text2:#888;--muted:#444;--accent:#e6be46;--accent2:rgba(230,190,70,.1);--accent3:rgba(230,190,70,.06);--danger:#e5484d;--danger2:rgba(229,72,77,.12)}
+    :root{--bg:#000;--sidebar:#060606;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--text:#fff;--text2:#888;--muted:#444;--accent:#e6be46;--accent2:rgba(230,190,70,.1);--accent3:rgba(230,190,70,.06);--danger:#e5484d;--danger2:rgba(229,72,77,.12);--lp-blue:#60a5fa;--lp-purple:#a78bfa;--lp-green:#4ade80;--lp-yellow:#fbbf24;--lp-red:#f87171}
     html,body{height:100%}
     body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased}
     .chat-screen{display:none!important}
@@ -69,13 +69,28 @@
     .main{margin-left:54px;height:100vh;display:flex;flex-direction:column;min-width:0;position:relative}
     .dashboard{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:22vh;z-index:10;transition:opacity .25s ease}
     .dashboard.hidden{opacity:0;pointer-events:none}
-    .dash-title{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
-    .dash-sub{font-size:13px;color:var(--muted);line-height:1.5}
+
+    /* ── PROGRESS BAR (top of messages) ── */
+    .agent-progress{position:absolute;top:0;left:0;right:0;height:2px;background:var(--border);z-index:16;opacity:0;transition:opacity .3s}
+    .agent-progress.active{opacity:1}
+    .agent-progress-bar{height:100%;background:linear-gradient(90deg,var(--lp-blue),var(--lp-purple));transition:width .5s ease;width:0%}
+
+    /* ── AGENT STATUS BAR ── */
+    .agent-status{position:absolute;top:2px;left:0;right:0;z-index:15;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 24px;background:linear-gradient(180deg,var(--bg) 60%,transparent);opacity:0;pointer-events:none;transition:opacity .25s}
+    .agent-status.active{opacity:1}
+    .agent-status-dot{width:6px;height:6px;border-radius:50%;background:var(--lp-green);animation:agentPulse 1.2s infinite}
+    @keyframes agentPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+    .agent-status-text{font-size:10px;font-weight:600;color:var(--lp-green);letter-spacing:.5px;text-transform:uppercase}
+    .agent-status-step{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .agent-status-tokens{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
     .messages{display:none;flex-direction:column;min-height:0;overflow-y:auto;position:absolute;left:0;right:0;bottom:160px;top:0;padding:20px 0}
     .messages.show{display:flex}
     .messages::-webkit-scrollbar{width:3px}
     .messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-    .msg-row{display:flex;padding:5px 24px;gap:12px;max-width:680px;width:100%;margin:0 auto;animation:msgIn .25s ease both}
+
+    /* ── MESSAGE ROWS ── */
+    .msg-row{display:flex;padding:5px 24px;gap:12px;max-width:720px;width:100%;margin:0 auto;animation:msgIn .25s ease both}
     .msg-row.user{flex-direction:row-reverse}
     .msg-row.system-row{justify-content:center;max-width:100%;padding:3px 24px}
     @keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -92,16 +107,47 @@
     .msg-row.user .msg-bubble{background:var(--text);color:#000;border-top-right-radius:3px;align-self:flex-end}
     .msg-row.assistant .msg-bubble{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-top-left-radius:3px}
     .system-msg{font-size:10px;color:var(--muted);font-style:italic;padding:3px 10px;border-radius:16px}
-    .tool-card{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--accent3);border:1px solid rgba(230,190,70,.1);border-radius:7px;margin-top:4px;width:fit-content;max-width:100%}
-    .tool-card-icon{width:18px;height:18px;border-radius:4px;background:rgba(230,190,70,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .tool-card-icon svg{width:9px;height:9px;fill:var(--accent)}
-    .tool-card-name{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:500;color:var(--accent)}
-    .tool-card-args{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .typing-indicator{display:flex;align-items:center;gap:4px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;width:fit-content}
-    .typing-indicator span{width:4px;height:4px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite}
-    .typing-indicator span:nth-child(2){animation-delay:.2s}
-    .typing-indicator span:nth-child(3){animation-delay:.4s}
-    @keyframes bounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-3px);opacity:1}}
+
+    /* ═══════════════════════════════════════
+       AGENT LOG ROWS — inside the chat
+       ═══════════════════════════════════════ */
+    .log-row{display:flex;align-items:flex-start;gap:8px;padding:4px 24px;max-width:720px;width:100%;margin:0 auto;animation:logSlide .18s ease both}
+    @keyframes logSlide{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)}}
+    .log-row:hover{background:rgba(255,255,255,.015)}
+    .log-time{font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;min-width:52px;padding-top:2px;flex-shrink:0}
+    .log-icon{font-size:13px;min-width:20px;text-align:center;flex-shrink:0;padding-top:1px}
+    .log-content{flex:1;min-width:0}
+    .log-title{font-size:12px;font-weight:500;line-height:1.55}
+    .log-detail{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#555;margin-top:2px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+    /* type colors */
+    .log-row.log-system .log-title{color:var(--muted)}
+    .log-row.log-thinking .log-title{color:var(--lp-purple)}
+    .log-row.log-tool .log-title{color:var(--lp-blue)}
+    .log-row.log-result .log-title{color:var(--lp-green)}
+    .log-row.log-warn .log-title{color:var(--lp-yellow)}
+    .log-row.log-error .log-title{color:var(--lp-red)}
+    .log-row.log-output .log-title{color:var(--text);font-weight:400}
+    .log-row.log-credit .log-title{color:var(--lp-yellow)}
+
+    /* inline code chips */
+    .lc{background:#1a1a2a;color:var(--lp-purple);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:10px}
+    .lb{color:var(--lp-blue)}
+    .lg{color:var(--lp-green)}
+    .ly{color:var(--lp-yellow)}
+
+    /* divider between log groups */
+    .log-divider{height:1px;background:#111;margin:4px 24px;max-width:720px}
+
+    /* typing dots in log */
+    .log-dots{display:inline-flex;gap:2px;vertical-align:middle;margin-left:4px}
+    .log-dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--lp-purple);animation:logBlink 1.2s infinite}
+    .log-dots span:nth-child(2){animation-delay:.2s}
+    .log-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes logBlink{0%,100%{opacity:.2}50%{opacity:1}}
+
+    /* old tool-card removed — replaced by log rows */
+
     .plan-banner{display:none;position:absolute;top:0;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;z-index:15;animation:bannerIn .2s ease both}
     .plan-banner.show{display:block}
     @keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
@@ -227,6 +273,20 @@
       <div class="dash-title">Start a conversation</div>
       <div class="dash-sub">Ask about your Roblox game, scripts, or instances.</div>
     </div>
+
+    <!-- Agent progress bar -->
+    <div class="agent-progress" id="agent-progress">
+      <div class="agent-progress-bar" id="agent-progress-bar"></div>
+    </div>
+
+    <!-- Agent status bar -->
+    <div class="agent-status" id="agent-status">
+      <div class="agent-status-dot"></div>
+      <span class="agent-status-text" id="agent-status-text">Running</span>
+      <span class="agent-status-step" id="agent-status-step"></span>
+      <span class="agent-status-tokens" id="agent-status-tokens"></span>
+    </div>
+
     <div class="messages" id="messages"></div>
     <div class="plan-banner" id="plan-banner">
       <div class="plan-top"><div class="plan-label">Execution Plan</div><span style="font-size:9px;color:var(--muted)">Review before running</span></div>
@@ -316,6 +376,12 @@ let isLoading=false,conversationHistory=[],currentMessages=[],selectedModel='son
 let pluginConnected=false,statusPoll=null,connectPoll=null,heartbeatInterval=null,lastShownToolId=null;
 let openPicker=null,inConversation=false,convCache={};
 
+/* Agent log tracking state */
+let agentStepCount=0;
+let agentTotalTokens=0;
+let agentTotalSteps=0;
+let lastToolNameForResult='';
+
 function getToken(){return localStorage.getItem(TOKEN_KEY)}
 function setToken(t){token=t;localStorage.setItem(TOKEN_KEY,t)}
 
@@ -346,132 +412,69 @@ async function enterApp(){
   updatePluginUI();enterChat();loadConversations();startWebHeartbeat();
 }
 
-/* ═══ WEB HEARTBEAT ═══ */
 function sendHeartbeat(){
   return api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>{
     if(!r)return;
-    if(r.data.plugin_connected&&!pluginConnected){
-      pluginConnected=true;updatePluginUI();updateInputState();
-    }else if(!r.data.plugin_connected&&pluginConnected){
-      pluginConnected=false;updatePluginUI();updateInputState();
-    }
+    if(r.data.plugin_connected&&!pluginConnected){pluginConnected=true;updatePluginUI();updateInputState();}
+    else if(!r.data.plugin_connected&&pluginConnected){pluginConnected=false;updatePluginUI();updateInputState();}
     if(r.data.credits!=null){credits.balance=r.data.credits;updateCreditUI();updateInputState();}
     if(r.data.session_id)sessionId=r.data.session_id;
   }).catch(()=>{});
 }
+function startWebHeartbeat(){if(heartbeatInterval)clearInterval(heartbeatInterval);sendHeartbeat();heartbeatInterval=setInterval(sendHeartbeat,10000);}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')sendHeartbeat();});
 
-function startWebHeartbeat(){
-  if(heartbeatInterval)clearInterval(heartbeatInterval);
-  sendHeartbeat();
-  heartbeatInterval=setInterval(sendHeartbeat,10000);
-}
-
-/* Send heartbeat immediately when tab becomes visible again */
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible')sendHeartbeat();
-});
-
-/* ═══ DISCONNECT PLUGIN ═══ */
 async function disconnectPlugin(){
   try{await api('/web/disconnect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});}catch(e){}
   pluginConnected=false;sessionId=null;updatePluginUI();updateInputState();
 }
 
 function updateCreditUI(){
-  const pill=document.getElementById('credit-pill');
-  const text=document.getElementById('credit-pill-text');
+  const pill=document.getElementById('credit-pill'),text=document.getElementById('credit-pill-text');
   const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
   text.textContent=bal.toFixed(2);
-  if(bal<=2){pill.classList.remove('ok');pill.classList.add('low');}
-  else{pill.classList.remove('low');pill.classList.add('ok');}
-  const hint=document.getElementById('token-cost-hint');
-  hint.textContent=bal<=0?'No credits':bal.toFixed(2)+' credits';
+  pill.classList.toggle('low',bal<=2);pill.classList.toggle('ok',bal>2);
+  document.getElementById('token-cost-hint').textContent=bal<=0?'No credits':bal.toFixed(2)+' credits';
 }
 
-async function openConnectModal(){
-  document.getElementById('connect-modal-overlay').classList.add('open');
-  await generateCode();startConnectPoll();
-}
-function closeConnectModal(){
-  document.getElementById('connect-modal-overlay').classList.remove('open');
-  if(connectPoll){clearInterval(connectPoll);connectPoll=null;}
-}
+async function openConnectModal(){document.getElementById('connect-modal-overlay').classList.add('open');await generateCode();startConnectPoll();}
+function closeConnectModal(){document.getElementById('connect-modal-overlay').classList.remove('open');if(connectPoll){clearInterval(connectPoll);connectPoll=null;}}
 
 async function generateCode(){
-  const r=await api('/connect/code');
-  if(!r)return;
+  const r=await api('/connect/code');if(!r)return;
   sessionId=r.data.session_id;
   document.getElementById('cm-code').textContent=r.data.code;
   try{const u=await api('/auth/me');if(u&&u.data&&u.data.user&&u.data.user.roblox_id)document.getElementById('cm-tip').textContent='Roblox ID detected — may auto-connect.';else document.getElementById('cm-tip').textContent='Add your Roblox ID for auto-connect.';}catch(e){document.getElementById('cm-tip').textContent='';}
 }
-
-document.getElementById('cm-copy-btn').addEventListener('click',()=>{
-  navigator.clipboard.writeText(document.getElementById('cm-code').textContent);
-  const b=document.getElementById('cm-copy-btn');b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1200);
-});
+document.getElementById('cm-copy-btn').addEventListener('click',()=>{navigator.clipboard.writeText(document.getElementById('cm-code').textContent);const b=document.getElementById('cm-copy-btn');b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1200);});
 document.getElementById('cm-refresh-btn').addEventListener('click',()=>generateCode());
 
-function startConnectPoll(){
-  if(connectPoll)clearInterval(connectPoll);
-  connectPoll=setInterval(async()=>{
-    try{const r=await fetch('/status');if(!r.ok)return;const d=await r.json();
-    if(d.plugin_connected){clearInterval(connectPoll);connectPoll=null;pluginConnected=true;updatePluginUI();closeConnectModal();updateInputState();}}catch(e){}
-  },2000);
-}
+function startConnectPoll(){if(connectPoll)clearInterval(connectPoll);connectPoll=setInterval(async()=>{try{const r=await fetch('/status');if(!r.ok)return;const d=await r.json();if(d.plugin_connected){clearInterval(connectPoll);connectPoll=null;pluginConnected=true;updatePluginUI();closeConnectModal();updateInputState();}}catch(e){}},2000);}
 
 function updatePluginUI(){
-  const dot=document.getElementById('plugin-dot'),txt=document.getElementById('plugin-text'),lbl=document.getElementById('sb-connect-label');
-  const discBtn=document.getElementById('sb-disconnect-btn');
+  const dot=document.getElementById('plugin-dot'),txt=document.getElementById('plugin-text'),lbl=document.getElementById('sb-connect-label'),discBtn=document.getElementById('sb-disconnect-btn');
   dot.classList.toggle('on',pluginConnected);txt.classList.toggle('on',pluginConnected);
   txt.textContent=pluginConnected?'Studio connected':'Disconnected';
   if(lbl)lbl.textContent=pluginConnected?'Connected':'Connect Studio';
   discBtn.style.display=pluginConnected?'flex':'none';
 }
 
-function enterChat(){
-  document.body.classList.add('ready');
-  document.getElementById('sb-new-btn').disabled=false;
-  updateInputState();startStatusPoll();
-}
+function enterChat(){document.body.classList.add('ready');document.getElementById('sb-new-btn').disabled=false;updateInputState();startStatusPoll();}
 
-function startStatusPoll(){
-  if(statusPoll)clearInterval(statusPoll);
-  statusPoll=setInterval(async()=>{
-    try{const r=await fetch('/status');if(!r.ok)return;const d=await r.json();
-    const wasConnected=pluginConnected;
-    pluginConnected=d.plugin_connected;
-    updatePluginUI();
-    if(wasConnected&&!pluginConnected)updateInputState();
-    }catch(e){}
-  },5000);
-}
+function startStatusPoll(){if(statusPoll)clearInterval(statusPoll);statusPoll=setInterval(async()=>{try{const r=await fetch('/status');if(!r.ok)return;const d=await r.json();const wasConnected=pluginConnected;pluginConnected=d.plugin_connected;updatePluginUI();if(wasConnected&&!pluginConnected)updateInputState();}catch(e){}},5000);}
 
 function updateInputState(){
   const ia=document.getElementById('input-area'),nc=document.getElementById('no-credits'),pill=document.getElementById('credit-pill');
   const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
-  if(bal<=0){
-    ia.style.display='none';nc.style.display='';
-    const at=credits.next_credit_at;if(at>0){const d=at-Date.now();if(d>0){const h=Math.floor(d/36e5),m=Math.floor((d%36e5)/6e4);document.getElementById('no-credits-time').textContent='Next credit in '+h+'h '+m+'m';}else document.getElementById('no-credits-time').textContent='Refreshing...';}
-    pill.style.display='none';return;
-  }
+  if(bal<=0){ia.style.display='none';nc.style.display='';const at=credits.next_credit_at;if(at>0){const d=at-Date.now();if(d>0){const h=Math.floor(d/36e5),m=Math.floor((d%36e5)/6e4);document.getElementById('no-credits-time').textContent='Next credit in '+h+'h '+m+'m';}else document.getElementById('no-credits-time').textContent='Refreshing...';}pill.style.display='none';return;}
   nc.style.display='none';ia.style.display='';pill.style.display='flex';
   document.getElementById('send-btn').disabled=false;
   document.getElementById('chat-input').placeholder=!pluginConnected?'Send a message — connect Studio first':(mode==='agent'?'Describe a multi-step task...':'Ask about your Roblox game...');
 }
 
-function setViewMode(chatting){
-  inConversation=chatting;
-  document.getElementById('dashboard').classList.toggle('hidden',chatting);
-  document.getElementById('messages').classList.toggle('show',chatting);
-}
+function setViewMode(chatting){inConversation=chatting;document.getElementById('dashboard').classList.toggle('hidden',chatting);document.getElementById('messages').classList.toggle('show',chatting);}
 
-function togglePicker(which){
-  const other=which==='model'?'mode':'model';
-  document.getElementById(other+'-picker').classList.remove('open');
-  const mp=document.getElementById(which+'-picker');
-  if(openPicker===which){mp.classList.remove('open');openPicker=null;return;}
-  mp.classList.add('open');openPicker=which;
-}
+function togglePicker(which){const other=which==='model'?'mode':'model';document.getElementById(other+'-picker').classList.remove('open');const mp=document.getElementById(which+'-picker');if(openPicker===which){mp.classList.remove('open');openPicker=null;return;}mp.classList.add('open');openPicker=which;}
 function selectModel(k){selectedModel=k;updateModelUI();document.getElementById('model-picker').classList.remove('open');openPicker=null;}
 function selectMode(m){mode=m;updateModeUI();document.getElementById('mode-picker').classList.remove('open');openPicker=null;updateInputState();}
 function updateModelUI(){document.getElementById('model-label').textContent=(MODEL_LABELS[selectedModel]||'Sonnet').replace('Claude ','');document.querySelectorAll('#model-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.key===selectedModel));}
@@ -479,27 +482,9 @@ function updateModeUI(){document.getElementById('mode-label').textContent=MODE_L
 document.addEventListener('click',e=>{if(!e.target.closest('.picker-trigger')&&!e.target.closest('.picker-dropdown')){document.getElementById('model-picker').classList.remove('open');document.getElementById('mode-picker').classList.remove('open');openPicker=null;}});
 
 /* ═══ CONVERSATION PERSISTENCE ═══ */
-async function loadConversations(){
-  try{const r=await api('/api/conversations');if(!r)return;convCache=r.data||{};renderSidebar();}catch(e){convCache={};renderSidebar();}
-}
-
-async function saveConv(){
-  if(!currentMessages.length)return;
-  const first=currentMessages.find(m=>m.role==='user');
-  const title=first?first.text.slice(0,48):'Conversation';
-  const cid=activeConvId||'conv-'+Date.now();
-  activeConvId=cid;
-  const convData={id:cid,title,messages:currentMessages,history:conversationHistory,mode,model:selectedModel,sessionId,updatedAt:Date.now()};
-  try{await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});convCache[cid]=convData;renderSidebar();}catch(e){}
-}
-
-async function deleteConv(id){
-  try{await api('/api/conversations/'+id,{method:'DELETE'});}catch(e){}
-  delete convCache[id];
-  if(activeConvId===id){activeConvId=null;showDashboard();}
-  renderSidebar();
-}
-
+async function loadConversations(){try{const r=await api('/api/conversations');if(!r)return;convCache=r.data||{};renderSidebar();}catch(e){convCache={};renderSidebar();}}
+async function saveConv(){if(!currentMessages.length)return;const first=currentMessages.find(m=>m.role==='user');const title=first?first.text.slice(0,48):'Conversation';const cid=activeConvId||'conv-'+Date.now();activeConvId=cid;const convData={id:cid,title,messages:currentMessages,history:conversationHistory,mode,model:selectedModel,sessionId,updatedAt:Date.now()};try{await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});convCache[cid]=convData;renderSidebar();}catch(e){}}
+async function deleteConv(id){try{await api('/api/conversations/'+id,{method:'DELETE'});}catch(e){}delete convCache[id];if(activeConvId===id){activeConvId=null;showDashboard();}renderSidebar();}
 function getConvList(){return Object.values(convCache).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
@@ -509,41 +494,13 @@ function renderSidebar(){
   const convs=getConvList();
   if(!convs.length){empty.style.display='';return;}
   empty.style.display='none';
-  convs.forEach(c=>{
-    const item=document.createElement('div');item.classList.add('sb-item');
-    if(c.id===activeConvId)item.classList.add('active');
-    item.innerHTML=`<div class="sb-item-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div><div class="sb-item-text">${escHtml(c.title)}</div><button class="sb-item-del" title="Delete">&times;</button>`;
-    item.querySelector('.sb-item-del').addEventListener('click',e=>{e.stopPropagation();deleteConv(c.id)});
-    item.addEventListener('click',e=>{if(e.target.closest('.sb-item-del'))return;openConv(c.id)});
-    list.appendChild(item);
-  });
+  convs.forEach(c=>{const item=document.createElement('div');item.classList.add('sb-item');if(c.id===activeConvId)item.classList.add('active');item.innerHTML=`<div class="sb-item-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div><div class="sb-item-text">${escHtml(c.title)}</div><button class="sb-item-del" title="Delete">&times;</button>`;item.querySelector('.sb-item-del').addEventListener('click',e=>{e.stopPropagation();deleteConv(c.id)});item.addEventListener('click',e=>{if(e.target.closest('.sb-item-del'))return;openConv(c.id)});list.appendChild(item);});
 }
 
-async function openConv(id){
-  let c=convCache[id];
-  if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data;}catch(e){}}
-  if(!c)return;
-  activeConvId=id;sessionId=c.sessionId||sessionId;
-  conversationHistory=c.history||[];currentMessages=c.messages||[];
-  pendingSessionId=c.pendingSessionId||null;
-  mode=c.mode||'chat';selectedModel=c.model||'sonnet';
-  updateModelUI();updateModeUI();
-  document.getElementById('plan-banner').classList.remove('show');
-  const msgs=document.getElementById('messages');msgs.innerHTML='';
-  currentMessages.forEach(m=>renderMessage(m));msgs.scrollTop=msgs.scrollHeight;
-  setViewMode(true);renderSidebar();
-}
-
+async function openConv(id){let c=convCache[id];if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data;}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));msgs.scrollTop=msgs.scrollHeight;setViewMode(true);renderSidebar();}
 function showDashboard(){activeConvId=null;document.getElementById('messages').innerHTML='';setViewMode(false);renderSidebar();}
 
-function startNewConv(){
-  activeConvId='new-'+Date.now();sessionId=sessionId||crypto.randomUUID();
-  conversationHistory=[];currentMessages=[];pendingSessionId=null;
-  mode='chat';updateModeUI();
-  document.getElementById('messages').innerHTML='';
-  document.getElementById('plan-banner').classList.remove('show');
-  setViewMode(true);renderSidebar();document.getElementById('chat-input').focus();
-}
+function startNewConv(){activeConvId='new-'+Date.now();sessionId=sessionId||crypto.randomUUID();conversationHistory=[];currentMessages=[];pendingSessionId=null;mode='chat';updateModeUI();document.getElementById('messages').innerHTML='';document.getElementById('plan-banner').classList.remove('show');setViewMode(true);renderSidebar();document.getElementById('chat-input').focus();}
 document.getElementById('sb-new-btn').addEventListener('click',startNewConv);
 
 const chatInput=document.getElementById('chat-input');
@@ -552,12 +509,70 @@ chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.prev
 
 const userSVG=`<svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>`;
 const botSVG=`<svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`;
-const toolSVG=`<svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>`;
 
+/* ═══════════════════════════════════════
+   AGENT LOG HELPERS — timestamp, etc.
+   ═══════════════════════════════════════ */
+function _pad(n){return String(n).padStart(2,'0')}
+function _now(){const d=new Date();return`${_pad(d.getHours())}:${_pad(d.getMinutes())}:${_pad(d.getSeconds())}`}
+
+function setAgentProgress(pct){
+  document.getElementById('agent-progress-bar').style.width=Math.min(pct,100)+'%';
+}
+function setAgentStatus(text,active){
+  const bar=document.getElementById('agent-progress');
+  const status=document.getElementById('agent-status');
+  const statusText=document.getElementById('agent-status-text');
+  bar.classList.toggle('active',active);
+  status.classList.toggle('active',active);
+  statusText.textContent=text;
+}
+function updateAgentStepUI(){
+  document.getElementById('agent-status-step').textContent=agentTotalSteps>0?`Step ${agentStepCount}/${agentTotalSteps}`:`Step ${agentStepCount}`;
+  document.getElementById('agent-status-tokens').textContent=agentTotalTokens>0?`${agentTotalTokens.toLocaleString()} tokens`:'';
+}
+
+/* ═══════════════════════════════════════
+   MESSAGE RENDERING — chat bubbles + log rows
+   ═══════════════════════════════════════ */
 function renderMessage(m){
   const msgs=document.getElementById('messages');
-  if(m.role==='system'){const r=document.createElement('div');r.classList.add('msg-row','system-row');const s=document.createElement('div');s.classList.add('system-msg');s.textContent=m.text;r.appendChild(s);msgs.appendChild(r);return;}
-  if(m.isToolEvent){const r=document.createElement('div');r.classList.add('msg-row','assistant');const a=document.createElement('div');a.classList.add('msg-avatar');a.innerHTML=botSVG;const b=document.createElement('div');b.classList.add('msg-body');const c=document.createElement('div');c.classList.add('tool-card');c.innerHTML=`<div class="tool-card-icon">${toolSVG}</div><div class="tool-card-name">${escHtml(m.toolName||'')}</div><div class="tool-card-args">${escHtml(m.toolArgs||'')}</div>`;b.appendChild(c);r.appendChild(a);r.appendChild(b);msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;}
+
+  /* System messages — centered italic */
+  if(m.role==='system'){
+    const r=document.createElement('div');r.classList.add('msg-row','system-row');
+    const s=document.createElement('div');s.classList.add('system-msg');s.textContent=m.text;
+    r.appendChild(s);msgs.appendChild(r);return;
+  }
+
+  /* Log-type messages (tool events, thinking, results) */
+  if(m.isLogEntry){
+    const r=document.createElement('div');r.classList.add('log-row','log-'+(m.logType||'system'));
+    r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">${m.logIcon||''}</span><div class="log-content"><div class="log-title">${m.logTitle||''}</div>${m.logDetail?`<div class="log-detail">${m.logDetail}</div>`:''}</div>`;
+    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
+  }
+
+  /* Log divider */
+  if(m.isLogDivider){
+    const d=document.createElement('div');d.className='log-divider';msgs.appendChild(d);return;
+  }
+
+  /* Thinking animation row */
+  if(m.isThinking){
+    const r=document.createElement('div');r.classList.add('log-row','log-thinking');r.id='thinking-log-row';
+    r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🧠</span><div class="log-content"><div class="log-title">Thinking <div class="log-dots"><span></span><span></span><span></span></div></div></div>`;
+    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
+  }
+
+  /* Tool event — OLD style, convert to log entry for backwards compat with saved convos */
+  if(m.isToolEvent){
+    const argsPreview=m.toolArgs?escHtml(m.toolArgs):'';
+    const r=document.createElement('div');r.classList.add('log-row','log-tool');
+    r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🔧</span><div class="log-content"><div class="log-title">Tool → <span class="lc">${escHtml(m.toolName||'')}</span></div>${argsPreview?`<div class="log-detail">${argsPreview}</div>`:''}</div>`;
+    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
+  }
+
+  /* User / Assistant chat bubbles */
   const r=document.createElement('div');r.classList.add('msg-row',m.role);
   const a=document.createElement('div');a.classList.add('msg-avatar');a.innerHTML=m.role==='user'?userSVG:botSVG;
   const b=document.createElement('div');b.classList.add('msg-body');
@@ -567,45 +582,176 @@ function renderMessage(m){
 }
 
 function pushMsg(m){currentMessages.push(m);renderMessage(m);}
-function addTyping(){const msgs=document.getElementById('messages');const r=document.createElement('div');r.classList.add('msg-row','assistant');r.id='typing-row';const a=document.createElement('div');a.classList.add('msg-avatar');a.innerHTML=botSVG;const b=document.createElement('div');b.classList.add('msg-body');const t=document.createElement('div');t.classList.add('typing-indicator');t.innerHTML='<span></span><span></span><span></span>';b.appendChild(t);r.appendChild(a);r.appendChild(b);msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;}
-function removeTyping(){const e=document.getElementById('typing-row');if(e)e.remove();}
 
+/* Push a log entry that won't pollute conversation history */
+function pushLog(type,icon,title,detail){
+  const m={isLogEntry:true,logType:type,logIcon:icon,logTitle:title,logDetail:detail||'',logTime:_now()};
+  renderMessage(m);
+}
+function pushLogDivider(){renderMessage({isLogDivider:true});}
+
+function addThinking(){renderMessage({isThinking:true});}
+function removeThinking(){const e=document.getElementById('thinking-log-row');if(e)e.remove();}
+
+/* ═══ PLAN APPROVAL ═══ */
 function showPlan(p){document.getElementById('plan-text').textContent=p;document.getElementById('plan-banner').classList.add('show');}
 function hidePlan(){document.getElementById('plan-banner').classList.remove('show');}
-document.getElementById('reject-plan-btn').addEventListener('click',()=>{hidePlan();pendingSessionId=null;pushMsg({role:'system',text:'Plan discarded.'});});
-document.getElementById('approve-btn').addEventListener('click',async()=>{
-  hidePlan();if(!pendingSessionId)return;
-  pushMsg({role:'system',text:'Executing plan...'});addTyping();
-  try{const r=await api('/ai/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:pendingSessionId,model:selectedModel})});
-  if(!r){removeTyping();pushMsg({role:'assistant',text:'Failed to start agent.'});return;}
-  removeTyping();handleResponse(r.data);if(r.data.status==='tool_requested')await pollForResult(pendingSessionId);}
-  catch(e){removeTyping();pushMsg({role:'assistant',text:'Error: '+e.message});}
+
+document.getElementById('reject-plan-btn').addEventListener('click',()=>{
+  hidePlan();pendingSessionId=null;
+  pushMsg({role:'system',text:'Plan discarded.'});
+  pushLog('warn','⛔','Plan discarded by user');
+  pushLogDivider();
+  setAgentStatus('Idle',false);
 });
 
+document.getElementById('approve-btn').addEventListener('click',async()=>{
+  hidePlan();if(!pendingSessionId)return;
+  pushMsg({role:'system',text:'Executing plan...'});
+  pushLog('result','✅','Plan approved — starting execution');
+  pushLogDivider();
+  setAgentStatus('Executing',true);
+  addThinking();
+  try{
+    const r=await api('/ai/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:pendingSessionId,model:selectedModel})});
+    if(!r){removeThinking();pushMsg({role:'assistant',text:'Failed to start agent.'});pushLog('error','❌','Failed to start agent');setAgentStatus('Error',true);return;}
+    removeThinking();handleResponse(r.data);if(r.data.status==='tool_requested')await pollForResult(pendingSessionId);
+  }catch(e){removeThinking();pushMsg({role:'assistant',text:'Error: '+e.message});pushLog('error','❌','Error: '+escHtml(e.message));setAgentStatus('Error',true);}
+});
+
+/* ═══ LOG A TOOL CALL ═══ */
+function logToolCall(tc){
+  const argParts=[];
+  if(tc.arguments){
+    for(const[k,v]of Object.entries(tc.arguments)){
+      const valStr=typeof v==='string'?`<span class="lb">"${escHtml(v)}"</span>`:escHtml(String(v));
+      argParts.push(`<span class="lc">${escHtml(k)}</span>: ${valStr}`);
+    }
+  }
+  const detail=argParts.length?argParts.join(' · '):'';
+  pushLog('tool','🔧',`Tool → <span class="lc">${escHtml(tc.name)}</span>`,detail);
+  agentStepCount++;
+  updateAgentStepUI();
+  const progress=agentTotalSteps>0?Math.min(10+(agentStepCount/Math.max(agentTotalSteps,1))*80,90):Math.min(10+agentStepCount*12,90);
+  setAgentProgress(progress);
+}
+
+/* ═══ HANDLE RESPONSE ═══ */
 function handleResponse(d){
   if(d.session_id)pendingSessionId=d.session_id;
   if(d.credits!=null){credits.balance=d.credits;updateCreditUI();updateInputState();}
-  if(d.error==='no_credits'){credits.balance=0;credits.next_credit_at=d.next_credit_at;updateCreditUI();updateInputState();pushMsg({role:'system',text:'No credits remaining.'});return;}
-  if(d.plan&&d.status==='awaiting_approval'){showPlan(d.plan);pushMsg({role:'assistant',text:'Plan ready. Review above.'});saveConv();return;}
-  if(d.tool_calls&&d.tool_calls.length){d.tool_calls.forEach(tc=>{lastShownToolId=tc.id;pushMsg({role:'assistant',text:'',isToolEvent:true,toolName:tc.name,toolArgs:JSON.stringify(tc.arguments).slice(0,100)});});}
-  if(d.reply&&d.status==='done'){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply});saveConv();}
-  if(d.tokens_used){pushMsg({role:'system',text:d.tokens_used+' tokens used'});}
+
+  if(d.error==='no_credits'){
+    credits.balance=0;credits.next_credit_at=d.next_credit_at;updateCreditUI();updateInputState();
+    pushMsg({role:'system',text:'No credits remaining.'});
+    pushLog('error','❌','No credits remaining');
+    setAgentStatus('Error',true);
+    return;
+  }
+
+  if(d.plan&&d.status==='awaiting_approval'){
+    const planLines=d.plan.split('\n').filter(l=>l.trim().match(/^\d/));
+    agentTotalSteps=planLines.length||3;
+    agentStepCount=0;
+    updateAgentStepUI();
+    pushLog('thinking','📋','Plan generated',d.plan.split('\n').slice(0,8).map(l=>escHtml(l)).join('<br>'));
+    pushLogDivider();
+    pushLog('system','⏳','Waiting for your approval','Review the plan and click Approve to continue');
+    setAgentStatus('Awaiting approval',true);
+    setAgentProgress(10);
+    showPlan(d.plan);
+    pushMsg({role:'assistant',text:'Plan ready. Review above.'});
+    saveConv();return;
+  }
+
+  if(d.tool_calls&&d.tool_calls.length){
+    d.tool_calls.forEach(tc=>{
+      lastShownToolId=tc.id;
+      logToolCall(tc);
+    });
+  }
+
+  if(d.reply&&d.status==='done'){
+    removeThinking();
+    const truncated=d.reply.length>200?d.reply.slice(0,200)+'...':d.reply;
+    pushLog('output','💬','Response',escHtml(truncated));
+    pushLogDivider();
+    pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply});saveConv();
+    setAgentProgress(100);
+    setAgentStatus('Done',false);
+    setTimeout(()=>{document.getElementById('agent-progress').classList.remove('active');},2000);
+  }else if(d.reply&&d.status!=='done'){
+    if(d.reply.trim()){pushLog('thinking','💭','Status',escHtml(d.reply.slice(0,120)));}
+  }
+
+  if(d.tokens_used){
+    agentTotalTokens+=d.tokens_used;
+    updateAgentStepUI();
+    pushLog('credit','💰',d.tokens_used+' tokens used','Balance: '+credits.balance.toFixed(2));
+  }
 }
 
+/* ═══ POLL FOR RESULT ═══ */
 async function pollForResult(sid){
-  addTyping();
+  addThinking();
+  setAgentStatus('Running',true);
   for(let i=0;i<90;i++){
     await new Promise(r=>setTimeout(r,2000));
-    try{const r=await api('/ai/result/'+sid);if(!r)break;const d=r.data;
+    try{
+      const r=await api('/ai/result/'+sid);if(!r)break;const d=r.data;
       if(d.credits!=null){credits.balance=d.credits;updateCreditUI();updateInputState();}
-      if(d.pending_tool_call&&d.pending_tool_call.id!==lastShownToolId){removeTyping();lastShownToolId=d.pending_tool_call.id;pushMsg({role:'assistant',text:'',isToolEvent:true,toolName:d.pending_tool_call.name,toolArgs:JSON.stringify(d.pending_tool_call.arguments).slice(0,100)});addTyping();}
-      if(d.status==='done'){removeTyping();lastShownToolId=null;if(d.reply){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply});}saveConv();return;}
-      if(d.status==='error'){removeTyping();lastShownToolId=null;pushMsg({role:'assistant',text:'Execution failed. Check Studio connection.'});saveConv();return;}
+
+      if(d.pending_tool_call&&d.pending_tool_call.id!==lastShownToolId){
+        removeThinking();
+        lastShownToolId=d.pending_tool_call.id;
+
+        /* Log completion of previous tool */
+        if(lastToolNameForResult){
+          pushLog('result','✅',`<span class="lc">${escHtml(lastToolNameForResult)}</span> completed`);
+          pushLogDivider();
+        }
+        lastToolNameForResult=d.pending_tool_call.name||'';
+
+        logToolCall(d.pending_tool_call);
+        addThinking();
+      }
+
+      if(d.status==='done'){
+        removeThinking();lastShownToolId=null;
+        if(lastToolNameForResult){
+          pushLog('result','✅',`<span class="lc">${escHtml(lastToolNameForResult)}</span> completed`);
+          pushLogDivider();
+          lastToolNameForResult='';
+        }
+        if(d.reply){
+          const truncated=d.reply.length>200?d.reply.slice(0,200)+'...':d.reply;
+          pushLog('output','💬','Final response',escHtml(truncated));
+          pushLogDivider();
+          pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply});
+        }
+        setAgentProgress(100);
+        setAgentStatus('Done',false);
+        agentStepCount=0;lastToolNameForResult='';
+        setTimeout(()=>{document.getElementById('agent-progress').classList.remove('active');},2000);
+        saveConv();return;
+      }
+
+      if(d.status==='error'){
+        removeThinking();lastShownToolId=null;
+        pushLog('error','❌','Execution failed','Check Studio connection and try again');
+        setAgentStatus('Error',true);
+        pushMsg({role:'assistant',text:'Execution failed. Check Studio connection.'});
+        saveConv();return;
+      }
     }catch(e){break;}
   }
-  removeTyping();lastShownToolId=null;pushMsg({role:'system',text:'Timed out waiting for Studio.'});saveConv();
+  removeThinking();lastShownToolId=null;
+  pushLog('error','❌','Timed out','Studio did not respond within the timeout period');
+  setAgentStatus('Error',true);
+  pushMsg({role:'system',text:'Timed out waiting for Studio.'});saveConv();
 }
 
+/* ═══ SEND MESSAGE ═══ */
 async function sendMessage(){
   const text=chatInput.value.trim();if(!text||isLoading)return;
   const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
@@ -614,22 +760,48 @@ async function sendMessage(){
   if(!activeConvId)startNewConv();
   isLoading=true;chatInput.value='';chatInput.style.height='auto';
   document.getElementById('send-btn').disabled=true;
-  conversationHistory.push({role:'user',content:text});pushMsg({role:'user',text});addTyping();
-  try{const r=await api('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,mode,message:text,model:selectedModel,conversation_history:conversationHistory.slice(-20)})});
-  removeTyping();if(!r){pushMsg({role:'assistant',text:'Connection error.'});return;}
-  handleResponse(r.data);if(r.data.status==='tool_requested')await pollForResult(r.data.session_id||sessionId);}
-  catch(e){removeTyping();pushMsg({role:'assistant',text:'Error: '+e.message});}
-  finally{isLoading=false;document.getElementById('send-btn').disabled=false;}
+  conversationHistory.push({role:'user',content:text});pushMsg({role:'user',text});
+
+  /* Reset agent tracking */
+  agentStepCount=0;agentTotalTokens=0;agentTotalSteps=0;lastToolNameForResult='';
+  updateAgentStepUI();
+  setAgentProgress(3);
+  setAgentStatus('Running',true);
+
+  const modelLabel=MODEL_LABELS[selectedModel]||'Sonnet';
+  pushLog('system','⚙️','Session started',`mode: <span class="lb">${escHtml(mode)}</span> · model: <span class="lb">${escHtml(modelLabel)}</span>`);
+  pushLogDivider();
+
+  if(mode==='agent'){
+    pushLog('thinking','📋','Generating plan...');
+  }else{
+    pushLog('thinking','🧠','Processing...');
+  }
+
+  addThinking();
+
+  try{
+    const r=await api('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,mode,message:text,model:selectedModel,conversation_history:conversationHistory.slice(-20)})});
+    removeThinking();
+    if(!r){pushMsg({role:'assistant',text:'Connection error.'});pushLog('error','❌','Connection error');setAgentStatus('Error',true);return;}
+    handleResponse(r.data);
+    if(r.data.status==='tool_requested'){
+      lastToolNameForResult=r.data.tool_calls&&r.data.tool_calls[0]?r.data.tool_calls[0].name:'';
+      await pollForResult(r.data.session_id||sessionId);
+    }
+  }catch(e){
+    removeThinking();pushMsg({role:'assistant',text:'Error: '+e.message});pushLog('error','❌','Error: '+escHtml(e.message));setAgentStatus('Error',true);
+  }finally{isLoading=false;document.getElementById('send-btn').disabled=false;}
 }
 
+/* ═══ INIT ═══ */
 (async function(){
   const t=getToken();
   if(t){token=t;const r=await api('/auth/me');if(r&&r.ok){userData=r.data.user;credits=r.data.credits;sessionId=r.data.session_id;updateCreditUI();if(sessionId)pluginConnected=true;updatePluginUI();enterChat();return;}}
   window.location.href='/';
 })();
 
-document.addEventListener('keydown', e => { if (e.key === 'F2') { e.preventDefault(); window.open('/admin','_blank'); } });
-  
+document.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();window.open('/admin','_blank');}});
 </script>
 </body>
 </html>
