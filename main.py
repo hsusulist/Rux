@@ -55,6 +55,9 @@ CODE_EXPIRY_MS = 5 * 60 * 1000
 CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 WEB_HEARTBEAT_TIMEOUT = 90
 
+# FIX: Maximum size for tool result content before truncation (chars)
+MAX_TOOL_RESULT_CHARS = 30000
+
 MODELS = {
     "gemini-flash": {"id": "gemini-2.5-flash", "provider": "google", "label": "Gemini Flash", "badge": "Fast"},
     "gemini-pro": {"id": "gemini-2.5-pro", "provider": "google", "label": "Gemini Pro", "badge": "Smart"},
@@ -208,29 +211,117 @@ def build_context(data):
         "selected_instance": data.get("selected_instance"),
     }
 
+# FIX: Avoid duplicating the user message. The client already includes it
+# in conversation_history, so we only append the context-augmented version
+# if the last message in history is NOT the same user message.
 def build_chat_messages(session, user_message, context):
-    content = f"User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"
     messages = list(session["conversation"])
-    messages.append({"role": "user", "content": content})
+
+    # Check if the last message is already this user message (client pushed it)
+    if messages and messages[-1].get("role") == "user" and messages[-1].get("content") == user_message:
+        # Replace the last message with the context-enriched version
+        messages[-1] = {"role": "user", "content": f"User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"}
+    else:
+        # Append the context-enriched user message
+        messages.append({"role": "user", "content": f"User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"})
+
     return messages
 
 def resolve_model(key):
     return MODELS.get(key, MODELS[DEFAULT_MODEL])
 
+# FIX: Preserve ALL content block types including thinking and redacted_thinking.
+# Dropping thinking blocks corrupts the conversation history and causes the
+# next Anthropic API call to fail because the assistant message doesn't match.
 def content_blocks_to_dicts(blocks):
     result = []
     for b in blocks:
-        if hasattr(b, 'type'):
-            if b.type == "text":
-                result.append({"type": "text", "text": b.text})
-            elif b.type == "tool_use":
-                result.append({"type": "tool_use", "id": b.id, "name": b.name, "input": b.input})
-        elif isinstance(b, dict):
+        if isinstance(b, dict):
             result.append(b)
+            continue
+        if not hasattr(b, 'type'):
+            continue
+        if b.type == "text":
+            result.append({"type": "text", "text": b.text})
+        elif b.type == "tool_use":
+            result.append({"type": "tool_use", "id": b.id, "name": b.name, "input": b.input})
+        elif b.type == "thinking":
+            # Preserve thinking blocks with their signature
+            result.append({"type": "thinking", "thinking": getattr(b, 'thinking', ''), "signature": getattr(b, 'signature', '')})
+        elif b.type == "redacted_thinking":
+            # Preserve redacted thinking blocks
+            result.append({"type": "redacted_thinking", "data": getattr(b, 'data', '')})
     return result
 
+# FIX: Extract tool calls and text from response content, handling multiple tool_use blocks.
+# Returns (first_tool_call_or_None, all_tool_calls_list, reply_text)
+def extract_tool_info(content):
+    tool_calls = []
+    reply_text = ""
+    for b in content:
+        if isinstance(b, dict):
+            if b.get("type") == "tool_use":
+                tool_calls.append({"id": b["id"], "name": b["name"], "arguments": b.get("input", {})})
+            elif b.get("type") == "text":
+                reply_text += b.get("text", "")
+        elif hasattr(b, 'type'):
+            if b.type == "tool_use":
+                tool_calls.append({"id": b.id, "name": b.name, "arguments": b.input})
+            elif b.type == "text":
+                reply_text += b.text
+    first_tc = tool_calls[0] if tool_calls else None
+    return first_tc, tool_calls, reply_text
+
+# FIX: Build assistant content dict list that ONLY includes the tool_use
+# we're actually going to execute. If Claude returned multiple tool_use
+# blocks, we keep only the first one and drop the rest to avoid orphaned
+# tool_use blocks without matching tool_results in the conversation.
+def build_assistant_content(content, keep_tool_id):
+    result = []
+    for b in content:
+        if isinstance(b, dict):
+            btype = b.get("type")
+            if btype == "text":
+                result.append(b)
+            elif btype == "tool_use" and b.get("id") == keep_tool_id:
+                result.append(b)
+            elif btype == "thinking":
+                result.append(b)
+            elif btype == "redacted_thinking":
+                result.append(b)
+            # Skip tool_use blocks that don't match keep_tool_id
+        elif hasattr(b, 'type'):
+            if b.type == "text":
+                result.append({"type": "text", "text": b.text})
+            elif b.type == "tool_use" and b.id == keep_tool_id:
+                result.append({"type": "tool_use", "id": b.id, "name": b.name, "input": b.input})
+            elif b.type == "thinking":
+                result.append({"type": "thinking", "thinking": getattr(b, 'thinking', ''), "signature": getattr(b, 'signature', '')})
+            elif b.type == "redacted_thinking":
+                result.append({"type": "redacted_thinking", "data": getattr(b, 'data', '')})
+            # Skip tool_use blocks that don't match keep_tool_id
+    # Ensure there's at least one content block
+    if not result:
+        result.append({"type": "text", "text": ""})
+    return result
+
+# FIX: Truncate large tool results to prevent exceeding context limits.
+# get_instance_tree can return megabytes of data.
+def truncate_tool_result(data, max_chars=MAX_TOOL_RESULT_CHARS):
+    s = json.dumps(data, ensure_ascii=False)
+    if len(s) <= max_chars:
+        return data
+    # Truncate and add a notice
+    truncated = s[:max_chars]
+    truncated += "\n\n... [RESULT TRUNCATED - too large to send to AI. Use more specific tools like read_script or find_instance instead.]"
+    try:
+        return json.loads(truncated) if truncated.startswith(('{', '[')) else {"truncated": True, "preview": truncated[:max_chars]}
+    except json.JSONDecodeError:
+        return {"truncated": True, "preview": s[:max_chars], "notice": "Result was too large and has been truncated."}
+
 # ═══ AI HELPERS ═══
-def call_anthropic(model_id, messages, max_tokens=1500, tools=None):
+# FIX: Increased max_tokens from 1500 to 4096
+def call_anthropic(model_id, messages, max_tokens=4096, tools=None):
     kw = dict(model=model_id, max_tokens=max_tokens, system=SYSTEM_PROMPT, messages=messages)
     if tools:
         kw["tools"] = tools
@@ -259,9 +350,10 @@ SYSTEM_PROMPT = """You are Rux, a Roblox Studio and Luau expert AI assistant con
 
 TOOLS:
 - You have direct access to tools (read_script, write_script, list_scripts, get_script_tree, search_code, create_script, delete_script, snapshot_script, restore_script, diff_script, check_errors, get_instance_tree, get_properties, set_property, find_instance, get_selection, get_current_script, get_place_metadata, find_usages, get_output_log, get_error_log).
-- Use one tool at a time and wait for the result before proceeding.
+- CRITICAL: You may only call ONE tool per response. Never call multiple tools at once. Call one tool, wait for the result, then decide your next step.
 - Always use list_scripts or get_script_tree first before trying to read a specific script by name, so you know the exact name.
 - get_output_log and get_error_log return whatever the plugin captured — they may be empty because Roblox does not expose the full Output window to plugins. Tell the user to check the Studio Output window directly if needed.
+- Prefer get_script_tree over get_instance_tree — get_instance_tree returns the entire game hierarchy which is extremely large. Use find_instance or get_script_tree instead.
 
 RULES:
 - Be precise, safe, and incremental.
@@ -273,6 +365,7 @@ RULES:
 - If a tool returns an error, recover gracefully and try the next best step.
 - Stop when the task is complete and give a concise summary.
 - Never make up script contents or tool results — always use real tool output.
+- If a tool result is truncated, use more specific tools like read_script or find_instance to get details.
 """
 
 TOOL_DEFINITIONS = [
@@ -287,7 +380,7 @@ TOOL_DEFINITIONS = [
     {"name": "get_error_log", "description": "Get recent error log lines available through the plugin.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "search_code", "description": "Search all scripts for a query string.", "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
     {"name": "find_usages", "description": "Search all scripts for usages of a variable or function name.", "input_schema": {"type": "object", "properties": {"variable_name": {"type": "string"}}, "required": ["variable_name"]}},
-    {"name": "get_instance_tree", "description": "Get the Explorer instance tree.", "input_schema": {"type": "object", "properties": {}}},
+    {"name": "get_instance_tree", "description": "Get the Explorer instance tree. WARNING: Returns very large data. Prefer get_script_tree or find_instance instead.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "get_properties", "description": "Get properties for an instance path.", "input_schema": {"type": "object", "properties": {"instance_path": {"type": "string"}}, "required": ["instance_path"]}},
     {"name": "set_property", "description": "Set a property on an instance path.", "input_schema": {"type": "object", "properties": {"instance_path": {"type": "string"}, "property": {"type": "string"}, "value": {}}, "required": ["instance_path", "property", "value"]}},
     {"name": "find_instance", "description": "Find an instance anywhere in the game by name.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
@@ -551,52 +644,87 @@ def ai():
                 cost = round(output_tokens * CREDIT_PER_TOKEN, 6)
                 balance, _ = deduct_credits(user["id"], cost)
 
-                tc = None
-                reply_text = ""
-                for b in r.content:
-                    if b.type == "tool_use":
-                        tc = {"id": b.id, "name": b.name, "arguments": b.input}
-                    elif b.type == "text":
-                        reply_text += b.text
-                if tc:
-                    session["pending_tool_call"] = tc
-                    session["agent_messages"] = msgs + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
+                # FIX: Use the new extraction function
+                first_tc, all_tcs, reply_text = extract_tool_info(r.content)
+
+                if first_tc:
+                    # FIX: Only keep the first tool_use in agent_messages to avoid
+                    # orphaned tool_use blocks without matching tool_results
+                    assistant_content = build_assistant_content(r.content, first_tc["id"])
+
+                    if len(all_tcs) > 1:
+                        print(f"[Rux] WARNING: Claude returned {len(all_tcs)} tool_use blocks, only executing first: {first_tc['name']}")
+                        reply_text += f"\n\n[Note: I will call {len(all_tcs)} tools one at a time. Starting with {first_tc['name']}.]"
+
+                    session["pending_tool_call"] = first_tc
+                    session["agent_messages"] = msgs + [{"role": "assistant", "content": assistant_content}]
                     session["status"] = "running"
                     session["latest_reply"] = ""
                     session["accumulated_cost"] = cost
-                    return jsonify({"session_id": session_id, "reply": reply_text or "", "tool_calls": [tc], "plan": None, "status": "tool_requested", "model": mi["label"], "credits": round(balance, 2), "tokens_used": output_tokens})
+                    return jsonify({
+                        "session_id": session_id, "reply": reply_text or "",
+                        "tool_calls": [first_tc], "plan": None,
+                        "status": "tool_requested", "model": mi["label"],
+                        "credits": round(balance, 2), "tokens_used": output_tokens,
+                    })
+
                 session["latest_reply"] = reply_text
                 session["status"] = "done"
-                return jsonify({"session_id": session_id, "reply": reply_text, "tool_calls": [], "plan": None, "status": "done", "model": mi["label"], "credits": round(balance, 2), "tokens_used": output_tokens})
+                return jsonify({
+                    "session_id": session_id, "reply": reply_text,
+                    "tool_calls": [], "plan": None, "status": "done",
+                    "model": mi["label"], "credits": round(balance, 2),
+                    "tokens_used": output_tokens,
+                })
             else:
                 reply, output_tokens = call_gemini(mid, msgs)
                 cost = round(output_tokens * CREDIT_PER_TOKEN, 6)
                 balance, _ = deduct_credits(user["id"], cost)
                 session["latest_reply"] = reply
                 session["status"] = "done"
-                return jsonify({"session_id": session_id, "reply": reply, "tool_calls": [], "plan": None, "status": "done", "model": mi["label"], "credits": round(balance, 2), "tokens_used": output_tokens})
+                return jsonify({
+                    "session_id": session_id, "reply": reply,
+                    "tool_calls": [], "plan": None, "status": "done",
+                    "model": mi["label"], "credits": round(balance, 2),
+                    "tokens_used": output_tokens,
+                })
 
         elif mode == "agent":
             if prov == "google":
-                return jsonify({"session_id": session_id, "reply": "Agent mode requires Claude models.", "tool_calls": [], "plan": None, "status": "done", "model": mi["label"], "credits": round(balance, 2), "tokens_used": 0})
+                return jsonify({
+                    "session_id": session_id,
+                    "reply": "Agent mode requires Claude models.",
+                    "tool_calls": [], "plan": None, "status": "done",
+                    "model": mi["label"], "credits": round(balance, 2),
+                    "tokens_used": 0,
+                })
             session["approved"] = False
             session["step_count"] = 0
             session["pending_tool_call"] = None
             session["status"] = "planning"
             pm = build_chat_messages(session, user_message, context)
             pm.append({"role": "user", "content": "Produce a numbered execution plan only. Do not call any tools yet."})
-            r = call_anthropic(mid, pm, max_tokens=1200)
+            r = call_anthropic(mid, pm, max_tokens=2000)
             output_tokens = r.usage.output_tokens
             cost = round(output_tokens * CREDIT_PER_TOKEN, 6)
             balance, _ = deduct_credits(user["id"], cost)
-            plan = "".join(b.text for b in r.content if b.type == "text")
+            plan = "".join(b.text for b in r.content if hasattr(b, 'type') and b.type == "text")
             session["plan"] = plan
-            session["agent_messages"] = pm + [{"role": "assistant", "content": r.content}]
+            session["agent_messages"] = pm + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
             session["accumulated_cost"] = cost
-            return jsonify({"session_id": session_id, "reply": "Plan generated.", "tool_calls": [], "plan": plan, "status": "awaiting_approval", "model": mi["label"], "credits": round(balance, 2), "tokens_used": output_tokens})
+            return jsonify({
+                "session_id": session_id, "reply": "Plan generated.",
+                "tool_calls": [], "plan": plan,
+                "status": "awaiting_approval", "model": mi["label"],
+                "credits": round(balance, 2), "tokens_used": output_tokens,
+            })
     except Exception as e:
         print(f"[Rux] /ai error: {traceback.format_exc()}")
-        return jsonify({"session_id": session_id, "reply": f"Failed: {e}", "tool_calls": [], "plan": None, "status": "error", "credits": round(balance, 2), "tokens_used": 0}), 500
+        return jsonify({
+            "session_id": session_id, "reply": f"Failed: {e}",
+            "tool_calls": [], "plan": None, "status": "error",
+            "credits": round(balance, 2), "tokens_used": 0,
+        }), 500
 
 @app.route("/ai/result/<session_id>", methods=["GET"])
 @require_auth
@@ -629,11 +757,19 @@ def approve_agent():
     mi = resolve_model(session.get("model_key", DEFAULT_MODEL))
     if mi["provider"] == "google":
         session["status"] = "error"
-        return jsonify({"session_id": session_id, "reply": "Agent requires Claude.", "tool_calls": [], "plan": session.get("plan"), "status": "error", "credits": 0, "tokens_used": 0}), 400
+        return jsonify({
+            "session_id": session_id, "reply": "Agent requires Claude.",
+            "tool_calls": [], "plan": session.get("plan"),
+            "status": "error", "credits": 0, "tokens_used": 0,
+        }), 400
 
     balance, _ = get_credits(user["id"])
     if balance <= 0:
-        return jsonify({"session_id": session_id, "reply": "No credits remaining.", "tool_calls": [], "plan": session.get("plan"), "status": "error", "credits": round(balance, 2), "tokens_used": 0}), 403
+        return jsonify({
+            "session_id": session_id, "reply": "No credits remaining.",
+            "tool_calls": [], "plan": session.get("plan"),
+            "status": "error", "credits": round(balance, 2), "tokens_used": 0,
+        }), 403
 
     try:
         prior = session.get("agent_messages", [])
@@ -646,22 +782,40 @@ def approve_agent():
         balance, _ = deduct_credits(user["id"], cost)
         session["accumulated_cost"] = session.get("accumulated_cost", 0) + cost
 
-        tc = None
-        ft = ""
-        for b in r.content:
-            if b.type == "tool_use":
-                tc = {"id": b.id, "name": b.name, "arguments": b.input}
-            elif b.type == "text":
-                ft += b.text
-        if tc:
-            session["pending_tool_call"] = tc
-            return jsonify({"session_id": session_id, "reply": ft or "Executing.", "tool_calls": [tc], "plan": session["plan"], "status": "tool_requested", "credits": round(balance, 2), "tokens_used": output_tokens})
+        # FIX: Use new extraction and only keep first tool_use
+        first_tc, all_tcs, ft = extract_tool_info(r.content)
+
+        if first_tc:
+            # Rebuild assistant content to only include the first tool_use
+            assistant_content = build_assistant_content(r.content, first_tc["id"])
+            # Update the last message in agent_messages
+            session["agent_messages"][-1] = {"role": "assistant", "content": assistant_content}
+
+            if len(all_tcs) > 1:
+                print(f"[Rux] WARNING: Agent returned {len(all_tcs)} tool_use blocks, only executing first: {first_tc['name']}")
+
+            session["pending_tool_call"] = first_tc
+            return jsonify({
+                "session_id": session_id, "reply": ft or "Executing.",
+                "tool_calls": [first_tc], "plan": session["plan"],
+                "status": "tool_requested", "credits": round(balance, 2),
+                "tokens_used": output_tokens,
+            })
         session["latest_reply"] = ft
         session["status"] = "done"
-        return jsonify({"session_id": session_id, "reply": ft, "tool_calls": [], "plan": session["plan"], "status": "done", "credits": round(balance, 2), "tokens_used": output_tokens})
+        return jsonify({
+            "session_id": session_id, "reply": ft,
+            "tool_calls": [], "plan": session["plan"],
+            "status": "done", "credits": round(balance, 2),
+            "tokens_used": output_tokens,
+        })
     except Exception as e:
         print(f"[Rux] /ai/approve error: {traceback.format_exc()}")
-        return jsonify({"session_id": session_id, "reply": f"Failed: {e}", "tool_calls": [], "plan": session.get("plan"), "status": "error", "credits": round(balance, 2), "tokens_used": 0}), 500
+        return jsonify({
+            "session_id": session_id, "reply": f"Failed: {e}",
+            "tool_calls": [], "plan": session.get("plan"),
+            "status": "error", "credits": round(balance, 2), "tokens_used": 0,
+        }), 500
 
 # ═══ PLUGIN ROUTES ═══
 @app.route("/plugin/heartbeat", methods=["POST"])
@@ -694,7 +848,6 @@ def plugin_poll():
                 web_connected = is_web_active(info["user_id"])
             if info.get("status") == "disconnected_by_web":
                 plugin_disconnected = True
-                # Reset status so it doesn't keep triggering
                 info["status"] = "connected"
 
     return jsonify({
@@ -736,11 +889,26 @@ def plugin_tool_result():
             session["status"] = "error"
             return jsonify({"reply": "Session expired. Start a new conversation.", "status": "error"}), 200
 
+        # FIX: Truncate large tool results before sending to Claude
         tool_result_data = data.get("tool_result", {})
-        tr = {"type": "tool_result", "tool_use_id": pc["id"], "content": json.dumps(tool_result_data, ensure_ascii=False)}
+        tool_result_data = truncate_tool_result(tool_result_data)
+
+        tool_result_str = json.dumps(tool_result_data, ensure_ascii=False)
+
+        tr = {"type": "tool_result", "tool_use_id": pc["id"], "content": tool_result_str}
         cont = prior + [{"role": "user", "content": [tr]}]
         r = call_anthropic(mi["id"], cont, tools=TOOL_DEFINITIONS)
-        session["agent_messages"] = cont + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
+
+        # FIX: Use new extraction and only keep first tool_use
+        first_tc, all_tcs, ft = extract_tool_info(r.content)
+
+        # Build assistant content - if there's a tool_use, only keep the first one
+        if first_tc:
+            assistant_content = build_assistant_content(r.content, first_tc["id"])
+        else:
+            assistant_content = content_blocks_to_dicts(r.content)
+
+        session["agent_messages"] = cont + [{"role": "assistant", "content": assistant_content}]
 
         output_tokens = r.usage.output_tokens
         cost = round(output_tokens * CREDIT_PER_TOKEN, 6)
@@ -750,32 +918,41 @@ def plugin_tool_result():
             balance = 0
         session["accumulated_cost"] = session.get("accumulated_cost", 0) + cost
 
-        nt = None
-        ft = ""
-        for b in r.content:
-            if b.type == "tool_use":
-                nt = {"id": b.id, "name": b.name, "arguments": b.input}
-            elif b.type == "text":
-                ft += b.text
         if ft:
             session["accumulated_reply"] = session.get("accumulated_reply", "") + ft
-        if nt:
-            session["pending_tool_call"] = nt
+
+        if first_tc:
+            if len(all_tcs) > 1:
+                print(f"[Rux] WARNING: tool_result continuation returned {len(all_tcs)} tool_use blocks, only executing first: {first_tc['name']}")
+
+            session["pending_tool_call"] = first_tc
             session["status"] = "running"
-            return jsonify({"reply": ft or "Tool processed.", "status": "tool_requested", "tool_call": nt, "credits": round(balance, 2), "tokens_used": output_tokens})
+            return jsonify({
+                "reply": ft or "Tool processed.",
+                "status": "tool_requested",
+                "tool_call": first_tc,
+                "credits": round(balance, 2),
+                "tokens_used": output_tokens,
+            })
+
         session["status"] = "done"
         final_reply = session.get("accumulated_reply", "") or ft
         session["latest_reply"] = final_reply
         session["accumulated_reply"] = ""
-        return jsonify({"reply": final_reply, "status": "done", "credits": round(balance, 2), "tokens_used": output_tokens})
+        return jsonify({
+            "reply": final_reply, "status": "done",
+            "credits": round(balance, 2), "tokens_used": output_tokens,
+        })
     except Exception as e:
+        error_str = str(e)
         print(f"[Rux] /plugin/tool_result error: {traceback.format_exc()}")
         session["status"] = "error"
         session["pending_tool_call"] = None
-        msg = "Session error. Start a new conversation."
-        if "tool" in str(e).lower() or "id" in str(e).lower():
-            msg = "Session lost. Start a new conversation."
-        return jsonify({"reply": msg, "status": "error"}), 200
+        # FIX: Return the actual error message for debugging instead of hiding it
+        return jsonify({
+            "reply": f"Error processing tool result: {error_str[:200]}",
+            "status": "error",
+        }), 200
 
 # ═══ CONVERSATION ROUTES ═══
 @app.route("/api/conversations", methods=["GET"])
