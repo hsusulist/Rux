@@ -1,311 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rux</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#000;--sidebar:#060606;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--text:#fff;--text2:#888;--muted:#444;--accent:#e6be46;--accent2:rgba(230,190,70,.1);--accent3:rgba(230,190,70,.06);--danger:#e5484d;--danger2:rgba(229,72,77,.12)}
-    html,body{height:100%}
-    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased}
-    .chat-screen{display:none!important}
-    body.ready .chat-screen.visible{display:flex!important}
-
-    /* ── SIDEBAR ── */
-    .sidebar{position:fixed;left:0;top:0;bottom:0;width:54px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50;transition:width .2s ease;overflow:hidden}
-    .sidebar:hover{width:232px}
-    .sb-top{display:flex;align-items:center;gap:10px;padding:14px 13px;border-bottom:1px solid var(--border);height:50px;flex-shrink:0}
-    .sb-logo-icon{width:28px;height:28px;border:1px solid var(--border2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .sb-logo-icon svg{width:13px;height:13px;fill:var(--text)}
-    .sb-logo-text{font-size:13px;font-weight:700;letter-spacing:-.2px;white-space:nowrap;opacity:0;transition:opacity .15s .05s}
-    .sidebar:hover .sb-logo-text{opacity:1}
-    .sb-new{margin:10px 11px 6px;height:34px;border:none;border-radius:7px;background:var(--text);color:#000;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
-    .sb-new:hover{background:#e0e0e0}
-    .sb-new svg{width:13px;height:13px;fill:#000;flex-shrink:0}
-    .sb-new-label{margin-left:7px;white-space:nowrap;opacity:0;transition:opacity .15s .05s}
-    .sidebar:hover .sb-new-label{opacity:1}
-    .sb-section{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);padding:10px 15px 5px;white-space:nowrap;opacity:0;transition:opacity .15s .05s}
-    .sidebar:hover .sb-section{opacity:1}
-    .sb-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:2px 6px}
-    .sb-list::-webkit-scrollbar{width:2px}
-    .sb-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-    .sb-item{display:flex;align-items:center;gap:9px;padding:7px;height:36px;border-radius:7px;cursor:pointer;transition:background .1s;position:relative;flex-shrink:0}
-    .sb-item:hover{background:var(--surface)}
-    .sb-item.active{background:var(--surface2)}
-    .sb-item-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .sb-item-icon svg{width:13px;height:13px;fill:var(--muted)}
-    .sb-item.active .sb-item-icon svg{fill:var(--accent)}
-    .sb-item-text{font-size:11.5px;font-weight:500;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .15s .05s}
-    .sidebar:hover .sb-item-text{opacity:1}
-    .sb-item.active .sb-item-text{color:var(--text)}
-    .sb-item-del{display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);width:20px;height:20px;border:none;background:transparent;border-radius:4px;cursor:pointer;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
-    .sidebar:hover .sb-item:hover .sb-item-del{display:flex}
-    .sb-item-del:hover{color:var(--text);background:rgba(255,255,255,.06)}
-    .sb-empty{padding:16px 13px;font-size:10px;color:var(--muted);font-style:italic;text-align:center;opacity:0;transition:opacity .15s .05s;white-space:nowrap}
-    .sidebar:hover .sb-empty{opacity:1}
-    .sb-bottom{padding:10px 11px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;flex-shrink:0}
-    .sb-bottom-row{display:flex;align-items:center;gap:7px;height:28px;padding:0 4px}
-    .sb-bottom-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .sb-bottom-icon svg{width:11px;height:11px;fill:var(--muted)}
-    .sb-bottom-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s}
-    .sb-bottom-dot.on{background:var(--accent);box-shadow:0 0 6px rgba(230,190,70,.3)}
-    .sb-bottom-text{font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap;opacity:0;transition:opacity .15s .05s}
-    .sidebar:hover .sb-bottom-text{opacity:1}
-    .sb-bottom-text.on{color:var(--text2)}
-    .sb-connect-btn{display:flex;align-items:center;gap:0;height:28px;padding:0 4px;border:none;background:transparent;border-radius:5px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .1s;width:100%}
-    .sb-connect-btn:hover{background:var(--surface)}
-    .sb-bottom-spacer{flex:1}
-    .sb-disconnect-btn{display:flex;align-items:center;gap:6px;height:28px;padding:0 4px;border:none;background:transparent;border-radius:5px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .1s;width:100%}
-    .sb-disconnect-btn:hover{background:var(--danger2)}
-    .sb-disconnect-btn svg{width:11px;height:11px;fill:var(--danger);flex-shrink:0}
-    .sb-disconnect-label{font-size:10px;font-weight:500;color:var(--danger);white-space:nowrap;opacity:0;transition:opacity .15s .05s}
-    .sidebar:hover .sb-disconnect-label{opacity:1}
-
-    /* ── MAIN ── */
-    .main{margin-left:54px;height:100vh;display:flex;flex-direction:column;min-width:0;position:relative}
-    .dashboard{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:22vh;z-index:10;transition:opacity .25s ease}
-    .dashboard.hidden{opacity:0;pointer-events:none}
-    .dash-title{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
-    .dash-sub{font-size:13px;color:var(--muted);line-height:1.5}
-    .messages{display:none;flex-direction:column;min-height:0;overflow-y:auto;position:absolute;left:0;right:0;bottom:160px;top:0;padding:20px 0}
-    .messages.show{display:flex}
-    .messages::-webkit-scrollbar{width:3px}
-    .messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-    .msg-row{display:flex;padding:5px 24px;gap:12px;max-width:680px;width:100%;margin:0 auto;animation:msgIn .25s ease both}
-    .msg-row.user{flex-direction:row-reverse}
-    .msg-row.system-row{justify-content:center;max-width:100%;padding:3px 24px}
-    @keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    .msg-avatar{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-    .msg-avatar svg{width:13px;height:13px}
-    .msg-row.user .msg-avatar{background:var(--text)}
-    .msg-row.user .msg-avatar svg{fill:#000}
-    .msg-row.assistant .msg-avatar{border:1px solid var(--border2)}
-    .msg-row.assistant .msg-avatar svg{fill:var(--accent)}
-    .msg-body{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
-    .msg-sender{font-size:9px;font-weight:600;letter-spacing:.3px;color:var(--muted);text-transform:uppercase}
-    .msg-row.user .msg-sender{text-align:right}
-    .msg-bubble{padding:9px 13px;border-radius:10px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
-    .msg-row.user .msg-bubble{background:var(--text);color:#000;border-top-right-radius:3px;align-self:flex-end}
-    .msg-row.assistant .msg-bubble{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-top-left-radius:3px}
-    .system-msg{font-size:10px;color:var(--muted);font-style:italic;padding:3px 10px;border-radius:16px}
-    .tool-card{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--accent3);border:1px solid rgba(230,190,70,.1);border-radius:7px;margin-top:4px;width:fit-content;max-width:100%}
-    .tool-card-icon{width:18px;height:18px;border-radius:4px;background:rgba(230,190,70,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .tool-card-icon svg{width:9px;height:9px;fill:var(--accent)}
-    .tool-card-name{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:500;color:var(--accent)}
-    .tool-card-args{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .typing-indicator{display:flex;align-items:center;gap:4px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px;width:fit-content}
-    .typing-indicator span{width:4px;height:4px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite}
-    .typing-indicator span:nth-child(2){animation-delay:.2s}
-    .typing-indicator span:nth-child(3){animation-delay:.4s}
-    @keyframes bounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-3px);opacity:1}}
-    .plan-banner{display:none;position:absolute;top:0;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;z-index:15;animation:bannerIn .2s ease both}
-    .plan-banner.show{display:block}
-    @keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-    .plan-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-    .plan-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent)}
-    .plan-body{font-size:12.5px;color:var(--text2);line-height:1.7;white-space:pre-wrap;max-height:140px;overflow-y:auto;border-left:2px solid var(--accent3);padding-left:10px;margin-bottom:10px;max-width:600px}
-    .plan-actions{display:flex;gap:6px}
-    .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .12s}
-    .btn svg{width:11px;height:11px;fill:currentColor}
-    .btn-primary{background:var(--text);color:#000}
-    .btn-primary:hover{background:#e0e0e0}
-    .btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
-    .btn-ghost:hover{color:var(--text);border-color:var(--muted)}
-
-    /* ── INPUT ── */
-    .input-area{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:min(680px,calc(100% - 80px));z-index:20}
-    .no-credits{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:min(680px,calc(100% - 80px));padding:14px 24px;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:12px;z-index:20}
-    .no-credits-text{font-size:12px;color:var(--text2)}
-    .no-credits-time{font-size:10px;color:var(--muted);margin-top:2px}
-    .picker-dropdown{position:absolute;bottom:calc(100% + 6px);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:4px;display:none;flex-direction:column;gap:1px;box-shadow:0 -6px 30px rgba(0,0,0,.5);z-index:50;min-width:200px}
-    .picker-dropdown.open{display:flex;animation:pickerIn .15s ease both}
-    .picker-dropdown.left{left:0}
-    .picker-dropdown.right{right:0}
-    @keyframes pickerIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-    .picker-option{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .1s;border:1px solid transparent}
-    .picker-option:hover{background:var(--surface3)}
-    .picker-option.selected{background:var(--surface3);border-color:var(--border2)}
-    .picker-option-icon{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surface)}
-    .picker-option-icon svg{width:13px;height:13px}
-    .picker-option-body{flex:1;min-width:0}
-    .picker-option-name{font-size:11.5px;font-weight:600}
-    .picker-option-desc{font-size:9.5px;color:var(--muted);margin-top:1px}
-    .picker-option-badge{font-size:8.5px;font-weight:600;padding:1px 7px;border-radius:16px;background:var(--surface3);color:var(--text2);border:1px solid var(--border);flex-shrink:0}
-    .input-shell{display:flex;align-items:flex-start;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px;transition:border-color .2s}
-    .input-shell:focus-within{border-color:var(--border2)}
-    #chat-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13.5px;font-family:'Inter',sans-serif;resize:none;min-height:28px;max-height:200px;line-height:1.55;padding-top:2px}
-    #chat-input::placeholder{color:var(--muted)}
-    .shell-left{display:flex;flex-direction:column;gap:4px;flex-shrink:0;padding-top:1px}
-    .shell-right{display:flex;flex-direction:column;gap:4px;flex-shrink:0;padding-top:1px}
-    .picker-trigger{display:flex;align-items:center;gap:4px;padding:5px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:7px;font-size:10.5px;font-weight:600;font-family:'Inter',sans-serif;color:var(--text2);cursor:pointer;transition:all .12s;white-space:nowrap}
-    .picker-trigger:hover{color:var(--text);border-color:var(--border2)}
-    .picker-trigger svg{width:10px;height:10px;fill:currentColor}
-    .picker-trigger .chevron{width:7px;height:7px;opacity:.35}
-    .credit-pill{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:default;white-space:nowrap;transition:all .2s}
-    .credit-pill.low{color:var(--muted)}
-    .credit-pill.ok{color:var(--text2)}
-    .credit-pill svg{width:10px;height:10px}
-    .credit-pill.low svg{fill:var(--muted)}
-    .credit-pill.ok svg{fill:var(--text2)}
-    .send-btn{width:34px;height:34px;border-radius:8px;background:var(--text);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
-    .send-btn:hover{background:#e0e0e0;transform:scale(1.06)}
-    .send-btn:disabled{opacity:.25;cursor:not-allowed;transform:none}
-    .send-btn svg{width:14px;height:14px;fill:#000}
-    .input-hint{font-size:9px;color:var(--muted);margin-top:5px;text-align:center}
-    kbd{background:var(--surface3);border:1px solid var(--border2);border-radius:2px;padding:0 4px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text2)}
-
-    /* Connect modal */
-    .connect-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
-    .connect-modal-overlay.open{opacity:1;pointer-events:all}
-    .connect-modal{background:#0a0a0a;border:1px solid #1e1e1e;border-radius:14px;padding:24px 28px;width:100%;max-width:310px;position:relative;transform:translateY(10px);transition:transform .2s ease}
-    .connect-modal-overlay.open .connect-modal{transform:translateY(0)}
-    .connect-modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#444;font-size:16px;cursor:pointer;line-height:1}
-    .connect-modal-close:hover{color:#fff}
-    .connect-modal-icon{width:36px;height:36px;border:1px solid var(--border2);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
-    .connect-modal-icon svg{width:16px;height:16px;fill:var(--accent)}
-    .connect-modal-title{font-size:14px;font-weight:700;letter-spacing:-.2px;margin-bottom:4px}
-    .connect-modal-sub{font-size:11px;color:#555;line-height:1.5;margin-bottom:14px}
-    .connect-modal-code-box{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#0c0c0c;border:1px solid #1a1a1a;border-radius:8px;margin-bottom:10px}
-    .connect-modal-code{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;letter-spacing:5px;flex:1;color:var(--accent)}
-    .connect-modal-copy{padding:3px 9px;background:#141414;border:1px solid #1e1e1e;border-radius:5px;font-size:10px;font-weight:600;color:#555;cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s}
-    .connect-modal-copy:hover{color:#fff;border-color:#444}
-    .connect-modal-status{font-size:10.5px;color:#333;animation:pulse 2s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-    .connect-modal-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
-    .connect-modal-tip{font-size:9px;color:#2a2a2a;max-width:170px;line-height:1.4}
-    .connect-modal-refresh{font-size:10px;color:#444;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;text-decoration:underline;transition:color .12s}
-    .connect-modal-refresh:hover{color:#888}
-    .logout-float{position:fixed;top:12px;right:16px;z-index:40}
-    .icon-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;cursor:pointer;color:var(--text2);transition:all .12s}
-    .icon-btn:hover{color:var(--text);border-color:var(--muted)}
-    .icon-btn svg{width:13px;height:13px;fill:currentColor}
-  </style>
-</head>
-<body>
-
-<div class="sidebar" id="sidebar">
-  <div class="sb-top">
-    <div class="sb-logo-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-    <div class="sb-logo-text">Rux</div>
-  </div>
-  <button class="sb-new" id="sb-new-btn" disabled>
-    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-    <span class="sb-new-label">New conversation</span>
-  </button>
-  <div class="sb-section">Conversations</div>
-  <div class="sb-list" id="sb-conv-list">
-    <div class="sb-empty" id="sb-empty">No conversations yet</div>
-  </div>
-  <div class="sb-bottom">
-    <button class="sb-connect-btn" id="sb-connect-btn" onclick="openConnectModal()">
-      <div class="sb-bottom-icon"><svg viewBox="0 0 24 24"><path d="M17 7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h10c2.76 0 5-2.24 5-5s-2.24-5-5-5zM7 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg></div>
-      <span class="sb-bottom-text" id="sb-connect-label">Connect Studio</span>
-    </button>
-    <button class="sb-connect-btn" id="sb-plugin-btn" onclick="window.open('https://create.roblox.com/store/asset/88102764564131/Rux?pagePosition=0','_blank')">
-      <div class="sb-bottom-icon"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5v2h4v10H9v-6h6v2h-4v6h6V9zm-6-6h2v4h-2V3z"/></svg></div>
-      <span class="sb-bottom-text">Get Plugin</span>
-    </button>
-    <div class="sb-bottom-spacer"></div>
-    <div class="sb-bottom-row">
-      <div class="sb-bottom-dot" id="plugin-dot"></div>
-      <span class="sb-bottom-text" id="plugin-text">Disconnected</span>
-    </div>
-    <button class="sb-disconnect-btn" id="sb-disconnect-btn" onclick="disconnectPlugin()" style="display:none">
-      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      <span class="sb-disconnect-label">Disconnect</span>
-    </button>
-  </div>
-</div>
-
-<div class="main">
-  <div class="chat-screen visible" id="screen-chat">
-    <div class="dashboard" id="dashboard">
-      <div class="dash-title">Start a conversation</div>
-      <div class="dash-sub">Ask about your Roblox game, scripts, or instances.</div>
-    </div>
-    <div class="messages" id="messages"></div>
-    <div class="plan-banner" id="plan-banner">
-      <div class="plan-top"><div class="plan-label">Execution Plan</div><span style="font-size:9px;color:var(--muted)">Review before running</span></div>
-      <div class="plan-body" id="plan-text"></div>
-      <div class="plan-actions">
-        <button class="btn btn-primary" id="approve-btn"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Approve</button>
-        <button class="btn btn-ghost" id="reject-plan-btn">Discard</button>
-      </div>
-    </div>
-    <div class="input-area" id="input-area">
-      <div class="picker-dropdown left" id="model-picker">
-        <div class="picker-option" data-key="gemini-flash" onclick="selectModel('gemini-flash')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#888"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#666"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#555"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#444"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemini Flash</div><div class="picker-option-desc">Fast responses</div></div><div class="picker-option-badge">Fast</div></div>
-        <div class="picker-option" data-key="gemini-pro" onclick="selectModel('gemini-pro')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#888"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#666"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#555"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#444"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemini Pro</div><div class="picker-option-desc">Deep reasoning</div></div><div class="picker-option-badge">Smart</div></div>
-        <div class="picker-option selected" data-key="sonnet" onclick="selectModel('sonnet')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="var(--text2)"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Claude Sonnet</div><div class="picker-option-desc">Balanced</div></div><div class="picker-option-badge">Default</div></div>
-        <div class="picker-option" data-key="opus" onclick="selectModel('opus')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="var(--text2)"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Claude Opus</div><div class="picker-option-desc">Maximum intelligence</div></div><div class="picker-option-badge">Power</div></div>
-      </div>
-      <div class="picker-dropdown right" id="mode-picker">
-        <div class="picker-option selected" data-mode="chat" onclick="selectMode('chat')">
-          <div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="var(--text2)"/></svg></div>
-          <div class="picker-option-body"><div class="picker-option-name">Chat</div><div class="picker-option-desc">Quick questions</div></div>
-        </div>
-        <div class="picker-option" data-mode="agent" onclick="selectMode('agent')">
-          <div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="var(--text2)"/></svg></div>
-          <div class="picker-option-body"><div class="picker-option-name">Agent</div><div class="picker-option-desc">Multi-step tasks</div></div>
-        </div>
-      </div>
-      <div class="input-shell">
-        <div class="shell-left">
-          <button class="picker-trigger" id="model-trigger" onclick="togglePicker('model')">
-            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            <span id="model-label">Sonnet</span>
-            <svg class="chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-          </button>
-          <div class="credit-pill ok" id="credit-pill" title="Credits">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-            <span id="credit-pill-text">50.00</span>
-          </div>
-        </div>
-        <textarea id="chat-input" rows="1" placeholder="Ask about your Roblox game..."></textarea>
-        <div class="shell-right">
-          <button class="picker-trigger" id="mode-trigger" onclick="togglePicker('mode')">
-            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-            <span id="mode-label">Chat</span>
-            <svg class="chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-          </button>
-          <button class="send-btn" id="send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-        </div>
-      </div>
-      <div class="input-hint"><kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line · <span id="token-cost-hint" style="color:var(--muted)"></span></div>
-    </div>
-    <div class="no-credits" id="no-credits" style="display:none">
-      <div class="no-credits-text">No credits remaining</div>
-      <div class="no-credits-time" id="no-credits-time"></div>
-    </div>
-  </div>
-</div>
-
-<div class="logout-float">
-  <button class="icon-btn" id="logout-btn" title="Sign out"><svg viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg></button>
-</div>
-
-<div class="connect-modal-overlay" id="connect-modal-overlay">
-  <div class="connect-modal">
-    <button class="connect-modal-close" onclick="closeConnectModal()">&#10005;</button>
-    <div class="connect-modal-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-    <div class="connect-modal-title">Connect Roblox Studio</div>
-    <div class="connect-modal-sub">Enter this code in the Rux plugin inside Studio.</div>
-    <div class="connect-modal-code-box">
-      <div class="connect-modal-code" id="cm-code">----</div>
-      <button class="connect-modal-copy" id="cm-copy-btn">Copy</button>
-    </div>
-    <div class="connect-modal-status" id="cm-status">Waiting for plugin...</div>
-    <div class="connect-modal-footer">
-      <div class="connect-modal-tip" id="cm-tip"></div>
-      <button class="connect-modal-refresh" id="cm-refresh-btn">New code</button>
-    </div>
-  </div>
-</div>
-
 <script>
 const TOKEN_KEY='rux_token';
 const MODEL_LABELS={'gemini-flash':'Gemini Flash','gemini-pro':'Gemini Pro','sonnet':'Claude Sonnet','opus':'Claude Opus'};
@@ -347,24 +39,29 @@ async function enterApp(){
 }
 
 /* ═══ WEB HEARTBEAT ═══ */
+function sendHeartbeat(){
+  return api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>{
+    if(!r)return;
+    if(r.data.plugin_connected&&!pluginConnected){
+      pluginConnected=true;updatePluginUI();updateInputState();
+    }else if(!r.data.plugin_connected&&pluginConnected){
+      pluginConnected=false;updatePluginUI();updateInputState();
+    }
+    if(r.data.credits!=null){credits.balance=r.data.credits;updateCreditUI();updateInputState();}
+    if(r.data.session_id)sessionId=r.data.session_id;
+  }).catch(()=>{});
+}
+
 function startWebHeartbeat(){
   if(heartbeatInterval)clearInterval(heartbeatInterval);
-  heartbeatInterval=setInterval(async()=>{
-    try{
-      const r=await api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
-      if(!r)return;
-      if(r.data.plugin_connected&&!pluginConnected){
-        pluginConnected=true;updatePluginUI();updateInputState();
-      }else if(!r.data.plugin_connected&&pluginConnected){
-        pluginConnected=false;updatePluginUI();updateInputState();
-      }
-      if(r.data.credits!=null){
-        credits.balance=r.data.credits;updateCreditUI();updateInputState();
-      }
-      if(r.data.session_id)sessionId=r.data.session_id;
-    }catch(e){}
-  },10000);
+  sendHeartbeat();
+  heartbeatInterval=setInterval(sendHeartbeat,10000);
 }
+
+/* Send heartbeat immediately when tab becomes visible again */
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')sendHeartbeat();
+});
 
 /* ═══ DISCONNECT PLUGIN ═══ */
 async function disconnectPlugin(){
@@ -496,7 +193,6 @@ async function deleteConv(id){
 }
 
 function getConvList(){return Object.values(convCache).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));}
-function timeAgo(t){const d=Date.now()-t,m=Math.floor(d/6e4);if(m<1)return'Now';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d';}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
 function renderSidebar(){
@@ -624,5 +320,3 @@ async function sendMessage(){
   window.location.href='/';
 })();
 </script>
-</body>
-</html>
