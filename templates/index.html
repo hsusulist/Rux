@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#000;--sidebar:#060606;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--text:#fff;--text2:#888;--muted:#444;--accent:#e6be46;--accent2:rgba(230,190,70,.1);--accent3:rgba(230,190,70,.06)}
+    :root{--bg:#000;--sidebar:#060606;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--text:#fff;--text2:#888;--muted:#444;--accent:#e6be46;--accent2:rgba(230,190,70,.1);--accent3:rgba(230,190,70,.06);--danger:#e5484d;--danger2:rgba(229,72,77,.12)}
     html,body{height:100%}
     body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased}
     .chat-screen{display:none!important}
@@ -56,9 +56,14 @@
     .sb-bottom-text{font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap;opacity:0;transition:opacity .15s .05s}
     .sidebar:hover .sb-bottom-text{opacity:1}
     .sb-bottom-text.on{color:var(--text2)}
-    .sb-connect-btn{display:flex;align-items:center;gap:0;height:28px;padding:0 4px;border:none;background:transparent;border-radius:5px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .1s}
+    .sb-connect-btn{display:flex;align-items:center;gap:0;height:28px;padding:0 4px;border:none;background:transparent;border-radius:5px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .1s;width:100%}
     .sb-connect-btn:hover{background:var(--surface)}
     .sb-bottom-spacer{flex:1}
+    .sb-disconnect-btn{display:flex;align-items:center;gap:6px;height:28px;padding:0 4px;border:none;background:transparent;border-radius:5px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .1s;width:100%}
+    .sb-disconnect-btn:hover{background:var(--danger2)}
+    .sb-disconnect-btn svg{width:11px;height:11px;fill:var(--danger);flex-shrink:0}
+    .sb-disconnect-label{font-size:10px;font-weight:500;color:var(--danger);white-space:nowrap;opacity:0;transition:opacity .15s .05s}
+    .sidebar:hover .sb-disconnect-label{opacity:1}
 
     /* ── MAIN ── */
     .main{margin-left:54px;height:100vh;display:flex;flex-direction:column;min-width:0;position:relative}
@@ -209,6 +214,10 @@
       <div class="sb-bottom-dot" id="plugin-dot"></div>
       <span class="sb-bottom-text" id="plugin-text">Disconnected</span>
     </div>
+    <button class="sb-disconnect-btn" id="sb-disconnect-btn" onclick="disconnectPlugin()" style="display:none">
+      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      <span class="sb-disconnect-label">Disconnect</span>
+    </button>
   </div>
 </div>
 
@@ -304,7 +313,7 @@ const MODE_LABELS={'chat':'Chat','agent':'Agent'};
 let token=null,userData=null,credits={balance:50.00,max:50.00,next_credit_at:0};
 let sessionId=null,mode='chat',activeConvId=null,pendingSessionId=null;
 let isLoading=false,conversationHistory=[],currentMessages=[],selectedModel='sonnet';
-let pluginConnected=false,statusPoll=null,connectPoll=null,lastShownToolId=null;
+let pluginConnected=false,statusPoll=null,connectPoll=null,heartbeatInterval=null,lastShownToolId=null;
 let openPicker=null,inConversation=false,convCache={};
 
 function getToken(){return localStorage.getItem(TOKEN_KEY)}
@@ -323,6 +332,7 @@ function doLogout(){
   localStorage.removeItem(TOKEN_KEY);token=null;userData=null;
   if(statusPoll)clearInterval(statusPoll);
   if(connectPoll)clearInterval(connectPoll);
+  if(heartbeatInterval)clearInterval(heartbeatInterval);
   window.location.href='/';
 }
 document.getElementById('logout-btn').addEventListener('click',doLogout);
@@ -333,26 +343,44 @@ async function enterApp(){
   credits=r.data.credits;sessionId=r.data.session_id;
   updateCreditUI();
   if(sessionId)pluginConnected=true;
-  updatePluginUI();enterChat();loadConversations();
+  updatePluginUI();enterChat();loadConversations();startWebHeartbeat();
+}
+
+/* ═══ WEB HEARTBEAT ═══ */
+function startWebHeartbeat(){
+  if(heartbeatInterval)clearInterval(heartbeatInterval);
+  heartbeatInterval=setInterval(async()=>{
+    try{
+      const r=await api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+      if(!r)return;
+      if(r.data.plugin_connected&&!pluginConnected){
+        pluginConnected=true;updatePluginUI();updateInputState();
+      }else if(!r.data.plugin_connected&&pluginConnected){
+        pluginConnected=false;updatePluginUI();updateInputState();
+      }
+      if(r.data.credits!=null){
+        credits.balance=r.data.credits;updateCreditUI();updateInputState();
+      }
+      if(r.data.session_id)sessionId=r.data.session_id;
+    }catch(e){}
+  },10000);
+}
+
+/* ═══ DISCONNECT PLUGIN ═══ */
+async function disconnectPlugin(){
+  try{await api('/web/disconnect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});}catch(e){}
+  pluginConnected=false;sessionId=null;updatePluginUI();updateInputState();
 }
 
 function updateCreditUI(){
   const pill=document.getElementById('credit-pill');
   const text=document.getElementById('credit-pill-text');
   const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
-  const max=typeof credits.max==='number'?credits.max:parseFloat(credits.max)||50;
   text.textContent=bal.toFixed(2);
-  if(bal<=2){
-    pill.classList.remove('ok');pill.classList.add('low');
-  }else{
-    pill.classList.remove('low');pill.classList.add('ok');
-  }
+  if(bal<=2){pill.classList.remove('ok');pill.classList.add('low');}
+  else{pill.classList.remove('low');pill.classList.add('ok');}
   const hint=document.getElementById('token-cost-hint');
-  if(bal<=0){
-    hint.textContent='No credits';
-  }else{
-    hint.textContent=bal.toFixed(2)+' credits';
-  }
+  hint.textContent=bal<=0?'No credits':bal.toFixed(2)+' credits';
 }
 
 async function openConnectModal(){
@@ -388,9 +416,11 @@ function startConnectPoll(){
 
 function updatePluginUI(){
   const dot=document.getElementById('plugin-dot'),txt=document.getElementById('plugin-text'),lbl=document.getElementById('sb-connect-label');
+  const discBtn=document.getElementById('sb-disconnect-btn');
   dot.classList.toggle('on',pluginConnected);txt.classList.toggle('on',pluginConnected);
   txt.textContent=pluginConnected?'Studio connected':'Disconnected';
   if(lbl)lbl.textContent=pluginConnected?'Connected':'Connect Studio';
+  discBtn.style.display=pluginConnected?'flex':'none';
 }
 
 function enterChat(){
@@ -403,7 +433,11 @@ function startStatusPoll(){
   if(statusPoll)clearInterval(statusPoll);
   statusPoll=setInterval(async()=>{
     try{const r=await fetch('/status');if(!r.ok)return;const d=await r.json();
-    pluginConnected=d.plugin_connected;updatePluginUI();if(!pluginConnected)updateInputState();}catch(e){}
+    const wasConnected=pluginConnected;
+    pluginConnected=d.plugin_connected;
+    updatePluginUI();
+    if(wasConnected&&!pluginConnected)updateInputState();
+    }catch(e){}
   },5000);
 }
 
@@ -439,14 +473,9 @@ function updateModelUI(){document.getElementById('model-label').textContent=(MOD
 function updateModeUI(){document.getElementById('mode-label').textContent=MODE_LABELS[mode]||'Chat';document.querySelectorAll('#mode-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.mode===mode));}
 document.addEventListener('click',e=>{if(!e.target.closest('.picker-trigger')&&!e.target.closest('.picker-dropdown')){document.getElementById('model-picker').classList.remove('open');document.getElementById('mode-picker').classList.remove('open');openPicker=null;}});
 
-/* ═══ CONVERSATION PERSISTENCE (server-side) ═══ */
+/* ═══ CONVERSATION PERSISTENCE ═══ */
 async function loadConversations(){
-  try{
-    const r=await api('/api/conversations');
-    if(!r)return;
-    convCache=r.data||{};
-    renderSidebar();
-  }catch(e){convCache={};renderSidebar();}
+  try{const r=await api('/api/conversations');if(!r)return;convCache=r.data||{};renderSidebar();}catch(e){convCache={};renderSidebar();}
 }
 
 async function saveConv(){
@@ -455,21 +484,8 @@ async function saveConv(){
   const title=first?first.text.slice(0,48):'Conversation';
   const cid=activeConvId||'conv-'+Date.now();
   activeConvId=cid;
-  const convData={
-    id:cid,
-    title,
-    messages:currentMessages,
-    history:conversationHistory,
-    mode,
-    model:selectedModel,
-    sessionId,
-    updatedAt:Date.now(),
-  };
-  try{
-    await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});
-    convCache[cid]=convData;
-    renderSidebar();
-  }catch(e){}
+  const convData={id:cid,title,messages:currentMessages,history:conversationHistory,mode,model:selectedModel,sessionId,updatedAt:Date.now()};
+  try{await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});convCache[cid]=convData;renderSidebar();}catch(e){}
 }
 
 async function deleteConv(id){
@@ -479,10 +495,7 @@ async function deleteConv(id){
   renderSidebar();
 }
 
-function getConvList(){
-  return Object.values(convCache).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-}
-
+function getConvList(){return Object.values(convCache).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));}
 function timeAgo(t){const d=Date.now()-t,m=Math.floor(d/6e4);if(m<1)return'Now';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d';}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
@@ -504,9 +517,7 @@ function renderSidebar(){
 
 async function openConv(id){
   let c=convCache[id];
-  if(!c){
-    try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data;}catch(e){}
-  }
+  if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data;}catch(e){}}
   if(!c)return;
   activeConvId=id;sessionId=c.sessionId||sessionId;
   conversationHistory=c.history||[];currentMessages=c.messages||[];
@@ -519,10 +530,7 @@ async function openConv(id){
   setViewMode(true);renderSidebar();
 }
 
-function showDashboard(){
-  activeConvId=null;document.getElementById('messages').innerHTML='';
-  setViewMode(false);renderSidebar();
-}
+function showDashboard(){activeConvId=null;document.getElementById('messages').innerHTML='';setViewMode(false);renderSidebar();}
 
 function startNewConv(){
   activeConvId='new-'+Date.now();sessionId=sessionId||crypto.randomUUID();
