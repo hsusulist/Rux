@@ -15,7 +15,6 @@
     .chat-screen{display:none!important}
     body.ready .chat-screen.visible{display:flex!important}
 
-    /* ── SIDEBAR ── */
     .sidebar{position:fixed;left:0;top:0;bottom:0;width:54px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50;transition:width .2s ease;overflow:hidden}
     .sidebar:hover{width:232px}
     .sb-top{display:flex;align-items:center;gap:10px;padding:14px 13px;border-bottom:1px solid var(--border);height:50px;flex-shrink:0}
@@ -65,17 +64,14 @@
     .sb-disconnect-label{font-size:10px;font-weight:500;color:var(--danger);white-space:nowrap;opacity:0;transition:opacity .15s .05s}
     .sidebar:hover .sb-disconnect-label{opacity:1}
 
-    /* ── MAIN ── */
     .main{margin-left:54px;height:100vh;display:flex;flex-direction:column;min-width:0;position:relative}
     .dashboard{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:22vh;z-index:10;transition:opacity .25s ease}
     .dashboard.hidden{opacity:0;pointer-events:none}
 
-    /* ── PROGRESS BAR (top of messages) ── */
     .agent-progress{position:absolute;top:0;left:0;right:0;height:2px;background:var(--border);z-index:16;opacity:0;transition:opacity .3s}
     .agent-progress.active{opacity:1}
     .agent-progress-bar{height:100%;background:linear-gradient(90deg,var(--lp-blue),var(--lp-purple));transition:width .5s ease;width:0%}
 
-    /* ── AGENT STATUS BAR ── */
     .agent-status{position:absolute;top:2px;left:0;right:0;z-index:15;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 24px;background:linear-gradient(180deg,var(--bg) 60%,transparent);opacity:0;pointer-events:none;transition:opacity .25s}
     .agent-status.active{opacity:1}
     .agent-status-dot{width:6px;height:6px;border-radius:50%;background:var(--lp-green);animation:agentPulse 1.2s infinite}
@@ -89,7 +85,7 @@
     .messages::-webkit-scrollbar{width:3px}
     .messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
-    /* ── MESSAGE ROWS ── */
+    /* ── USER / SIMPLE ASSISTANT MSG ── */
     .msg-row{display:flex;padding:5px 24px;gap:12px;max-width:720px;width:100%;margin:0 auto;animation:msgIn .25s ease both}
     .msg-row.user{flex-direction:row-reverse}
     .msg-row.system-row{justify-content:center;max-width:100%;padding:3px 24px}
@@ -109,13 +105,13 @@
     .system-msg{font-size:10px;color:var(--muted);font-style:italic;padding:3px 10px;border-radius:16px}
 
     /* ═══════════════════════════════════════
-       AGENT LOG ROWS — inside the chat
+       AGENT LOG ROWS
        ═══════════════════════════════════════ */
     .log-row{display:flex;align-items:flex-start;gap:8px;padding:4px 24px;max-width:720px;width:100%;margin:0 auto;animation:logSlide .18s ease both}
     @keyframes logSlide{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)}}
     .log-row:hover{background:rgba(255,255,255,.015)}
     .log-time{font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;min-width:52px;padding-top:2px;flex-shrink:0}
-    .log-icon{font-size:13px;min-width:20px;text-align:center;flex-shrink:0;padding-top:1px}
+    .log-icon{font-size:13px;min-width:20px;text-align:center;flex-shrink:0;padding-top:1px;filter:grayscale(1) brightness(0.65)}
     .log-content{flex:1;min-width:0}
     .log-title{font-size:12px;font-weight:500;line-height:1.55}
     .log-detail{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#555;margin-top:2px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
@@ -130,23 +126,30 @@
     .log-row.log-output .log-title{color:var(--text);font-weight:400}
     .log-row.log-credit .log-title{color:var(--lp-yellow)}
 
-    /* inline code chips */
+    /* code chips */
     .lc{background:#1a1a2a;color:var(--lp-purple);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:10px}
     .lb{color:var(--lp-blue)}
     .lg{color:var(--lp-green)}
     .ly{color:var(--lp-yellow)}
 
-    /* divider between log groups */
     .log-divider{height:1px;background:#111;margin:4px 24px;max-width:720px}
 
-    /* typing dots in log */
+    /* thinking dots */
     .log-dots{display:inline-flex;gap:2px;vertical-align:middle;margin-left:4px}
     .log-dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--lp-purple);animation:logBlink 1.2s infinite}
     .log-dots span:nth-child(2){animation-delay:.2s}
     .log-dots span:nth-child(3){animation-delay:.4s}
     @keyframes logBlink{0%,100%{opacity:.2}50%{opacity:1}}
 
-    /* old tool-card removed — replaced by log rows */
+    /* ═══ RESPONSE BLOCK — the final assistant output ═══ */
+    .response-block{max-width:720px;width:100%;margin:0 auto;padding:6px 24px 8px;animation:logSlide .22s ease both}
+    .response-block-inner{padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px}
+    .response-block-header{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+    .response-block-dot{width:5px;height:5px;border-radius:50%;background:var(--lp-green);filter:grayscale(1) brightness(0.7)}
+    .response-block-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+    .response-block-text{font-size:13px;line-height:1.7;color:var(--text2);white-space:pre-wrap;word-break:break-word}
+    .response-block-text strong{color:var(--text);font-weight:600}
+    .response-block-text code{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:#1a1a2a;color:var(--lp-purple);padding:1px 5px;border-radius:3px}
 
     .plan-banner{display:none;position:absolute;top:0;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;z-index:15;animation:bannerIn .2s ease both}
     .plan-banner.show{display:block}
@@ -162,7 +165,6 @@
     .btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
     .btn-ghost:hover{color:var(--text);border-color:var(--muted)}
 
-    /* ── INPUT ── */
     .input-area{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:min(680px,calc(100% - 80px));z-index:20}
     .no-credits{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:min(680px,calc(100% - 80px));padding:14px 24px;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:12px;z-index:20}
     .no-credits-text{font-size:12px;color:var(--text2)}
@@ -204,7 +206,6 @@
     .input-hint{font-size:9px;color:var(--muted);margin-top:5px;text-align:center}
     kbd{background:var(--surface3);border:1px solid var(--border2);border-radius:2px;padding:0 4px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text2)}
 
-    /* Connect modal */
     .connect-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
     .connect-modal-overlay.open{opacity:1;pointer-events:all}
     .connect-modal{background:#0a0a0a;border:1px solid #1e1e1e;border-radius:14px;padding:24px 28px;width:100%;max-width:310px;position:relative;transform:translateY(10px);transition:transform .2s ease}
@@ -273,20 +274,13 @@
       <div class="dash-title">Start a conversation</div>
       <div class="dash-sub">Ask about your Roblox game, scripts, or instances.</div>
     </div>
-
-    <!-- Agent progress bar -->
-    <div class="agent-progress" id="agent-progress">
-      <div class="agent-progress-bar" id="agent-progress-bar"></div>
-    </div>
-
-    <!-- Agent status bar -->
+    <div class="agent-progress" id="agent-progress"><div class="agent-progress-bar" id="agent-progress-bar"></div></div>
     <div class="agent-status" id="agent-status">
       <div class="agent-status-dot"></div>
       <span class="agent-status-text" id="agent-status-text">Running</span>
       <span class="agent-status-step" id="agent-status-step"></span>
       <span class="agent-status-tokens" id="agent-status-tokens"></span>
     </div>
-
     <div class="messages" id="messages"></div>
     <div class="plan-banner" id="plan-banner">
       <div class="plan-top"><div class="plan-label">Execution Plan</div><span style="font-size:9px;color:var(--muted)">Review before running</span></div>
@@ -376,11 +370,9 @@ let isLoading=false,conversationHistory=[],currentMessages=[],selectedModel='son
 let pluginConnected=false,statusPoll=null,connectPoll=null,heartbeatInterval=null,lastShownToolId=null;
 let openPicker=null,inConversation=false,convCache={};
 
-/* Agent log tracking state */
-let agentStepCount=0;
-let agentTotalTokens=0;
-let agentTotalSteps=0;
-let lastToolNameForResult='';
+/* Agent log state */
+let agentStepCount=0,agentTotalTokens=0,agentTotalSteps=0,lastToolNameForResult='';
+let hadToolActivity=false; // tracks if current request used tools
 
 function getToken(){return localStorage.getItem(TOKEN_KEY)}
 function setToken(t){token=t;localStorage.setItem(TOKEN_KEY,t)}
@@ -394,86 +386,33 @@ async function api(path,opts={}){
   return{ok:res.ok,status:res.status,data};
 }
 
-function doLogout(){
-  localStorage.removeItem(TOKEN_KEY);token=null;userData=null;
-  if(statusPoll)clearInterval(statusPoll);
-  if(connectPoll)clearInterval(connectPoll);
-  if(heartbeatInterval)clearInterval(heartbeatInterval);
-  window.location.href='/';
-}
+function doLogout(){localStorage.removeItem(TOKEN_KEY);token=null;userData=null;if(statusPoll)clearInterval(statusPoll);if(connectPoll)clearInterval(connectPoll);if(heartbeatInterval)clearInterval(heartbeatInterval);window.location.href='/';}
 document.getElementById('logout-btn').addEventListener('click',doLogout);
 
-async function enterApp(){
-  const r=await api('/auth/me');
-  if(!r)return;
-  credits=r.data.credits;sessionId=r.data.session_id;
-  updateCreditUI();
-  if(sessionId)pluginConnected=true;
-  updatePluginUI();enterChat();loadConversations();startWebHeartbeat();
-}
+async function enterApp(){const r=await api('/auth/me');if(!r)return;credits=r.data.credits;sessionId=r.data.session_id;updateCreditUI();if(sessionId)pluginConnected=true;updatePluginUI();enterChat();loadConversations();startWebHeartbeat();}
 
-function sendHeartbeat(){
-  return api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>{
-    if(!r)return;
-    if(r.data.plugin_connected&&!pluginConnected){pluginConnected=true;updatePluginUI();updateInputState();}
-    else if(!r.data.plugin_connected&&pluginConnected){pluginConnected=false;updatePluginUI();updateInputState();}
-    if(r.data.credits!=null){credits.balance=r.data.credits;updateCreditUI();updateInputState();}
-    if(r.data.session_id)sessionId=r.data.session_id;
-  }).catch(()=>{});
-}
+function sendHeartbeat(){return api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>{if(!r)return;if(r.data.plugin_connected&&!pluginConnected){pluginConnected=true;updatePluginUI();updateInputState();}else if(!r.data.plugin_connected&&pluginConnected){pluginConnected=false;updatePluginUI();updateInputState();}if(r.data.credits!=null){credits.balance=r.data.credits;updateCreditUI();updateInputState();}if(r.data.session_id)sessionId=r.data.session_id;}).catch(()=>{});}
 function startWebHeartbeat(){if(heartbeatInterval)clearInterval(heartbeatInterval);sendHeartbeat();heartbeatInterval=setInterval(sendHeartbeat,10000);}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')sendHeartbeat();});
 
-async function disconnectPlugin(){
-  try{await api('/web/disconnect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});}catch(e){}
-  pluginConnected=false;sessionId=null;updatePluginUI();updateInputState();
-}
+async function disconnectPlugin(){try{await api('/web/disconnect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});}catch(e){}pluginConnected=false;sessionId=null;updatePluginUI();updateInputState();}
 
-function updateCreditUI(){
-  const pill=document.getElementById('credit-pill'),text=document.getElementById('credit-pill-text');
-  const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
-  text.textContent=bal.toFixed(2);
-  pill.classList.toggle('low',bal<=2);pill.classList.toggle('ok',bal>2);
-  document.getElementById('token-cost-hint').textContent=bal<=0?'No credits':bal.toFixed(2)+' credits';
-}
+function updateCreditUI(){const pill=document.getElementById('credit-pill'),text=document.getElementById('credit-pill-text');const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;text.textContent=bal.toFixed(2);pill.classList.toggle('low',bal<=2);pill.classList.toggle('ok',bal>2);document.getElementById('token-cost-hint').textContent=bal<=0?'No credits':bal.toFixed(2)+' credits';}
 
 async function openConnectModal(){document.getElementById('connect-modal-overlay').classList.add('open');await generateCode();startConnectPoll();}
 function closeConnectModal(){document.getElementById('connect-modal-overlay').classList.remove('open');if(connectPoll){clearInterval(connectPoll);connectPoll=null;}}
-
-async function generateCode(){
-  const r=await api('/connect/code');if(!r)return;
-  sessionId=r.data.session_id;
-  document.getElementById('cm-code').textContent=r.data.code;
-  try{const u=await api('/auth/me');if(u&&u.data&&u.data.user&&u.data.user.roblox_id)document.getElementById('cm-tip').textContent='Roblox ID detected — may auto-connect.';else document.getElementById('cm-tip').textContent='Add your Roblox ID for auto-connect.';}catch(e){document.getElementById('cm-tip').textContent='';}
-}
+async function generateCode(){const r=await api('/connect/code');if(!r)return;sessionId=r.data.session_id;document.getElementById('cm-code').textContent=r.data.code;try{const u=await api('/auth/me');if(u&&u.data&&u.data.user&&u.data.user.roblox_id)document.getElementById('cm-tip').textContent='Roblox ID detected — may auto-connect.';else document.getElementById('cm-tip').textContent='Add your Roblox ID for auto-connect.';}catch(e){document.getElementById('cm-tip').textContent='';}}
 document.getElementById('cm-copy-btn').addEventListener('click',()=>{navigator.clipboard.writeText(document.getElementById('cm-code').textContent);const b=document.getElementById('cm-copy-btn');b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1200);});
 document.getElementById('cm-refresh-btn').addEventListener('click',()=>generateCode());
-
 function startConnectPoll(){if(connectPoll)clearInterval(connectPoll);connectPoll=setInterval(async()=>{try{const r=await fetch('/status');if(!r.ok)return;const d=await r.json();if(d.plugin_connected){clearInterval(connectPoll);connectPoll=null;pluginConnected=true;updatePluginUI();closeConnectModal();updateInputState();}}catch(e){}},2000);}
 
-function updatePluginUI(){
-  const dot=document.getElementById('plugin-dot'),txt=document.getElementById('plugin-text'),lbl=document.getElementById('sb-connect-label'),discBtn=document.getElementById('sb-disconnect-btn');
-  dot.classList.toggle('on',pluginConnected);txt.classList.toggle('on',pluginConnected);
-  txt.textContent=pluginConnected?'Studio connected':'Disconnected';
-  if(lbl)lbl.textContent=pluginConnected?'Connected':'Connect Studio';
-  discBtn.style.display=pluginConnected?'flex':'none';
-}
-
+function updatePluginUI(){const dot=document.getElementById('plugin-dot'),txt=document.getElementById('plugin-text'),lbl=document.getElementById('sb-connect-label'),discBtn=document.getElementById('sb-disconnect-btn');dot.classList.toggle('on',pluginConnected);txt.classList.toggle('on',pluginConnected);txt.textContent=pluginConnected?'Studio connected':'Disconnected';if(lbl)lbl.textContent=pluginConnected?'Connected':'Connect Studio';discBtn.style.display=pluginConnected?'flex':'none';}
 function enterChat(){document.body.classList.add('ready');document.getElementById('sb-new-btn').disabled=false;updateInputState();startStatusPoll();}
-
 function startStatusPoll(){if(statusPoll)clearInterval(statusPoll);statusPoll=setInterval(async()=>{try{const r=await fetch('/status');if(!r.ok)return;const d=await r.json();const wasConnected=pluginConnected;pluginConnected=d.plugin_connected;updatePluginUI();if(wasConnected&&!pluginConnected)updateInputState();}catch(e){}},5000);}
 
-function updateInputState(){
-  const ia=document.getElementById('input-area'),nc=document.getElementById('no-credits'),pill=document.getElementById('credit-pill');
-  const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
-  if(bal<=0){ia.style.display='none';nc.style.display='';const at=credits.next_credit_at;if(at>0){const d=at-Date.now();if(d>0){const h=Math.floor(d/36e5),m=Math.floor((d%36e5)/6e4);document.getElementById('no-credits-time').textContent='Next credit in '+h+'h '+m+'m';}else document.getElementById('no-credits-time').textContent='Refreshing...';}pill.style.display='none';return;}
-  nc.style.display='none';ia.style.display='';pill.style.display='flex';
-  document.getElementById('send-btn').disabled=false;
-  document.getElementById('chat-input').placeholder=!pluginConnected?'Send a message — connect Studio first':(mode==='agent'?'Describe a multi-step task...':'Ask about your Roblox game...');
-}
+function updateInputState(){const ia=document.getElementById('input-area'),nc=document.getElementById('no-credits'),pill=document.getElementById('credit-pill');const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;if(bal<=0){ia.style.display='none';nc.style.display='';const at=credits.next_credit_at;if(at>0){const d=at-Date.now();if(d>0){const h=Math.floor(d/36e5),m=Math.floor((d%36e5)/6e4);document.getElementById('no-credits-time').textContent='Next credit in '+h+'h '+m+'m';}else document.getElementById('no-credits-time').textContent='Refreshing...';}pill.style.display='none';return;}nc.style.display='none';ia.style.display='';pill.style.display='flex';document.getElementById('send-btn').disabled=false;document.getElementById('chat-input').placeholder=!pluginConnected?'Send a message — connect Studio first':(mode==='agent'?'Describe a multi-step task...':'Ask about your Roblox game...');}
 
 function setViewMode(chatting){inConversation=chatting;document.getElementById('dashboard').classList.toggle('hidden',chatting);document.getElementById('messages').classList.toggle('show',chatting);}
-
 function togglePicker(which){const other=which==='model'?'mode':'model';document.getElementById(other+'-picker').classList.remove('open');const mp=document.getElementById(which+'-picker');if(openPicker===which){mp.classList.remove('open');openPicker=null;return;}mp.classList.add('open');openPicker=which;}
 function selectModel(k){selectedModel=k;updateModelUI();document.getElementById('model-picker').classList.remove('open');openPicker=null;}
 function selectMode(m){mode=m;updateModeUI();document.getElementById('mode-picker').classList.remove('open');openPicker=null;updateInputState();}
@@ -481,25 +420,16 @@ function updateModelUI(){document.getElementById('model-label').textContent=(MOD
 function updateModeUI(){document.getElementById('mode-label').textContent=MODE_LABELS[mode]||'Chat';document.querySelectorAll('#mode-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.mode===mode));}
 document.addEventListener('click',e=>{if(!e.target.closest('.picker-trigger')&&!e.target.closest('.picker-dropdown')){document.getElementById('model-picker').classList.remove('open');document.getElementById('mode-picker').classList.remove('open');openPicker=null;}});
 
-/* ═══ CONVERSATION PERSISTENCE ═══ */
 async function loadConversations(){try{const r=await api('/api/conversations');if(!r)return;convCache=r.data||{};renderSidebar();}catch(e){convCache={};renderSidebar();}}
 async function saveConv(){if(!currentMessages.length)return;const first=currentMessages.find(m=>m.role==='user');const title=first?first.text.slice(0,48):'Conversation';const cid=activeConvId||'conv-'+Date.now();activeConvId=cid;const convData={id:cid,title,messages:currentMessages,history:conversationHistory,mode,model:selectedModel,sessionId,updatedAt:Date.now()};try{await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});convCache[cid]=convData;renderSidebar();}catch(e){}}
 async function deleteConv(id){try{await api('/api/conversations/'+id,{method:'DELETE'});}catch(e){}delete convCache[id];if(activeConvId===id){activeConvId=null;showDashboard();}renderSidebar();}
 function getConvList(){return Object.values(convCache).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-function renderSidebar(){
-  const list=document.getElementById('sb-conv-list'),empty=document.getElementById('sb-empty');
-  list.querySelectorAll('.sb-item').forEach(e=>e.remove());
-  const convs=getConvList();
-  if(!convs.length){empty.style.display='';return;}
-  empty.style.display='none';
-  convs.forEach(c=>{const item=document.createElement('div');item.classList.add('sb-item');if(c.id===activeConvId)item.classList.add('active');item.innerHTML=`<div class="sb-item-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div><div class="sb-item-text">${escHtml(c.title)}</div><button class="sb-item-del" title="Delete">&times;</button>`;item.querySelector('.sb-item-del').addEventListener('click',e=>{e.stopPropagation();deleteConv(c.id)});item.addEventListener('click',e=>{if(e.target.closest('.sb-item-del'))return;openConv(c.id)});list.appendChild(item);});
-}
+function renderSidebar(){const list=document.getElementById('sb-conv-list'),empty=document.getElementById('sb-empty');list.querySelectorAll('.sb-item').forEach(e=>e.remove());const convs=getConvList();if(!convs.length){empty.style.display='';return;}empty.style.display='none';convs.forEach(c=>{const item=document.createElement('div');item.classList.add('sb-item');if(c.id===activeConvId)item.classList.add('active');item.innerHTML=`<div class="sb-item-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div><div class="sb-item-text">${escHtml(c.title)}</div><button class="sb-item-del" title="Delete">&times;</button>`;item.querySelector('.sb-item-del').addEventListener('click',e=>{e.stopPropagation();deleteConv(c.id)});item.addEventListener('click',e=>{if(e.target.closest('.sb-item-del'))return;openConv(c.id)});list.appendChild(item);});}
 
 async function openConv(id){let c=convCache[id];if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data;}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));msgs.scrollTop=msgs.scrollHeight;setViewMode(true);renderSidebar();}
 function showDashboard(){activeConvId=null;document.getElementById('messages').innerHTML='';setViewMode(false);renderSidebar();}
-
 function startNewConv(){activeConvId='new-'+Date.now();sessionId=sessionId||crypto.randomUUID();conversationHistory=[];currentMessages=[];pendingSessionId=null;mode='chat';updateModeUI();document.getElementById('messages').innerHTML='';document.getElementById('plan-banner').classList.remove('show');setViewMode(true);renderSidebar();document.getElementById('chat-input').focus();}
 document.getElementById('sb-new-btn').addEventListener('click',startNewConv);
 
@@ -510,69 +440,32 @@ chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.prev
 const userSVG=`<svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>`;
 const botSVG=`<svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`;
 
-/* ═══════════════════════════════════════
-   AGENT LOG HELPERS — timestamp, etc.
-   ═══════════════════════════════════════ */
+/* ═══ AGENT UI HELPERS ═══ */
 function _pad(n){return String(n).padStart(2,'0')}
 function _now(){const d=new Date();return`${_pad(d.getHours())}:${_pad(d.getMinutes())}:${_pad(d.getSeconds())}`}
 
-function setAgentProgress(pct){
-  document.getElementById('agent-progress-bar').style.width=Math.min(pct,100)+'%';
-}
-function setAgentStatus(text,active){
-  const bar=document.getElementById('agent-progress');
-  const status=document.getElementById('agent-status');
-  const statusText=document.getElementById('agent-status-text');
-  bar.classList.toggle('active',active);
-  status.classList.toggle('active',active);
-  statusText.textContent=text;
-}
-function updateAgentStepUI(){
-  document.getElementById('agent-status-step').textContent=agentTotalSteps>0?`Step ${agentStepCount}/${agentTotalSteps}`:`Step ${agentStepCount}`;
-  document.getElementById('agent-status-tokens').textContent=agentTotalTokens>0?`${agentTotalTokens.toLocaleString()} tokens`:'';
-}
+function setAgentProgress(pct){document.getElementById('agent-progress-bar').style.width=Math.min(pct,100)+'%';}
+function setAgentStatus(text,active){const bar=document.getElementById('agent-progress');const status=document.getElementById('agent-status');const statusText=document.getElementById('agent-status-text');bar.classList.toggle('active',active);status.classList.toggle('active',active);statusText.textContent=text;}
+function updateAgentStepUI(){document.getElementById('agent-status-step').textContent=agentTotalSteps>0?`Step ${agentStepCount}/${agentTotalSteps}`:`Step ${agentStepCount}`;document.getElementById('agent-status-tokens').textContent=agentTotalTokens>0?`${agentTotalTokens.toLocaleString()} tokens`:'';}
 
-/* ═══════════════════════════════════════
-   MESSAGE RENDERING — chat bubbles + log rows
-   ═══════════════════════════════════════ */
+/* ═══ RENDER MESSAGE ═══ */
 function renderMessage(m){
   const msgs=document.getElementById('messages');
 
-  /* System messages — centered italic */
-  if(m.role==='system'){
-    const r=document.createElement('div');r.classList.add('msg-row','system-row');
-    const s=document.createElement('div');s.classList.add('system-msg');s.textContent=m.text;
-    r.appendChild(s);msgs.appendChild(r);return;
-  }
+  if(m.role==='system'){const r=document.createElement('div');r.classList.add('msg-row','system-row');const s=document.createElement('div');s.classList.add('system-msg');s.textContent=m.text;r.appendChild(s);msgs.appendChild(r);return;}
 
-  /* Log-type messages (tool events, thinking, results) */
-  if(m.isLogEntry){
-    const r=document.createElement('div');r.classList.add('log-row','log-'+(m.logType||'system'));
-    r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">${m.logIcon||''}</span><div class="log-content"><div class="log-title">${m.logTitle||''}</div>${m.logDetail?`<div class="log-detail">${m.logDetail}</div>`:''}</div>`;
-    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
-  }
+  /* Log entries */
+  if(m.isLogEntry){const r=document.createElement('div');r.classList.add('log-row','log-'+(m.logType||'system'));r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">${m.logIcon||''}</span><div class="log-content"><div class="log-title">${m.logTitle||''}</div>${m.logDetail?`<div class="log-detail">${m.logDetail}</div>`:''}</div>`;msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;}
+  if(m.isLogDivider){const d=document.createElement('div');d.className='log-divider';msgs.appendChild(d);return;}
+  if(m.isThinking){const r=document.createElement('div');r.classList.add('log-row','log-thinking');r.id='thinking-log-row';r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🧠</span><div class="log-content"><div class="log-title">Thinking <div class="log-dots"><span></span><span></span><span></span></div></div></div>`;msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;}
 
-  /* Log divider */
-  if(m.isLogDivider){
-    const d=document.createElement('div');d.className='log-divider';msgs.appendChild(d);return;
-  }
+  /* Old tool event from saved convos — render as log row */
+  if(m.isToolEvent){const r=document.createElement('div');r.classList.add('log-row','log-tool');r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🔧</span><div class="log-content"><div class="log-title">Tool → <span class="lc">${escHtml(m.toolName||'')}</span></div>${m.toolArgs?`<div class="log-detail">${escHtml(m.toolArgs)}</div>`:''}</div>`;msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;}
 
-  /* Thinking animation row */
-  if(m.isThinking){
-    const r=document.createElement('div');r.classList.add('log-row','log-thinking');r.id='thinking-log-row';
-    r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🧠</span><div class="log-content"><div class="log-title">Thinking <div class="log-dots"><span></span><span></span><span></span></div></div></div>`;
-    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
-  }
+  /* Response block — assistant reply after tool usage */
+  if(m.isResponseBlock){const r=document.createElement('div');r.className='response-block';r.innerHTML=`<div class="response-block-inner"><div class="response-block-header"><div class="response-block-dot"></div><div class="response-block-label">Response</div></div><div class="response-block-text">${formatResponseText(m.text)}</div></div>`;msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;}
 
-  /* Tool event — OLD style, convert to log entry for backwards compat with saved convos */
-  if(m.isToolEvent){
-    const argsPreview=m.toolArgs?escHtml(m.toolArgs):'';
-    const r=document.createElement('div');r.classList.add('log-row','log-tool');
-    r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🔧</span><div class="log-content"><div class="log-title">Tool → <span class="lc">${escHtml(m.toolName||'')}</span></div>${argsPreview?`<div class="log-detail">${argsPreview}</div>`:''}</div>`;
-    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
-  }
-
-  /* User / Assistant chat bubbles */
+  /* User / simple assistant bubble */
   const r=document.createElement('div');r.classList.add('msg-row',m.role);
   const a=document.createElement('div');a.classList.add('msg-avatar');a.innerHTML=m.role==='user'?userSVG:botSVG;
   const b=document.createElement('div');b.classList.add('msg-body');
@@ -581,57 +474,47 @@ function renderMessage(m){
   b.appendChild(sn);b.appendChild(bl);r.appendChild(a);r.appendChild(b);msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;
 }
 
-function pushMsg(m){currentMessages.push(m);renderMessage(m);}
-
-/* Push a log entry that won't pollute conversation history */
-function pushLog(type,icon,title,detail){
-  const m={isLogEntry:true,logType:type,logIcon:icon,logTitle:title,logDetail:detail||'',logTime:_now()};
-  renderMessage(m);
+/* Format response text: bold, inline code, basic structure */
+function formatResponseText(text){
+  let s=escHtml(text);
+  /* **bold** */
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  /* `code` */
+  s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
+  return s;
 }
-function pushLogDivider(){renderMessage({isLogDivider:true});}
 
+function pushMsg(m){currentMessages.push(m);renderMessage(m);}
+function pushLog(type,icon,title,detail){renderMessage({isLogEntry:true,logType:type,logIcon:icon,logTitle:title,logDetail:detail||'',logTime:_now()});}
+function pushLogDivider(){renderMessage({isLogDivider:true});}
 function addThinking(){renderMessage({isThinking:true});}
 function removeThinking(){const e=document.getElementById('thinking-log-row');if(e)e.remove();}
 
-/* ═══ PLAN APPROVAL ═══ */
+/* Push assistant response — uses response-block when tools were used, normal bubble otherwise */
+function pushAssistantReply(text){
+  if(hadToolActivity){
+    pushMsg({isResponseBlock:true,text});
+  }else{
+    pushMsg({role:'assistant',text});
+  }
+  conversationHistory.push({role:'assistant',content:text});
+  saveConv();
+}
+
+/* ═══ PLAN ═══ */
 function showPlan(p){document.getElementById('plan-text').textContent=p;document.getElementById('plan-banner').classList.add('show');}
 function hidePlan(){document.getElementById('plan-banner').classList.remove('show');}
+document.getElementById('reject-plan-btn').addEventListener('click',()=>{hidePlan();pendingSessionId=null;pushMsg({role:'system',text:'Plan discarded.'});pushLog('warn','⛔','Plan discarded by user');pushLogDivider();setAgentStatus('Idle',false);});
+document.getElementById('approve-btn').addEventListener('click',async()=>{hidePlan();if(!pendingSessionId)return;pushMsg({role:'system',text:'Executing plan...'});pushLog('result','✅','Plan approved — starting execution');pushLogDivider();setAgentStatus('Executing',true);addThinking();try{const r=await api('/ai/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:pendingSessionId,model:selectedModel})});if(!r){removeThinking();pushMsg({role:'assistant',text:'Failed to start agent.'});pushLog('error','❌','Failed to start agent');setAgentStatus('Error',true);return;}removeThinking();handleResponse(r.data);if(r.data.status==='tool_requested')await pollForResult(pendingSessionId);}catch(e){removeThinking();pushMsg({role:'assistant',text:'Error: '+e.message});pushLog('error','❌','Error: '+escHtml(e.message));setAgentStatus('Error',true);}});
 
-document.getElementById('reject-plan-btn').addEventListener('click',()=>{
-  hidePlan();pendingSessionId=null;
-  pushMsg({role:'system',text:'Plan discarded.'});
-  pushLog('warn','⛔','Plan discarded by user');
-  pushLogDivider();
-  setAgentStatus('Idle',false);
-});
-
-document.getElementById('approve-btn').addEventListener('click',async()=>{
-  hidePlan();if(!pendingSessionId)return;
-  pushMsg({role:'system',text:'Executing plan...'});
-  pushLog('result','✅','Plan approved — starting execution');
-  pushLogDivider();
-  setAgentStatus('Executing',true);
-  addThinking();
-  try{
-    const r=await api('/ai/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:pendingSessionId,model:selectedModel})});
-    if(!r){removeThinking();pushMsg({role:'assistant',text:'Failed to start agent.'});pushLog('error','❌','Failed to start agent');setAgentStatus('Error',true);return;}
-    removeThinking();handleResponse(r.data);if(r.data.status==='tool_requested')await pollForResult(pendingSessionId);
-  }catch(e){removeThinking();pushMsg({role:'assistant',text:'Error: '+e.message});pushLog('error','❌','Error: '+escHtml(e.message));setAgentStatus('Error',true);}
-});
-
-/* ═══ LOG A TOOL CALL ═══ */
+/* ═══ LOG TOOL CALL ═══ */
 function logToolCall(tc){
+  hadToolActivity=true;
   const argParts=[];
-  if(tc.arguments){
-    for(const[k,v]of Object.entries(tc.arguments)){
-      const valStr=typeof v==='string'?`<span class="lb">"${escHtml(v)}"</span>`:escHtml(String(v));
-      argParts.push(`<span class="lc">${escHtml(k)}</span>: ${valStr}`);
-    }
-  }
+  if(tc.arguments){for(const[k,v]of Object.entries(tc.arguments)){const valStr=typeof v==='string'?`<span class="lb">"${escHtml(v)}"</span>`:escHtml(String(v));argParts.push(`<span class="lc">${escHtml(k)}</span>: ${valStr}`);}}
   const detail=argParts.length?argParts.join(' · '):'';
   pushLog('tool','🔧',`Tool → <span class="lc">${escHtml(tc.name)}</span>`,detail);
-  agentStepCount++;
-  updateAgentStepUI();
+  agentStepCount++;updateAgentStepUI();
   const progress=agentTotalSteps>0?Math.min(10+(agentStepCount/Math.max(agentTotalSteps,1))*80,90):Math.min(10+agentStepCount*12,90);
   setAgentProgress(progress);
 }
@@ -641,114 +524,58 @@ function handleResponse(d){
   if(d.session_id)pendingSessionId=d.session_id;
   if(d.credits!=null){credits.balance=d.credits;updateCreditUI();updateInputState();}
 
-  if(d.error==='no_credits'){
-    credits.balance=0;credits.next_credit_at=d.next_credit_at;updateCreditUI();updateInputState();
-    pushMsg({role:'system',text:'No credits remaining.'});
-    pushLog('error','❌','No credits remaining');
-    setAgentStatus('Error',true);
-    return;
-  }
+  if(d.error==='no_credits'){credits.balance=0;credits.next_credit_at=d.next_credit_at;updateCreditUI();updateInputState();pushMsg({role:'system',text:'No credits remaining.'});pushLog('error','❌','No credits remaining');setAgentStatus('Error',true);return;}
 
   if(d.plan&&d.status==='awaiting_approval'){
     const planLines=d.plan.split('\n').filter(l=>l.trim().match(/^\d/));
-    agentTotalSteps=planLines.length||3;
-    agentStepCount=0;
-    updateAgentStepUI();
+    agentTotalSteps=planLines.length||3;agentStepCount=0;updateAgentStepUI();
     pushLog('thinking','📋','Plan generated',d.plan.split('\n').slice(0,8).map(l=>escHtml(l)).join('<br>'));
     pushLogDivider();
     pushLog('system','⏳','Waiting for your approval','Review the plan and click Approve to continue');
-    setAgentStatus('Awaiting approval',true);
-    setAgentProgress(10);
-    showPlan(d.plan);
-    pushMsg({role:'assistant',text:'Plan ready. Review above.'});
-    saveConv();return;
+    setAgentStatus('Awaiting approval',true);setAgentProgress(10);
+    showPlan(d.plan);pushMsg({role:'assistant',text:'Plan ready. Review above.'});saveConv();return;
   }
 
-  if(d.tool_calls&&d.tool_calls.length){
-    d.tool_calls.forEach(tc=>{
-      lastShownToolId=tc.id;
-      logToolCall(tc);
-    });
-  }
+  if(d.tool_calls&&d.tool_calls.length){d.tool_calls.forEach(tc=>{lastShownToolId=tc.id;logToolCall(tc);});}
 
   if(d.reply&&d.status==='done'){
     removeThinking();
-    const truncated=d.reply.length>200?d.reply.slice(0,200)+'...':d.reply;
-    pushLog('output','💬','Response',escHtml(truncated));
-    pushLogDivider();
-    pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply});saveConv();
-    setAgentProgress(100);
-    setAgentStatus('Done',false);
+    pushAssistantReply(d.reply);
+    setAgentProgress(100);setAgentStatus('Done',false);
     setTimeout(()=>{document.getElementById('agent-progress').classList.remove('active');},2000);
   }else if(d.reply&&d.status!=='done'){
     if(d.reply.trim()){pushLog('thinking','💭','Status',escHtml(d.reply.slice(0,120)));}
   }
 
-  if(d.tokens_used){
-    agentTotalTokens+=d.tokens_used;
-    updateAgentStepUI();
-    pushLog('credit','💰',d.tokens_used+' tokens used','Balance: '+credits.balance.toFixed(2));
-  }
+  if(d.tokens_used){agentTotalTokens+=d.tokens_used;updateAgentStepUI();pushLog('credit','💰',d.tokens_used+' tokens used','Balance: '+credits.balance.toFixed(2));}
 }
 
 /* ═══ POLL FOR RESULT ═══ */
 async function pollForResult(sid){
-  addThinking();
-  setAgentStatus('Running',true);
+  addThinking();setAgentStatus('Running',true);
   for(let i=0;i<90;i++){
     await new Promise(r=>setTimeout(r,2000));
     try{
       const r=await api('/ai/result/'+sid);if(!r)break;const d=r.data;
       if(d.credits!=null){credits.balance=d.credits;updateCreditUI();updateInputState();}
-
       if(d.pending_tool_call&&d.pending_tool_call.id!==lastShownToolId){
-        removeThinking();
-        lastShownToolId=d.pending_tool_call.id;
-
-        /* Log completion of previous tool */
-        if(lastToolNameForResult){
-          pushLog('result','✅',`<span class="lc">${escHtml(lastToolNameForResult)}</span> completed`);
-          pushLogDivider();
-        }
+        removeThinking();lastShownToolId=d.pending_tool_call.id;
+        if(lastToolNameForResult){pushLog('result','✅',`<span class="lc">${escHtml(lastToolNameForResult)}</span> completed`);pushLogDivider();}
         lastToolNameForResult=d.pending_tool_call.name||'';
-
-        logToolCall(d.pending_tool_call);
-        addThinking();
+        logToolCall(d.pending_tool_call);addThinking();
       }
-
       if(d.status==='done'){
         removeThinking();lastShownToolId=null;
-        if(lastToolNameForResult){
-          pushLog('result','✅',`<span class="lc">${escHtml(lastToolNameForResult)}</span> completed`);
-          pushLogDivider();
-          lastToolNameForResult='';
-        }
-        if(d.reply){
-          const truncated=d.reply.length>200?d.reply.slice(0,200)+'...':d.reply;
-          pushLog('output','💬','Final response',escHtml(truncated));
-          pushLogDivider();
-          pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply});
-        }
-        setAgentProgress(100);
-        setAgentStatus('Done',false);
-        agentStepCount=0;lastToolNameForResult='';
+        if(lastToolNameForResult){pushLog('result','✅',`<span class="lc">${escHtml(lastToolNameForResult)}</span> completed`);pushLogDivider();lastToolNameForResult='';}
+        if(d.reply){pushAssistantReply(d.reply);}
+        setAgentProgress(100);setAgentStatus('Done',false);agentStepCount=0;lastToolNameForResult='';
         setTimeout(()=>{document.getElementById('agent-progress').classList.remove('active');},2000);
         saveConv();return;
       }
-
-      if(d.status==='error'){
-        removeThinking();lastShownToolId=null;
-        pushLog('error','❌','Execution failed','Check Studio connection and try again');
-        setAgentStatus('Error',true);
-        pushMsg({role:'assistant',text:'Execution failed. Check Studio connection.'});
-        saveConv();return;
-      }
+      if(d.status==='error'){removeThinking();lastShownToolId=null;pushLog('error','❌','Execution failed','Check Studio connection and try again');setAgentStatus('Error',true);pushMsg({role:'assistant',text:'Execution failed. Check Studio connection.'});saveConv();return;}
     }catch(e){break;}
   }
-  removeThinking();lastShownToolId=null;
-  pushLog('error','❌','Timed out','Studio did not respond within the timeout period');
-  setAgentStatus('Error',true);
-  pushMsg({role:'system',text:'Timed out waiting for Studio.'});saveConv();
+  removeThinking();lastShownToolId=null;pushLog('error','❌','Timed out','Studio did not respond within the timeout period');setAgentStatus('Error',true);pushMsg({role:'system',text:'Timed out waiting for Studio.'});saveConv();
 }
 
 /* ═══ SEND MESSAGE ═══ */
@@ -762,22 +589,14 @@ async function sendMessage(){
   document.getElementById('send-btn').disabled=true;
   conversationHistory.push({role:'user',content:text});pushMsg({role:'user',text});
 
-  /* Reset agent tracking */
   agentStepCount=0;agentTotalTokens=0;agentTotalSteps=0;lastToolNameForResult='';
-  updateAgentStepUI();
-  setAgentProgress(3);
-  setAgentStatus('Running',true);
+  hadToolActivity=false;
+  updateAgentStepUI();setAgentProgress(3);setAgentStatus('Running',true);
 
   const modelLabel=MODEL_LABELS[selectedModel]||'Sonnet';
   pushLog('system','⚙️','Session started',`mode: <span class="lb">${escHtml(mode)}</span> · model: <span class="lb">${escHtml(modelLabel)}</span>`);
   pushLogDivider();
-
-  if(mode==='agent'){
-    pushLog('thinking','📋','Generating plan...');
-  }else{
-    pushLog('thinking','🧠','Processing...');
-  }
-
+  pushLog('thinking',mode==='agent'?'📋':'🧠',mode==='agent'?'Generating plan...':'Processing...');
   addThinking();
 
   try{
@@ -785,22 +604,12 @@ async function sendMessage(){
     removeThinking();
     if(!r){pushMsg({role:'assistant',text:'Connection error.'});pushLog('error','❌','Connection error');setAgentStatus('Error',true);return;}
     handleResponse(r.data);
-    if(r.data.status==='tool_requested'){
-      lastToolNameForResult=r.data.tool_calls&&r.data.tool_calls[0]?r.data.tool_calls[0].name:'';
-      await pollForResult(r.data.session_id||sessionId);
-    }
-  }catch(e){
-    removeThinking();pushMsg({role:'assistant',text:'Error: '+e.message});pushLog('error','❌','Error: '+escHtml(e.message));setAgentStatus('Error',true);
-  }finally{isLoading=false;document.getElementById('send-btn').disabled=false;}
+    if(r.data.status==='tool_requested'){lastToolNameForResult=r.data.tool_calls&&r.data.tool_calls[0]?r.data.tool_calls[0].name:'';await pollForResult(r.data.session_id||sessionId);}
+  }catch(e){removeThinking();pushMsg({role:'assistant',text:'Error: '+e.message});pushLog('error','❌','Error: '+escHtml(e.message));setAgentStatus('Error',true);}
+  finally{isLoading=false;document.getElementById('send-btn').disabled=false;}
 }
 
-/* ═══ INIT ═══ */
-(async function(){
-  const t=getToken();
-  if(t){token=t;const r=await api('/auth/me');if(r&&r.ok){userData=r.data.user;credits=r.data.credits;sessionId=r.data.session_id;updateCreditUI();if(sessionId)pluginConnected=true;updatePluginUI();enterChat();return;}}
-  window.location.href='/';
-})();
-
+(async function(){const t=getToken();if(t){token=t;const r=await api('/auth/me');if(r&&r.ok){userData=r.data.user;credits=r.data.credits;sessionId=r.data.session_id;updateCreditUI();if(sessionId)pluginConnected=true;updatePluginUI();enterChat();return;}}window.location.href='/';})();
 document.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();window.open('/admin','_blank');}});
 </script>
 </body>
