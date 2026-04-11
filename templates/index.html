@@ -113,7 +113,7 @@
 
     /* ── INPUT ── */
     .input-area{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:min(680px,calc(100% - 80px));z-index:20}
-    .no-credits{padding:14px 24px;text-align:center}
+    .no-credits{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:min(680px,calc(100% - 80px));padding:14px 24px;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:12px;z-index:20}
     .no-credits-text{font-size:12px;color:var(--text2)}
     .no-credits-time{font-size:10px;color:var(--muted);margin-top:2px}
     .picker-dropdown{position:absolute;bottom:calc(100% + 6px);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:4px;display:none;flex-direction:column;gap:1px;box-shadow:0 -6px 30px rgba(0,0,0,.5);z-index:50;min-width:200px}
@@ -140,7 +140,7 @@
     .picker-trigger:hover{color:var(--text);border-color:var(--border2)}
     .picker-trigger svg{width:10px;height:10px;fill:currentColor}
     .picker-trigger .chevron{width:7px;height:7px;opacity:.35}
-    .credit-pill{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;cursor:default;white-space:nowrap;transition:all .2s}
+    .credit-pill{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:default;white-space:nowrap;transition:all .2s}
     .credit-pill.low{color:var(--muted)}
     .credit-pill.ok{color:var(--text2)}
     .credit-pill svg{width:10px;height:10px}
@@ -253,7 +253,7 @@
           </button>
           <div class="credit-pill ok" id="credit-pill" title="Credits">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-            <span id="credit-pill-text">10/10</span>
+            <span id="credit-pill-text">50.00</span>
           </div>
         </div>
         <textarea id="chat-input" rows="1" placeholder="Ask about your Roblox game..."></textarea>
@@ -266,7 +266,7 @@
           <button class="send-btn" id="send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
         </div>
       </div>
-      <div class="input-hint"><kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line</div>
+      <div class="input-hint"><kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line · <span id="token-cost-hint" style="color:var(--muted)"></span></div>
     </div>
     <div class="no-credits" id="no-credits" style="display:none">
       <div class="no-credits-text">No credits remaining</div>
@@ -298,14 +298,14 @@
 </div>
 
 <script>
-const TOKEN_KEY='rux_token',CONV_KEY='rux_conversations';
+const TOKEN_KEY='rux_token';
 const MODEL_LABELS={'gemini-flash':'Gemini Flash','gemini-pro':'Gemini Pro','sonnet':'Claude Sonnet','opus':'Claude Opus'};
 const MODE_LABELS={'chat':'Chat','agent':'Agent'};
-let token=null,userData=null,credits={balance:10,max:10,next_credit_at:0};
+let token=null,userData=null,credits={balance:50.00,max:50.00,next_credit_at:0};
 let sessionId=null,mode='chat',activeConvId=null,pendingSessionId=null;
 let isLoading=false,conversationHistory=[],currentMessages=[],selectedModel='sonnet';
 let pluginConnected=false,statusPoll=null,connectPoll=null,lastShownToolId=null;
-let openPicker=null,inConversation=false;
+let openPicker=null,inConversation=false,convCache={};
 
 function getToken(){return localStorage.getItem(TOKEN_KEY)}
 function setToken(t){token=t;localStorage.setItem(TOKEN_KEY,t)}
@@ -333,17 +333,25 @@ async function enterApp(){
   credits=r.data.credits;sessionId=r.data.session_id;
   updateCreditUI();
   if(sessionId)pluginConnected=true;
-  updatePluginUI();enterChat();
+  updatePluginUI();enterChat();loadConversations();
 }
 
 function updateCreditUI(){
   const pill=document.getElementById('credit-pill');
   const text=document.getElementById('credit-pill-text');
-  text.textContent=credits.balance+'/'+credits.max;
-  if(credits.balance<=2){
+  const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
+  const max=typeof credits.max==='number'?credits.max:parseFloat(credits.max)||50;
+  text.textContent=bal.toFixed(2);
+  if(bal<=2){
     pill.classList.remove('ok');pill.classList.add('low');
   }else{
     pill.classList.remove('low');pill.classList.add('ok');
+  }
+  const hint=document.getElementById('token-cost-hint');
+  if(bal<=0){
+    hint.textContent='No credits';
+  }else{
+    hint.textContent=bal.toFixed(2)+' credits';
   }
 }
 
@@ -401,7 +409,8 @@ function startStatusPoll(){
 
 function updateInputState(){
   const ia=document.getElementById('input-area'),nc=document.getElementById('no-credits'),pill=document.getElementById('credit-pill');
-  if(credits.balance<1){
+  const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
+  if(bal<=0){
     ia.style.display='none';nc.style.display='';
     const at=credits.next_credit_at;if(at>0){const d=at-Date.now();if(d>0){const h=Math.floor(d/36e5),m=Math.floor((d%36e5)/6e4);document.getElementById('no-credits-time').textContent='Next credit in '+h+'h '+m+'m';}else document.getElementById('no-credits-time').textContent='Refreshing...';}
     pill.style.display='none';return;
@@ -430,9 +439,50 @@ function updateModelUI(){document.getElementById('model-label').textContent=(MOD
 function updateModeUI(){document.getElementById('mode-label').textContent=MODE_LABELS[mode]||'Chat';document.querySelectorAll('#mode-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.mode===mode));}
 document.addEventListener('click',e=>{if(!e.target.closest('.picker-trigger')&&!e.target.closest('.picker-dropdown')){document.getElementById('model-picker').classList.remove('open');document.getElementById('mode-picker').classList.remove('open');openPicker=null;}});
 
-function loadConvs(){try{return JSON.parse(localStorage.getItem(CONV_KEY)||'{}')}catch{return{}}}
-function saveConvs(c){localStorage.setItem(CONV_KEY,JSON.stringify(c))}
-function getConvList(){return Object.values(loadConvs()).sort((a,b)=>b.updatedAt-a.updatedAt)}
+/* ═══ CONVERSATION PERSISTENCE (server-side) ═══ */
+async function loadConversations(){
+  try{
+    const r=await api('/api/conversations');
+    if(!r)return;
+    convCache=r.data||{};
+    renderSidebar();
+  }catch(e){convCache={};renderSidebar();}
+}
+
+async function saveConv(){
+  if(!currentMessages.length)return;
+  const first=currentMessages.find(m=>m.role==='user');
+  const title=first?first.text.slice(0,48):'Conversation';
+  const cid=activeConvId||'conv-'+Date.now();
+  activeConvId=cid;
+  const convData={
+    id:cid,
+    title,
+    messages:currentMessages,
+    history:conversationHistory,
+    mode,
+    model:selectedModel,
+    sessionId,
+    updatedAt:Date.now(),
+  };
+  try{
+    await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});
+    convCache[cid]=convData;
+    renderSidebar();
+  }catch(e){}
+}
+
+async function deleteConv(id){
+  try{await api('/api/conversations/'+id,{method:'DELETE'});}catch(e){}
+  delete convCache[id];
+  if(activeConvId===id){activeConvId=null;showDashboard();}
+  renderSidebar();
+}
+
+function getConvList(){
+  return Object.values(convCache).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+}
+
 function timeAgo(t){const d=Date.now()-t,m=Math.floor(d/6e4);if(m<1)return'Now';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d';}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
@@ -452,8 +502,12 @@ function renderSidebar(){
   });
 }
 
-function openConv(id){
-  const c=loadConvs()[id];if(!c)return;
+async function openConv(id){
+  let c=convCache[id];
+  if(!c){
+    try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data;}catch(e){}
+  }
+  if(!c)return;
   activeConvId=id;sessionId=c.sessionId||sessionId;
   conversationHistory=c.history||[];currentMessages=c.messages||[];
   pendingSessionId=c.pendingSessionId||null;
@@ -463,12 +517,6 @@ function openConv(id){
   const msgs=document.getElementById('messages');msgs.innerHTML='';
   currentMessages.forEach(m=>renderMessage(m));msgs.scrollTop=msgs.scrollHeight;
   setViewMode(true);renderSidebar();
-}
-
-function deleteConv(id){
-  const c=loadConvs();delete c[id];saveConvs(c);
-  if(activeConvId===id){activeConvId=null;showDashboard();}
-  renderSidebar();
 }
 
 function showDashboard(){
@@ -485,17 +533,6 @@ function startNewConv(){
   setViewMode(true);renderSidebar();document.getElementById('chat-input').focus();
 }
 document.getElementById('sb-new-btn').addEventListener('click',startNewConv);
-
-function saveConv(){
-  if(!currentMessages.length)return;
-  const first=currentMessages.find(m=>m.role==='user');
-  const title=first?first.text.slice(0,48):'Conversation';
-  const cid=activeConvId&&!activeConvId.startsWith('new-')?activeConvId:'conv-'+Date.now();
-  activeConvId=cid;
-  const convs=loadConvs();
-  convs[cid]={id:cid,title,sessionId,history:conversationHistory,messages:currentMessages,pendingSessionId,mode,model:selectedModel,updatedAt:Date.now()};
-  saveConvs(convs);renderSidebar();
-}
 
 const chatInput=document.getElementById('chat-input');
 chatInput.addEventListener('input',()=>{chatInput.style.height='auto';chatInput.style.height=Math.min(chatInput.scrollHeight,200)+'px';});
@@ -540,6 +577,7 @@ function handleResponse(d){
   if(d.plan&&d.status==='awaiting_approval'){showPlan(d.plan);pushMsg({role:'assistant',text:'Plan ready. Review above.'});saveConv();return;}
   if(d.tool_calls&&d.tool_calls.length){d.tool_calls.forEach(tc=>{lastShownToolId=tc.id;pushMsg({role:'assistant',text:'',isToolEvent:true,toolName:tc.name,toolArgs:JSON.stringify(tc.arguments).slice(0,100)});});}
   if(d.reply&&d.status==='done'){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply});saveConv();}
+  if(d.tokens_used){pushMsg({role:'system',text:d.tokens_used+' tokens used'});}
 }
 
 async function pollForResult(sid){
@@ -547,6 +585,7 @@ async function pollForResult(sid){
   for(let i=0;i<90;i++){
     await new Promise(r=>setTimeout(r,2000));
     try{const r=await api('/ai/result/'+sid);if(!r)break;const d=r.data;
+      if(d.credits!=null){credits.balance=d.credits;updateCreditUI();updateInputState();}
       if(d.pending_tool_call&&d.pending_tool_call.id!==lastShownToolId){removeTyping();lastShownToolId=d.pending_tool_call.id;pushMsg({role:'assistant',text:'',isToolEvent:true,toolName:d.pending_tool_call.name,toolArgs:JSON.stringify(d.pending_tool_call.arguments).slice(0,100)});addTyping();}
       if(d.status==='done'){removeTyping();lastShownToolId=null;if(d.reply){pushMsg({role:'assistant',text:d.reply});conversationHistory.push({role:'assistant',content:d.reply});}saveConv();return;}
       if(d.status==='error'){removeTyping();lastShownToolId=null;pushMsg({role:'assistant',text:'Execution failed. Check Studio connection.'});saveConv();return;}
@@ -556,7 +595,9 @@ async function pollForResult(sid){
 }
 
 async function sendMessage(){
-  const text=chatInput.value.trim();if(!text||isLoading||credits.balance<1)return;
+  const text=chatInput.value.trim();if(!text||isLoading)return;
+  const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
+  if(bal<=0){updateInputState();return;}
   if(!pluginConnected){openConnectModal();return;}
   if(!activeConvId)startNewConv();
   isLoading=true;chatInput.value='';chatInput.style.height='auto';
