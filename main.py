@@ -15,12 +15,6 @@ except ImportError:
     HAS_BCRYPT = False
 
 try:
-    import replit
-    HAS_REPLIT = True
-except ImportError:
-    HAS_REPLIT = False
-
-try:
     from google import genai as google_genai
     from google.genai import types as google_genai_types
     GEMINI_AVAILABLE = True
@@ -28,6 +22,8 @@ except ImportError:
     GEMINI_AVAILABLE = False
 
 from anthropic import Anthropic
+
+import store
 
 app = Flask(__name__)
 
@@ -48,47 +44,18 @@ else:
     gemini_client = None
 
 MAX_AGENT_STEPS = 20
-MAX_CREDITS = 50.0
-CREDIT_PER_TOKEN = 0.005
-CREDIT_INTERVAL_MS = 6 * 60 * 60 * 1000
+MAX_TOOL_RESULT_CHARS = 30000
 CODE_EXPIRY_MS = 5 * 60 * 1000
 CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 WEB_HEARTBEAT_TIMEOUT = 90
 
-# FIX: Maximum size for tool result content before truncation (chars)
-MAX_TOOL_RESULT_CHARS = 30000
-
 MODELS = {
-    "gemini-flash": {"id": "gemini-2.5-flash", "provider": "google", "label": "Gemini Flash", "badge": "Fast"},
-    "gemini-pro": {"id": "gemini-2.5-pro", "provider": "google", "label": "Gemini Pro", "badge": "Smart"},
-    "sonnet": {"id": "claude-sonnet-4-6", "provider": "anthropic", "label": "Claude Sonnet", "badge": "Balanced"},
-    "opus": {"id": "claude-opus-4-6", "provider": "anthropic", "label": "Claude Opus", "badge": "Powerful"},
+    "gemini-flash": {"id": "gemini-2.5-flash", "provider": "google", "label": "Gemini Flash", "badge": "Fast", "credit_per_token": 0.001},
+    "gemini-pro": {"id": "gemini-2.5-pro", "provider": "google", "label": "Gemini Pro", "badge": "Smart", "credit_per_token": 0.003},
+    "sonnet": {"id": "claude-sonnet-4-6", "provider": "anthropic", "label": "Claude Sonnet", "badge": "Balanced", "credit_per_token": 0.005},
+    "opus": {"id": "claude-opus-4-6", "provider": "anthropic", "label": "Claude Opus", "badge": "Powerful", "credit_per_token": 0.01},
 }
 DEFAULT_MODEL = "sonnet"
-
-# ═══ KV HELPER ═══
-class KV:
-    def __init__(self):
-        self._mem = {}
-    def get(self, key):
-        if HAS_REPLIT:
-            try:
-                val = replit.db[key]
-                return json.loads(val)
-            except Exception:
-                return None
-        return self._mem.get(key)
-    def set(self, key, value):
-        if HAS_REPLIT:
-            replit.db[key] = json.dumps(value)
-        self._mem[key] = value
-    def delete(self, key):
-        if HAS_REPLIT:
-            try: del replit.db[key]
-            except Exception: pass
-        self._mem.pop(key, None)
-
-kv = KV()
 
 # ═══ IN-MEMORY STATE ═══
 sessions = {}
@@ -117,10 +84,10 @@ def verify_password(password, hashed):
 def get_user_from_token(token):
     if not token:
         return None
-    s = kv.get(f"session:{token}")
+    s = store.get_session(token)
     if not s:
         return None
-    return kv.get(f"user:id:{s['user_id']}")
+    return store.get_user_by_id(s["user_id"])
 
 def require_auth(f):
     def wrapper(*args, **kwargs):
@@ -132,37 +99,6 @@ def require_auth(f):
         return f(*args, **kwargs)
     wrapper.__name__ = f.__name__
     return wrapper
-
-# ═══ CREDIT HELPERS ═══
-def get_credits(user_id):
-    data = kv.get(f"credits:{user_id}")
-    if not data:
-        return MAX_CREDITS, 0
-    balance = float(data.get("balance", 0))
-    last_updated = data.get("last_updated", 0)
-    now = int(time.time() * 1000)
-    if last_updated > 0 and balance < MAX_CREDITS:
-        elapsed = now - last_updated
-        if elapsed >= CREDIT_INTERVAL_MS:
-            intervals = int(elapsed // CREDIT_INTERVAL_MS)
-            add = min(float(intervals), MAX_CREDITS - balance)
-            balance = round(balance + add, 4)
-            last_updated += intervals * CREDIT_INTERVAL_MS
-            kv.set(f"credits:{user_id}", {"balance": balance, "last_updated": last_updated})
-    return balance, last_updated
-
-def has_credits(user_id):
-    balance, _ = get_credits(user_id)
-    return balance > 0
-
-def deduct_credits(user_id, amount):
-    data = kv.get(f"credits:{user_id}")
-    if not data:
-        data = {"balance": MAX_CREDITS, "last_updated": 0}
-    balance = round(float(data.get("balance", 0)) - amount, 6)
-    last_updated = data.get("last_updated", 0)
-    kv.set(f"credits:{user_id}", {"balance": balance, "last_updated": last_updated})
-    return balance, last_updated
 
 # ═══ WEB HEARTBEAT HELPERS ═══
 def update_web_heartbeat(user_id):
@@ -201,9 +137,6 @@ def get_session(session_id):
             }
         return sessions[session_id]
 
-def append_log(session, message):
-    session["logs"].append(message)
-
 def build_context(data):
     return {
         "current_script_name": data.get("current_script_name"),
@@ -211,28 +144,18 @@ def build_context(data):
         "selected_instance": data.get("selected_instance"),
     }
 
-# FIX: Avoid duplicating the user message. The client already includes it
-# in conversation_history, so we only append the context-augmented version
-# if the last message in history is NOT the same user message.
 def build_chat_messages(session, user_message, context):
     messages = list(session["conversation"])
-
-    # Check if the last message is already this user message (client pushed it)
+    ctx_msg = f"User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"
     if messages and messages[-1].get("role") == "user" and messages[-1].get("content") == user_message:
-        # Replace the last message with the context-enriched version
-        messages[-1] = {"role": "user", "content": f"User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"}
+        messages[-1] = {"role": "user", "content": ctx_msg}
     else:
-        # Append the context-enriched user message
-        messages.append({"role": "user", "content": f"User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"})
-
+        messages.append({"role": "user", "content": ctx_msg})
     return messages
 
 def resolve_model(key):
     return MODELS.get(key, MODELS[DEFAULT_MODEL])
 
-# FIX: Preserve ALL content block types including thinking and redacted_thinking.
-# Dropping thinking blocks corrupts the conversation history and causes the
-# next Anthropic API call to fail because the assistant message doesn't match.
 def content_blocks_to_dicts(blocks):
     result = []
     for b in blocks:
@@ -246,15 +169,11 @@ def content_blocks_to_dicts(blocks):
         elif b.type == "tool_use":
             result.append({"type": "tool_use", "id": b.id, "name": b.name, "input": b.input})
         elif b.type == "thinking":
-            # Preserve thinking blocks with their signature
             result.append({"type": "thinking", "thinking": getattr(b, 'thinking', ''), "signature": getattr(b, 'signature', '')})
         elif b.type == "redacted_thinking":
-            # Preserve redacted thinking blocks
             result.append({"type": "redacted_thinking", "data": getattr(b, 'data', '')})
     return result
 
-# FIX: Extract tool calls and text from response content, handling multiple tool_use blocks.
-# Returns (first_tool_call_or_None, all_tool_calls_list, reply_text)
 def extract_tool_info(content):
     tool_calls = []
     reply_text = ""
@@ -272,10 +191,6 @@ def extract_tool_info(content):
     first_tc = tool_calls[0] if tool_calls else None
     return first_tc, tool_calls, reply_text
 
-# FIX: Build assistant content dict list that ONLY includes the tool_use
-# we're actually going to execute. If Claude returned multiple tool_use
-# blocks, we keep only the first one and drop the rest to avoid orphaned
-# tool_use blocks without matching tool_results in the conversation.
 def build_assistant_content(content, keep_tool_id):
     result = []
     for b in content:
@@ -285,11 +200,8 @@ def build_assistant_content(content, keep_tool_id):
                 result.append(b)
             elif btype == "tool_use" and b.get("id") == keep_tool_id:
                 result.append(b)
-            elif btype == "thinking":
+            elif btype in ("thinking", "redacted_thinking"):
                 result.append(b)
-            elif btype == "redacted_thinking":
-                result.append(b)
-            # Skip tool_use blocks that don't match keep_tool_id
         elif hasattr(b, 'type'):
             if b.type == "text":
                 result.append({"type": "text", "text": b.text})
@@ -299,28 +211,22 @@ def build_assistant_content(content, keep_tool_id):
                 result.append({"type": "thinking", "thinking": getattr(b, 'thinking', ''), "signature": getattr(b, 'signature', '')})
             elif b.type == "redacted_thinking":
                 result.append({"type": "redacted_thinking", "data": getattr(b, 'data', '')})
-            # Skip tool_use blocks that don't match keep_tool_id
-    # Ensure there's at least one content block
     if not result:
         result.append({"type": "text", "text": ""})
     return result
 
-# FIX: Truncate large tool results to prevent exceeding context limits.
-# get_instance_tree can return megabytes of data.
 def truncate_tool_result(data, max_chars=MAX_TOOL_RESULT_CHARS):
     s = json.dumps(data, ensure_ascii=False)
     if len(s) <= max_chars:
         return data
-    # Truncate and add a notice
     truncated = s[:max_chars]
-    truncated += "\n\n... [RESULT TRUNCATED - too large to send to AI. Use more specific tools like read_script or find_instance instead.]"
+    truncated += "\n\n... [RESULT TRUNCATED - too large. Use read_script or find_instance instead.]"
     try:
         return json.loads(truncated) if truncated.startswith(('{', '[')) else {"truncated": True, "preview": truncated[:max_chars]}
     except json.JSONDecodeError:
-        return {"truncated": True, "preview": s[:max_chars], "notice": "Result was too large and has been truncated."}
+        return {"truncated": True, "preview": s[:max_chars], "notice": "Result truncated."}
 
 # ═══ AI HELPERS ═══
-# FIX: Increased max_tokens from 1500 to 4096
 def call_anthropic(model_id, messages, max_tokens=4096, tools=None):
     kw = dict(model=model_id, max_tokens=max_tokens, system=SYSTEM_PROMPT, messages=messages)
     if tools:
@@ -351,21 +257,21 @@ SYSTEM_PROMPT = """You are Rux, a Roblox Studio and Luau expert AI assistant con
 TOOLS:
 - You have direct access to tools (read_script, write_script, list_scripts, get_script_tree, search_code, create_script, delete_script, snapshot_script, restore_script, diff_script, check_errors, get_instance_tree, get_properties, set_property, find_instance, get_selection, get_current_script, get_place_metadata, find_usages, get_output_log, get_error_log).
 - CRITICAL: You may only call ONE tool per response. Never call multiple tools at once. Call one tool, wait for the result, then decide your next step.
-- Always use list_scripts or get_script_tree first before trying to read a specific script by name, so you know the exact name.
-- get_output_log and get_error_log return whatever the plugin captured — they may be empty because Roblox does not expose the full Output window to plugins. Tell the user to check the Studio Output window directly if needed.
-- Prefer get_script_tree over get_instance_tree — get_instance_tree returns the entire game hierarchy which is extremely large. Use find_instance or get_script_tree instead.
+- Always use list_scripts or get_script_tree first before trying to read a specific script by name.
+- Prefer get_script_tree over get_instance_tree — get_instance_tree returns extremely large data. Use find_instance or get_script_tree instead.
+- get_output_log and get_error_log may return empty results — tell the user to check the Studio Output window directly if needed.
+- If a tool result is truncated, use more specific tools like read_script or find_instance.
 
 RULES:
 - Be precise, safe, and incremental.
 - In agent mode, first produce a numbered plan before using tools.
-- In chat mode, call tools directly to answer the user's question — no plan needed.
+- In chat mode, call tools directly — no plan needed.
 - Prefer inspection before writing.
 - Before editing any script, call snapshot_script first.
 - Keep changes minimal and explain what changed.
 - If a tool returns an error, recover gracefully and try the next best step.
 - Stop when the task is complete and give a concise summary.
 - Never make up script contents or tool results — always use real tool output.
-- If a tool result is truncated, use more specific tools like read_script or find_instance to get details.
 """
 
 TOOL_DEFINITIONS = [
@@ -380,7 +286,7 @@ TOOL_DEFINITIONS = [
     {"name": "get_error_log", "description": "Get recent error log lines available through the plugin.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "search_code", "description": "Search all scripts for a query string.", "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
     {"name": "find_usages", "description": "Search all scripts for usages of a variable or function name.", "input_schema": {"type": "object", "properties": {"variable_name": {"type": "string"}}, "required": ["variable_name"]}},
-    {"name": "get_instance_tree", "description": "Get the Explorer instance tree. WARNING: Returns very large data. Prefer get_script_tree or find_instance instead.", "input_schema": {"type": "object", "properties": {}}},
+    {"name": "get_instance_tree", "description": "Get the Explorer instance tree. WARNING: Returns very large data. Prefer get_script_tree or find_instance.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "get_properties", "description": "Get properties for an instance path.", "input_schema": {"type": "object", "properties": {"instance_path": {"type": "string"}}, "required": ["instance_path"]}},
     {"name": "set_property", "description": "Set a property on an instance path.", "input_schema": {"type": "object", "properties": {"instance_path": {"type": "string"}, "property": {"type": "string"}, "value": {}}, "required": ["instance_path", "property", "value"]}},
     {"name": "find_instance", "description": "Find an instance anywhere in the game by name.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
@@ -405,23 +311,16 @@ def auth_register():
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
-    existing = kv.get(f"user:email:{email}")
+    existing = store.get_user_by_email(email)
     if existing:
         return jsonify({"error": "Email already registered"}), 400
 
     user_id = str(uuid.uuid4())
-    kv.set(f"user:id:{user_id}", {
-        "id": user_id, "email": email,
-        "password_hash": hash_password(password),
-        "roblox_id": roblox_id, "created_at": int(time.time()),
-    })
-    kv.set(f"user:email:{email}", {"id": user_id})
-    if roblox_id:
-        kv.set(f"user:roblox:{roblox_id}", {"id": user_id, "email": email})
-    kv.set(f"credits:{user_id}", {"balance": MAX_CREDITS, "last_updated": 0})
+    store.save_user(user_id, email, hash_password(password), roblox_id)
+    store.init_credits(user_id)
 
     token = str(uuid.uuid4())
-    kv.set(f"session:{token}", {"user_id": user_id, "created_at": int(time.time())})
+    store.save_session(token, user_id)
 
     return jsonify({"token": token, "user": {"id": user_id, "email": email}})
 
@@ -431,27 +330,26 @@ def auth_login():
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
 
-    user = kv.get(f"user:email:{email}")
+    user = store.get_user_by_email(email)
     if not user:
         return jsonify({"error": "Invalid email or password"}), 401
 
-    full = kv.get(f"user:id:{user['id']}")
-    if not full or not verify_password(password, full["password_hash"]):
+    if not verify_password(password, user["password_hash"]):
         return jsonify({"error": "Invalid email or password"}), 401
 
     token = str(uuid.uuid4())
-    kv.set(f"session:{token}", {"user_id": full["id"], "created_at": int(time.time())})
+    store.save_session(token, user["id"])
 
-    return jsonify({"token": token, "user": {"id": full["id"], "email": full["email"]}})
+    return jsonify({"token": token, "user": {"id": user["id"], "email": user["email"]}})
 
 @app.route("/auth/me", methods=["GET"])
 @require_auth
 def auth_me():
     user = request.user
-    balance, last_updated = get_credits(user["id"])
-    next_at = last_updated + CREDIT_INTERVAL_MS if last_updated > 0 else 0
+    balance, last_updated = store.get_credits(user["id"])
+    next_at = last_updated + store.CREDIT_INTERVAL_MS if last_updated > 0 else 0
 
-    active_session = kv.get(f"user_plugin:{user['id']}")
+    active_session = store.get_user_plugin(user["id"])
     session_id = None
     now = time.time()
     if active_session:
@@ -464,7 +362,7 @@ def auth_me():
 
     return jsonify({
         "user": {"id": user["id"], "email": user["email"]},
-        "credits": {"balance": round(balance, 2), "max": MAX_CREDITS, "next_credit_at": next_at},
+        "credits": {"balance": round(balance, 2), "max": store.MAX_CREDITS, "next_credit_at": next_at},
         "session_id": session_id,
     })
 
@@ -473,7 +371,7 @@ def auth_me():
 def auth_logout():
     user = request.user
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    kv.delete(f"session:{token}")
+    store.delete_session(token)
     clear_web_heartbeat(user["id"])
     return jsonify({"ok": True})
 
@@ -484,7 +382,7 @@ def web_heartbeat():
     user = request.user
     update_web_heartbeat(user["id"])
 
-    active_session = kv.get(f"user_plugin:{user['id']}")
+    active_session = store.get_user_plugin(user["id"])
     plugin_connected = False
     session_id = None
     if active_session:
@@ -494,7 +392,7 @@ def web_heartbeat():
                 plugin_connected = True
                 session_id = active_session.get("session_id")
 
-    balance, _ = get_credits(user["id"])
+    balance, _ = store.get_credits(user["id"])
     return jsonify({
         "ok": True,
         "plugin_connected": plugin_connected,
@@ -507,13 +405,13 @@ def web_heartbeat():
 @require_auth
 def web_disconnect():
     user = request.user
-    active_session = kv.get(f"user_plugin:{user['id']}")
+    active_session = store.get_user_plugin(user["id"])
     if active_session:
         pid = active_session.get("plugin_id")
         with plugin_registry_lock:
             if pid and pid in plugin_registry:
                 plugin_registry[pid]["status"] = "disconnected_by_web"
-        kv.delete(f"user_plugin:{user['id']}")
+        store.delete_user_plugin(user["id"])
     clear_web_heartbeat(user["id"])
     return jsonify({"ok": True})
 
@@ -545,7 +443,6 @@ def plugin_connect():
     method = None
     user_id = None
 
-    # Try code first (explicit connection from web)
     if code:
         clean_expired_codes()
         with pending_connections_lock:
@@ -556,25 +453,22 @@ def plugin_connect():
                     session_id = pending["session_id"]
                     method = "code"
                     user_id = pending["user_id"]
-                    kv.set(f"user_plugin:{pending['user_id']}", {"plugin_id": plugin_id, "session_id": session_id})
+                    store.save_user_plugin(user_id, plugin_id, session_id)
                     del pending_connections[code]
 
-    # Try auto-connect via creator_id — REUSE existing session if available
     if not session_id and creator_id:
-        u = kv.get(f"user:roblox:{str(creator_id)}")
+        u = store.get_user_by_roblox_id(creator_id)
         if u:
             user_id = u["id"]
-            # Check if user already has an active plugin session
-            existing = kv.get(f"user_plugin:{user_id}")
+            existing = store.get_user_plugin(user_id)
             if existing and existing.get("session_id"):
-                # Reuse the existing session so web and plugin stay in sync
                 session_id = existing["session_id"]
                 method = "auto_reuse"
-                kv.set(f"user_plugin:{user_id}", {"plugin_id": plugin_id, "session_id": session_id})
+                store.save_user_plugin(user_id, plugin_id, session_id)
             else:
                 session_id = str(uuid.uuid4())
                 method = "auto"
-                kv.set(f"user_plugin:{user_id}", {"plugin_id": plugin_id, "session_id": session_id})
+                store.save_user_plugin(user_id, plugin_id, session_id)
 
     if not session_id:
         return jsonify({"ok": False, "error": "Invalid or expired code"}), 400
@@ -588,7 +482,6 @@ def plugin_connect():
 
     return jsonify({"ok": True, "session_id": session_id, "method": method})
 
-# ═══ PLUGIN DISCONNECT ROUTE ═══
 @app.route("/plugin/disconnect", methods=["POST"])
 def plugin_disconnect():
     data = request.get_json(force=True)
@@ -600,7 +493,7 @@ def plugin_disconnect():
             if pid in plugin_registry:
                 del plugin_registry[pid]
         if uid:
-            kv.delete(f"user_plugin:{uid}")
+            store.delete_user_plugin(uid)
     return jsonify({"ok": True})
 
 # ═══ AI ROUTES ═══
@@ -608,11 +501,12 @@ def plugin_disconnect():
 @require_auth
 def ai():
     user = request.user
-    balance, _ = get_credits(user["id"])
+    balance, _ = store.get_credits(user["id"])
     if balance <= 0:
-        _, _, next_at = get_credits(user["id"])
+        balance2, last_upd = store.get_credits(user["id"])
+        next_at = last_upd + store.CREDIT_INTERVAL_MS if last_upd > 0 else 0
         return jsonify({
-            "error": "no_credits", "balance": round(balance, 2),
+            "error": "no_credits", "balance": round(balance2, 2),
             "next_credit_at": next_at,
         }), 403
 
@@ -633,7 +527,7 @@ def ai():
     session["accumulated_cost"] = 0.0
 
     mi = resolve_model(model_key)
-    mid, prov = mi["id"], mi["provider"]
+    mid, prov, cpt = mi["id"], mi["provider"], mi["credit_per_token"]
 
     try:
         if mode == "chat":
@@ -641,20 +535,16 @@ def ai():
             if prov == "anthropic":
                 r = call_anthropic(mid, msgs, tools=TOOL_DEFINITIONS)
                 output_tokens = r.usage.output_tokens
-                cost = round(output_tokens * CREDIT_PER_TOKEN, 6)
-                balance, _ = deduct_credits(user["id"], cost)
+                cost = round(output_tokens * cpt, 6)
+                balance, _ = store.deduct_credits(user["id"], cost)
 
-                # FIX: Use the new extraction function
                 first_tc, all_tcs, reply_text = extract_tool_info(r.content)
 
                 if first_tc:
-                    # FIX: Only keep the first tool_use in agent_messages to avoid
-                    # orphaned tool_use blocks without matching tool_results
                     assistant_content = build_assistant_content(r.content, first_tc["id"])
-
                     if len(all_tcs) > 1:
-                        print(f"[Rux] WARNING: Claude returned {len(all_tcs)} tool_use blocks, only executing first: {first_tc['name']}")
-                        reply_text += f"\n\n[Note: I will call {len(all_tcs)} tools one at a time. Starting with {first_tc['name']}.]"
+                        print(f"[Rux] WARNING: {len(all_tcs)} tool_use blocks, executing first: {first_tc['name']}")
+                        reply_text += f"\n\n[Calling {len(all_tcs)} tools one at a time. Starting with {first_tc['name']}.]"
 
                     session["pending_tool_call"] = first_tc
                     session["agent_messages"] = msgs + [{"role": "assistant", "content": assistant_content}]
@@ -678,8 +568,8 @@ def ai():
                 })
             else:
                 reply, output_tokens = call_gemini(mid, msgs)
-                cost = round(output_tokens * CREDIT_PER_TOKEN, 6)
-                balance, _ = deduct_credits(user["id"], cost)
+                cost = round(output_tokens * cpt, 6)
+                balance, _ = store.deduct_credits(user["id"], cost)
                 session["latest_reply"] = reply
                 session["status"] = "done"
                 return jsonify({
@@ -695,8 +585,7 @@ def ai():
                     "session_id": session_id,
                     "reply": "Agent mode requires Claude models.",
                     "tool_calls": [], "plan": None, "status": "done",
-                    "model": mi["label"], "credits": round(balance, 2),
-                    "tokens_used": 0,
+                    "model": mi["label"], "credits": round(balance, 2), "tokens_used": 0,
                 })
             session["approved"] = False
             session["step_count"] = 0
@@ -706,8 +595,8 @@ def ai():
             pm.append({"role": "user", "content": "Produce a numbered execution plan only. Do not call any tools yet."})
             r = call_anthropic(mid, pm, max_tokens=2000)
             output_tokens = r.usage.output_tokens
-            cost = round(output_tokens * CREDIT_PER_TOKEN, 6)
-            balance, _ = deduct_credits(user["id"], cost)
+            cost = round(output_tokens * cpt, 6)
+            balance, _ = store.deduct_credits(user["id"], cost)
             plan = "".join(b.text for b in r.content if hasattr(b, 'type') and b.type == "text")
             session["plan"] = plan
             session["agent_messages"] = pm + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
@@ -731,7 +620,7 @@ def ai():
 def ai_result(session_id):
     session = get_session(session_id)
     tc = session.get("pending_tool_call")
-    balance, _ = get_credits(request.user["id"])
+    balance, _ = store.get_credits(request.user["id"])
     return jsonify({
         "session_id": session_id,
         "status": session.get("status", "idle"),
@@ -755,6 +644,7 @@ def approve_agent():
     session["status"] = "running"
     session["accumulated_reply"] = ""
     mi = resolve_model(session.get("model_key", DEFAULT_MODEL))
+    cpt = mi["credit_per_token"]
     if mi["provider"] == "google":
         session["status"] = "error"
         return jsonify({
@@ -763,7 +653,7 @@ def approve_agent():
             "status": "error", "credits": 0, "tokens_used": 0,
         }), 400
 
-    balance, _ = get_credits(user["id"])
+    balance, _ = store.get_credits(user["id"])
     if balance <= 0:
         return jsonify({
             "session_id": session_id, "reply": "No credits remaining.",
@@ -778,22 +668,17 @@ def approve_agent():
         session["agent_messages"] = prior + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
 
         output_tokens = r.usage.output_tokens
-        cost = round(output_tokens * CREDIT_PER_TOKEN, 6)
-        balance, _ = deduct_credits(user["id"], cost)
+        cost = round(output_tokens * cpt, 6)
+        balance, _ = store.deduct_credits(user["id"], cost)
         session["accumulated_cost"] = session.get("accumulated_cost", 0) + cost
 
-        # FIX: Use new extraction and only keep first tool_use
         first_tc, all_tcs, ft = extract_tool_info(r.content)
 
         if first_tc:
-            # Rebuild assistant content to only include the first tool_use
             assistant_content = build_assistant_content(r.content, first_tc["id"])
-            # Update the last message in agent_messages
             session["agent_messages"][-1] = {"role": "assistant", "content": assistant_content}
-
             if len(all_tcs) > 1:
-                print(f"[Rux] WARNING: Agent returned {len(all_tcs)} tool_use blocks, only executing first: {first_tc['name']}")
-
+                print(f"[Rux] WARNING: Agent returned {len(all_tcs)} tool_use blocks, executing first: {first_tc['name']}")
             session["pending_tool_call"] = first_tc
             return jsonify({
                 "session_id": session_id, "reply": ft or "Executing.",
@@ -865,6 +750,8 @@ def plugin_tool_result():
     user_id = session.get("user_id")
     mk = session.get("model_key", DEFAULT_MODEL)
     mi = resolve_model(mk)
+    cpt = mi["credit_per_token"]
+
     if mi["provider"] == "google":
         session["status"] = "error"
         session["pending_tool_call"] = None
@@ -889,20 +776,16 @@ def plugin_tool_result():
             session["status"] = "error"
             return jsonify({"reply": "Session expired. Start a new conversation.", "status": "error"}), 200
 
-        # FIX: Truncate large tool results before sending to Claude
         tool_result_data = data.get("tool_result", {})
         tool_result_data = truncate_tool_result(tool_result_data)
-
         tool_result_str = json.dumps(tool_result_data, ensure_ascii=False)
 
         tr = {"type": "tool_result", "tool_use_id": pc["id"], "content": tool_result_str}
         cont = prior + [{"role": "user", "content": [tr]}]
         r = call_anthropic(mi["id"], cont, tools=TOOL_DEFINITIONS)
 
-        # FIX: Use new extraction and only keep first tool_use
         first_tc, all_tcs, ft = extract_tool_info(r.content)
 
-        # Build assistant content - if there's a tool_use, only keep the first one
         if first_tc:
             assistant_content = build_assistant_content(r.content, first_tc["id"])
         else:
@@ -911,9 +794,9 @@ def plugin_tool_result():
         session["agent_messages"] = cont + [{"role": "assistant", "content": assistant_content}]
 
         output_tokens = r.usage.output_tokens
-        cost = round(output_tokens * CREDIT_PER_TOKEN, 6)
+        cost = round(output_tokens * cpt, 6)
         if user_id:
-            balance, _ = deduct_credits(user_id, cost)
+            balance, _ = store.deduct_credits(user_id, cost)
         else:
             balance = 0
         session["accumulated_cost"] = session.get("accumulated_cost", 0) + cost
@@ -923,8 +806,7 @@ def plugin_tool_result():
 
         if first_tc:
             if len(all_tcs) > 1:
-                print(f"[Rux] WARNING: tool_result continuation returned {len(all_tcs)} tool_use blocks, only executing first: {first_tc['name']}")
-
+                print(f"[Rux] WARNING: tool_result continuation returned {len(all_tcs)} tool_use blocks, executing first: {first_tc['name']}")
             session["pending_tool_call"] = first_tc
             session["status"] = "running"
             return jsonify({
@@ -948,9 +830,8 @@ def plugin_tool_result():
         print(f"[Rux] /plugin/tool_result error: {traceback.format_exc()}")
         session["status"] = "error"
         session["pending_tool_call"] = None
-        # FIX: Return the actual error message for debugging instead of hiding it
         return jsonify({
-            "reply": f"Error processing tool result: {error_str[:200]}",
+            "reply": f"Error processing tool result: {error_str[:300]}",
             "status": "error",
         }), 200
 
@@ -959,19 +840,17 @@ def plugin_tool_result():
 @require_auth
 def get_conversations():
     user = request.user
-    data = kv.get(f"convs_list:{user['id']}")
-    if not data:
-        return jsonify({})
+    data = store.get_conv_list(user["id"])
     return jsonify(data)
 
 @app.route("/api/conversations/<conv_id>", methods=["GET"])
 @require_auth
 def get_conversation(conv_id):
     user = request.user
-    conv_list = kv.get(f"convs_list:{user['id']}")
+    conv_list = store.get_conv_list(user["id"])
     if not conv_list or conv_id not in conv_list:
         return jsonify({"error": "Not found"}), 404
-    data = kv.get(f"conv:{conv_id}")
+    data = store.get_conv(conv_id)
     if not data:
         return jsonify({"error": "Not found"}), 404
     return jsonify(data)
@@ -995,29 +874,14 @@ def save_conversation():
         "sessionId": data.get("sessionId"),
         "updatedAt": data.get("updatedAt", int(time.time() * 1000)),
     }
-    kv.set(f"conv:{conv_id}", conv_data)
-
-    conv_list = kv.get(f"convs_list:{user['id']}") or {}
-    conv_list[conv_id] = {
-        "id": conv_id,
-        "title": conv_data["title"],
-        "mode": conv_data["mode"],
-        "model": conv_data["model"],
-        "updatedAt": conv_data["updatedAt"],
-    }
-    kv.set(f"convs_list:{user['id']}", conv_list)
-
+    store.save_conv(user["id"], conv_id, conv_data)
     return jsonify({"ok": True})
 
 @app.route("/api/conversations/<conv_id>", methods=["DELETE"])
 @require_auth
 def delete_conversation(conv_id):
     user = request.user
-    conv_list = kv.get(f"convs_list:{user['id']}") or {}
-    if conv_id in conv_list:
-        del conv_list[conv_id]
-        kv.set(f"convs_list:{user['id']}", conv_list)
-    kv.delete(f"conv:{conv_id}")
+    store.delete_conv(user["id"], conv_id)
     return jsonify({"ok": True})
 
 # ═══ STATUS / MODELS / PAGES ═══

@@ -262,7 +262,7 @@
           </button>
           <div class="credit-pill ok" id="credit-pill" title="Credits">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-            <span id="credit-pill-text">50.00</span>
+            <span id="credit-pill-text">10.00</span>
           </div>
         </div>
         <textarea id="chat-input" rows="1" placeholder="Ask about your Roblox game..."></textarea>
@@ -310,7 +310,7 @@
 const TOKEN_KEY='rux_token';
 const MODEL_LABELS={'gemini-flash':'Gemini Flash','gemini-pro':'Gemini Pro','sonnet':'Claude Sonnet','opus':'Claude Opus'};
 const MODE_LABELS={'chat':'Chat','agent':'Agent'};
-let token=null,userData=null,credits={balance:50.00,max:50.00,next_credit_at:0};
+let token=null,userData=null,credits={balance:10.00,max:10.00,next_credit_at:0};
 let sessionId=null,mode='chat',activeConvId=null,pendingSessionId=null;
 let isLoading=false,conversationHistory=[],currentMessages=[],selectedModel='sonnet';
 let pluginConnected=false,statusPoll=null,connectPoll=null,heartbeatInterval=null,lastShownToolId=null;
