@@ -554,51 +554,70 @@ def plugin_poll():
 
 @app.route("/plugin/tool_result", methods=["POST"])
 def plugin_tool_result():
-    data = request.get_json(force=True)
-    sid = data.get("session_id")
-    session = get_session(sid)
-    mk = session.get("model_key", DEFAULT_MODEL)
-    mi = resolve_model(mk)
-    if mi["provider"] == "google":
-        session["status"] = "error"
-        session["pending_tool_call"] = None
-        return jsonify({"reply": "Tools not supported for Google models.", "status": "error"}), 400
-    if session["step_count"] >= MAX_AGENT_STEPS:
-        session["status"] = "error"
-        session["pending_tool_call"] = None
-        return jsonify({"reply": "Max steps reached.", "status": "error"}), 400
-    pc = session.get("pending_tool_call")
-    if not pc:
-        return jsonify({"reply": "No pending tool call.", "status": "error"}), 400
-    session["step_count"] += 1
-    session["pending_tool_call"] = None
-    try:
-        prior = session.get("agent_messages", [])
-        tr = {"type": "tool_result", "tool_use_id": pc["id"], "content": json.dumps(data.get("tool_result"))}
-        cont = prior + [{"role": "user", "content": [tr]}]
-        r = call_anthropic(mi["id"], cont, tools=TOOL_DEFINITIONS)
-        session["agent_messages"] = cont + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
-        nt = None
-        ft = ""
-        for b in r.content:
-            if b.type == "tool_use":
-                nt = {"id": b.id, "name": b.name, "arguments": b.input}
-            elif b.type == "text":
-                ft += b.text
-        if ft:
-            session["accumulated_reply"] = session.get("accumulated_reply", "") + ft
-        if nt:
-            session["pending_tool_call"] = nt
-            session["status"] = "running"
-            return jsonify({"reply": ft or "Tool processed.", "status": "tool_requested", "tool_call": nt})
-        session["status"] = "done"
-        final_reply = session.get("accumulated_reply", "") or ft
-        session["latest_reply"] = final_reply
-        session["accumulated_reply"] = ""
-        return jsonify({"reply": final_reply, "status": "done"})
-    except Exception as e:
-        session["status"] = "error"
-        return jsonify({"reply": f"Failed: {e}", "status": "error"}), 500
+            data = request.get_json(force=True)
+            sid = data.get("session_id")
+            session = get_session(sid)
+            mk = session.get("model_key", DEFAULT_MODEL)
+            mi = resolve_model(mk)
+            if mi["provider"] == "google":
+                session["status"] = "error"
+                session["pending_tool_call"] = None
+                return jsonify({"reply": "Tools not supported for Google models.", "status": "error"}), 400
+
+            if session["step_count"] >= MAX_AGENT_STEPS:
+                session["status"] = "error"
+                session["pending_tool_call"] = None
+                return jsonify({"reply": "Max steps reached.", "status": "error"}), 400
+
+            pc = session.get("pending_tool_call")
+            if not pc:
+                session["status"] = "error"
+                session["pending_tool_call"] = None
+                return jsonify({"reply": "No pending tool call. Session expired — start a new conversation.", "status": "error"}), 200
+
+            session["step_count"] += 1
+            session["pending_tool_call"] = None
+            try:
+                prior = session.get("agent_messages", [])
+                # Session lost: prior should have messages but doesn't
+                if len(prior) == 0:
+                    session["status"] = "error"
+                    return jsonify({"reply": "Session expired. Start a new conversation.", "status": "error"}), 200
+
+                tr = {"type": "tool_result", "tool_use_id": pc["id"], "content": json.dumps(data.get("tool_result"), ensure_ascii=False)}
+                cont = prior + [{"role": "user", "content": [tr]}]
+                r = call_anthropic(mi["id"], cont, tools=TOOL_DEFINITIONS)
+                session["agent_messages"] = cont + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
+
+                nt = None
+                ft = ""
+                for b in r.content:
+                    if b.type == "tool_use":
+                        nt = {"id": b.id, "name": b.name, "arguments": b.input}
+                    elif b.type == "text":
+                        ft += b.text
+                if ft:
+                    session["accumulated_reply"] = session.get("accumulated_reply", "") + ft
+                if nt:
+                    session["pending_tool_call"] = nt
+                    session["status"] = "running"
+                    return jsonify({"reply": ft or "Tool processed.", "status": "tool_requested", "tool_call": nt})
+                session["status"] = "done"
+                final_reply = session.get("accumulated_reply", "") or ft
+                session["latest_reply"] = final_reply
+                session["accumulated_reply"] = ""
+                return jsonify({"reply": final_reply, "status": "done"})
+            except anthropic.APIError as e:
+                session["status"] = "error"
+                session["pending_tool_call"] = None
+                msg = "Conversation too long. Start a new conversation."
+                if "tool" in str(e).lower() or "id" in str(e).lower():
+                    msg = "Session lost. Start a new conversation."
+                return jsonify({"reply": msg, "status": "error"}), 200
+            except Exception as e:
+                session["status"] = "error"
+                session["pending_tool_call"] = None
+                return jsonify({"reply": "Internal error. Start a new conversation.", "status": "error"}), 500
 
 @app.route("/status", methods=["GET"])
 def get_status():
