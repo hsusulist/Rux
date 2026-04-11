@@ -50,12 +50,12 @@ CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 WEB_HEARTBEAT_TIMEOUT = 90
 
 MODELS = {
-    "gemini-flash": {"id": "gemini-2.5-flash", "provider": "google", "label": "Gemini Flash", "badge": "Fast", "credit_per_token": 0.001},
-    "gemini-pro": {"id": "gemini-2.5-pro", "provider": "google", "label": "Gemini Pro", "badge": "Smart", "credit_per_token": 0.003},
-    "sonnet": {"id": "claude-sonnet-4-6", "provider": "anthropic", "label": "Claude Sonnet", "badge": "Balanced", "credit_per_token": 0.005},
-    "opus": {"id": "claude-opus-4-6", "provider": "anthropic", "label": "Claude Opus", "badge": "Powerful", "credit_per_token": 0.01},
+    "gemini-flash": {"id": "gemini-2.5-flash", "provider": "google", "label": "Gemini Flash", "badge": "Fast", "credit_per_token": 0.0001},
+    "gemini-pro": {"id": "gemini-2.5-pro", "provider": "google", "label": "Gemini Pro", "badge": "Smart", "credit_per_token": 0.0003},
+    "sonnet": {"id": "claude-sonnet-4-6", "provider": "anthropic", "label": "Claude Sonnet", "badge": "Balanced", "credit_per_token": 0.0005},
+    "opus": {"id": "claude-opus-4-6", "provider": "anthropic", "label": "Claude Opus", "badge": "Powerful", "credit_per_token": 0.001},
 }
-DEFAULT_MODEL = "sonnet"
+DEFAULT_MODEL = "gemini-pro"
 
 # ═══ IN-MEMORY STATE ═══
 sessions = {}
