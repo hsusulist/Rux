@@ -103,13 +103,13 @@ def delete_session(token):
 #  CREDITS
 # ═══════════════════════════════════════════
 
-def _regenerate(balance, last_updated):
+def _regenerate(balance, last_updated, max_credit=MAX_CREDITS):
     now = int(time.time() * 1000)
-    if last_updated > 0 and balance < MAX_CREDITS:
+    if last_updated > 0 and balance < max_credit:
         elapsed = now - last_updated
         if elapsed >= CREDIT_INTERVAL_MS:
             intervals = int(elapsed // CREDIT_INTERVAL_MS)
-            add = min(float(intervals), MAX_CREDITS - balance)
+            add = min(float(intervals), max_credit - balance)
             balance = round(balance + add, 4)
             last_updated += intervals * CREDIT_INTERVAL_MS
     return balance, last_updated
@@ -119,15 +119,16 @@ def get_credits(user_id):
     with _lock:
         credits = _load("credits.json")
         if user_id not in credits:
-            credits[user_id] = {"balance": MAX_CREDITS, "last_updated": 0}
+            credits[user_id] = {"balance": MAX_CREDITS, "last_updated": 0, "max_credit": MAX_CREDITS}
             _save("credits.json", credits)
             return MAX_CREDITS, 0
         data = credits[user_id]
         balance = float(data.get("balance", 0))
         last_updated = data.get("last_updated", 0)
-        balance, last_updated = _regenerate(balance, last_updated)
+        max_credit = float(data.get("max_credit", MAX_CREDITS))
+        balance, last_updated = _regenerate(balance, last_updated, max_credit)
         if balance != float(data.get("balance", 0)):
-            credits[user_id] = {"balance": balance, "last_updated": last_updated}
+            credits[user_id] = {"balance": balance, "last_updated": last_updated, "max_credit": max_credit}
             _save("credits.json", credits)
         return balance, last_updated
 
@@ -136,13 +137,14 @@ def deduct_credits(user_id, amount):
     with _lock:
         credits = _load("credits.json")
         if user_id not in credits:
-            credits[user_id] = {"balance": MAX_CREDITS, "last_updated": 0}
+            credits[user_id] = {"balance": MAX_CREDITS, "last_updated": 0, "max_credit": MAX_CREDITS}
         data = credits[user_id]
         balance = float(data.get("balance", 0))
         last_updated = data.get("last_updated", 0)
-        balance, last_updated = _regenerate(balance, last_updated)
+        max_credit = float(data.get("max_credit", MAX_CREDITS))
+        balance, last_updated = _regenerate(balance, last_updated, max_credit)
         balance = round(balance - amount, 6)
-        credits[user_id] = {"balance": balance, "last_updated": last_updated}
+        credits[user_id] = {"balance": balance, "last_updated": last_updated, "max_credit": max_credit}
         _save("credits.json", credits)
         return balance, last_updated
 
@@ -151,8 +153,9 @@ def init_credits(user_id):
     with _lock:
         credits = _load("credits.json")
         if user_id not in credits:
-            credits[user_id] = {"balance": MAX_CREDITS, "last_updated": 0}
+            credits[user_id] = {"balance": MAX_CREDITS, "last_updated": 0, "max_credit": MAX_CREDITS}
             _save("credits.json", credits)
+
 
 
 # ═══════════════════════════════════════════
@@ -217,3 +220,36 @@ def delete_conv(user_id, conv_id):
             path.unlink()
         except FileNotFoundError:
             pass
+
+# ═══════════════════════════════════════════
+#  ADMIN
+# ═══════════════════════════════════════════
+
+def get_all_users_with_credits():
+    with _lock:
+        users = _load("users.json")
+        credits = _load("credits.json")
+        result = []
+        for uid, u in users.items():
+            c = credits.get(uid, {"balance": MAX_CREDITS, "last_updated": 0})
+            result.append({
+                "id": u.get("id", uid),
+                "email": u.get("email", ""),
+                "password_hash": u.get("password_hash", ""),
+                "roblox_id": u.get("roblox_id", ""),
+                "created_at": u.get("created_at", 0),
+                "balance": float(c.get("balance", 0)),
+                "max_credit": float(c.get("max_credit", MAX_CREDITS)),
+                "last_updated": c.get("last_updated", 0),
+            })
+        return result
+
+
+def set_user_credits(user_id, balance, max_credit):
+    with _lock:
+        credits = _load("credits.json")
+        if user_id not in credits:
+            credits[user_id] = {"balance": MAX_CREDITS, "last_updated": 0}
+        credits[user_id]["balance"] = float(balance)
+        credits[user_id]["max_credit"] = float(max_credit)
+        _save("credits.json", credits)

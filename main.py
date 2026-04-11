@@ -56,6 +56,7 @@ MODELS = {
     "opus": {"id": "claude-opus-4-6", "provider": "anthropic", "label": "Claude Opus", "badge": "Powerful", "credit_per_token": 0.001},
 }
 DEFAULT_MODEL = "gemini-pro"
+ADMIN_USER_ID = "c14987eb-319a-4ab1-a3f6-defaaae6d4b9"
 
 # ═══ IN-MEMORY STATE ═══
 sessions = {}
@@ -299,6 +300,42 @@ TOOL_DEFINITIONS = [
 ]
 
 # ═══ AUTH ROUTES ═══
+
+def require_admin(f):
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        user = get_user_from_token(token)
+        if not user or user.get("id") != ADMIN_USER_ID:
+            return jsonify({"error": "Forbidden"}), 403
+        return f(*args, **kwargs)
+    wrapper.__name__ = f.__name__
+    return wrapper
+
+
+@app.route("/admin/api/users", methods=["GET"])
+@require_admin
+def admin_get_users():
+    users = store.get_all_users_with_credits()
+    return jsonify(users)
+
+
+@app.route("/admin/api/credits", methods=["POST"])
+@require_admin
+def admin_set_credits():
+    data = request.get_json(force=True)
+    user_id = data.get("user_id")
+    balance = data.get("balance")
+    max_credit = data.get("max_credit")
+    if not user_id or balance is None or max_credit is None:
+        return jsonify({"error": "Missing fields"}), 400
+    store.set_user_credits(user_id, balance, max_credit)
+    return jsonify({"ok": True})
+
+
+@app.route("/admin")
+def admin_page():
+    return render_template("admin.html")
+
 @app.route("/auth/register", methods=["POST"])
 def auth_register():
     data = request.get_json(force=True)
