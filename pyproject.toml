@@ -11,5 +11,6 @@ dependencies = [
     "google-genai>=1.71.0",
     "google-generativeai>=0.8.6",
     "gunicorn>=25.3.0",
+    "openai>=2.31.0",
     "psycopg2-binary>=2.9.11",
 ]

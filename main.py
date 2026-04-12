@@ -22,6 +22,7 @@ except ImportError:
     GEMINI_AVAILABLE = False
 
 from anthropic import Anthropic
+from openai import OpenAI
 
 import store
 
@@ -49,6 +50,22 @@ if GEMINI_AVAILABLE and os.environ.get("AI_INTEGRATIONS_GEMINI_API_KEY"):
 else:
     gemini_client = None
 
+try:
+    openai_client = OpenAI(
+        api_key=os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY"),
+        base_url=os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL"),
+    )
+except Exception:
+    openai_client = None
+
+try:
+    openrouter_client = OpenAI(
+        api_key=os.environ.get("AI_INTEGRATIONS_OPENROUTER_API_KEY"),
+        base_url=os.environ.get("AI_INTEGRATIONS_OPENROUTER_BASE_URL"),
+    )
+except Exception:
+    openrouter_client = None
+
 MAX_AGENT_STEPS = 20
 MAX_TOOL_RESULT_CHARS = 30000
 CODE_EXPIRY_MS = 5 * 60 * 1000
@@ -60,6 +77,13 @@ MODELS = {
     "gemini-pro": {"id": "gemini-2.5-pro", "provider": "google", "label": "Gemini Pro", "badge": "Smart", "credit_per_token": 0.0003},
     "sonnet": {"id": "claude-sonnet-4-6", "provider": "anthropic", "label": "Claude Sonnet", "badge": "Balanced", "credit_per_token": 0.0005},
     "opus": {"id": "claude-opus-4-6", "provider": "anthropic", "label": "Claude Opus", "badge": "Powerful", "credit_per_token": 0.001},
+    "gpt-5-chat": {"id": "gpt-5.3-chat", "provider": "openai", "label": "GPT-5.3 Chat", "badge": "Smart", "credit_per_token": 0.0005},
+    "gpt-5-codex": {"id": "gpt-5.3-codex", "provider": "openai", "label": "GPT-5.3 Codex", "badge": "Code", "credit_per_token": 0.0005},
+    "qwen-coder": {"id": "qwen/qwen3-coder-next", "provider": "openrouter", "label": "Qwen3 Coder", "badge": "Code", "credit_per_token": 0.0002},
+    "glm-5": {"id": "z-ai/glm-5.1", "provider": "openrouter", "label": "GLM-5.1", "badge": "Fast", "credit_per_token": 0.0002},
+    "grok-4": {"id": "x-ai/grok-4.20", "provider": "openrouter", "label": "Grok 4", "badge": "Smart", "credit_per_token": 0.0004},
+    "gemma-31b": {"id": "google/gemma-4-31b-it:free", "provider": "openrouter", "label": "Gemma 4 31B", "badge": "Free", "credit_per_token": 0},
+    "gemma-26b": {"id": "google/gemma-4-26b-a4b-it:free", "provider": "openrouter", "label": "Gemma 4 26B", "badge": "Free", "credit_per_token": 0},
 }
 DEFAULT_MODEL = "gemini-pro"
 OWNER_ID = "c14987eb-319a-4ab1-a3f6-defaaae6d4b9"
@@ -295,6 +319,27 @@ def call_gemini(model_id, messages):
     except Exception:
         pass
     return resp.text, output_tokens
+
+def call_openai_compat(client, model_id, messages):
+    if not client:
+        raise Exception("AI provider not available")
+    oai_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for m in messages:
+        role = m["role"] if m["role"] in ("user", "assistant") else "user"
+        content = m["content"] if isinstance(m["content"], str) else json.dumps(m["content"])
+        oai_messages.append({"role": role, "content": content})
+    resp = client.chat.completions.create(
+        model=model_id,
+        messages=oai_messages,
+        max_completion_tokens=8192,
+    )
+    text = resp.choices[0].message.content or ""
+    output_tokens = 0
+    try:
+        output_tokens = resp.usage.completion_tokens or 0
+    except Exception:
+        pass
+    return text, output_tokens
 
 SYSTEM_PROMPT = """You are Rux, a Roblox Studio and Luau expert AI assistant connected to a live Roblox Studio plugin via a tool bridge.
 
@@ -718,6 +763,19 @@ def ai():
                     "model": mi["label"], "credits": round(balance, 2),
                     "tokens_used": output_tokens,
                 })
+            elif prov in ("openai", "openrouter"):
+                client = openai_client if prov == "openai" else openrouter_client
+                reply, output_tokens = call_openai_compat(client, mid, msgs)
+                cost = round(output_tokens * cpt, 6)
+                balance, _ = store.deduct_credits(user["id"], cost)
+                session["latest_reply"] = reply
+                session["status"] = "done"
+                return jsonify({
+                    "session_id": session_id, "reply": reply,
+                    "tool_calls": [], "plan": None, "status": "done",
+                    "model": mi["label"], "credits": round(balance, 2),
+                    "tokens_used": output_tokens,
+                })
             else:
                 reply, output_tokens = call_gemini(mid, msgs)
                 cost = round(output_tokens * cpt, 6)
@@ -732,10 +790,10 @@ def ai():
                 })
 
         elif mode == "agent":
-            if prov == "google":
+            if prov != "anthropic":
                 return jsonify({
                     "session_id": session_id,
-                    "reply": "Agent mode requires Claude models.",
+                    "reply": "Agent mode requires a Claude model. Please switch to Claude Sonnet or Claude Opus.",
                     "tool_calls": [], "plan": None, "status": "done",
                     "model": mi["label"], "credits": round(balance, 2), "tokens_used": 0,
                 })
@@ -797,10 +855,10 @@ def approve_agent():
     session["accumulated_reply"] = ""
     mi = resolve_model(session.get("model_key", DEFAULT_MODEL))
     cpt = mi["credit_per_token"]
-    if mi["provider"] == "google":
+    if mi["provider"] != "anthropic":
         session["status"] = "error"
         return jsonify({
-            "session_id": session_id, "reply": "Agent requires Claude.",
+            "session_id": session_id, "reply": "Agent mode requires a Claude model.",
             "tool_calls": [], "plan": session.get("plan"),
             "status": "error", "credits": 0, "tokens_used": 0,
         }), 400
@@ -904,10 +962,10 @@ def plugin_tool_result():
     mi = resolve_model(mk)
     cpt = mi["credit_per_token"]
 
-    if mi["provider"] == "google":
+    if mi["provider"] != "anthropic":
         session["status"] = "error"
         session["pending_tool_call"] = None
-        return jsonify({"reply": "Tools not supported for Google models.", "status": "error"}), 400
+        return jsonify({"reply": "Tool use only supported with Claude models.", "status": "error"}), 400
 
     if session["step_count"] >= MAX_AGENT_STEPS:
         session["status"] = "error"
