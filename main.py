@@ -86,7 +86,7 @@ MODELS = {
     "gemma-26b": {"id": "google/gemma-4-26b-a4b-it:free", "provider": "openrouter", "label": "Gemma 4 26B", "badge": "Free", "credit_per_token": 0},
 }
 DEFAULT_MODEL = "gemini-pro"
-OWNER_ID = "c14987eb-319a-4ab1-a3f6-defaaae6d4b9"
+OWNER_ID = "418f27dc-3ad3-48f6-b725-a00de0091926"
 
 def get_user_from_token(token):
     if not token:

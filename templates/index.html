@@ -148,20 +148,29 @@
     .no-credits{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:min(680px,calc(100% - 80px));padding:14px 24px;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:12px;z-index:20}
     .no-credits-text{font-size:12px;color:var(--text2)}
     .no-credits-time{font-size:10px;color:var(--muted);margin-top:2px}
-    .picker-dropdown{position:absolute;bottom:calc(100% + 6px);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:4px;display:none;flex-direction:column;gap:1px;box-shadow:0 -6px 30px rgba(0,0,0,.5);z-index:50;min-width:200px}
+    .picker-dropdown{position:absolute;bottom:calc(100% + 6px);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:4px;display:none;flex-direction:column;gap:1px;box-shadow:0 -6px 30px rgba(0,0,0,.5);z-index:50;min-width:220px}
     .picker-dropdown.open{display:flex;animation:pickerIn .15s ease both}
     .picker-dropdown.left{left:0}
     .picker-dropdown.right{right:0}
     @keyframes pickerIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .picker-tabs{display:flex;gap:2px;padding:3px;border-bottom:1px solid var(--border);margin:-4px -4px 3px;flex-shrink:0}
+    .picker-tab{flex:1;padding:5px 3px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border-radius:5px;transition:all .12s;white-space:nowrap;letter-spacing:.1px}
+    .picker-tab:hover{color:var(--text2);background:rgba(255,255,255,.04)}
+    .picker-tab.active{color:var(--text);background:var(--surface3)}
+    .picker-options-list{display:flex;flex-direction:column;gap:1px;overflow-y:auto;max-height:280px}
+    .picker-options-list::-webkit-scrollbar{width:2px}
+    .picker-options-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
     .picker-option{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .1s;border:1px solid transparent}
     .picker-option:hover{background:var(--surface3)}
     .picker-option.selected{background:var(--surface3);border-color:var(--border2)}
+    .picker-option.hidden{display:none}
     .picker-option-icon{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surface)}
     .picker-option-icon svg{width:13px;height:13px}
     .picker-option-body{flex:1;min-width:0}
     .picker-option-name{font-size:11.5px;font-weight:600}
     .picker-option-desc{font-size:9.5px;color:var(--muted);margin-top:1px}
     .picker-option-badge{font-size:8.5px;font-weight:600;padding:1px 7px;border-radius:16px;background:var(--surface3);color:var(--text2);border:1px solid var(--border);flex-shrink:0}
+    .picker-option-badge.free{color:#4ade80;border-color:rgba(74,222,128,.2);background:rgba(74,222,128,.06)}
     .input-shell{display:flex;align-items:flex-start;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px;transition:border-color .2s}
     .input-shell:focus-within{border-color:var(--border2)}
     #chat-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13.5px;font-family:'Inter',sans-serif;resize:none;min-height:28px;max-height:200px;line-height:1.55;padding-top:2px}
@@ -271,10 +280,26 @@
     </div>
     <div class="input-area" id="input-area">
       <div class="picker-dropdown left" id="model-picker">
-        <div class="picker-option" data-key="gemini-flash" onclick="selectModel('gemini-flash')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#888"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#666"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#555"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#444"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemini Flash</div><div class="picker-option-desc">Fast responses</div></div><div class="picker-option-badge">Fast</div></div>
-        <div class="picker-option" data-key="gemini-pro" onclick="selectModel('gemini-pro')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#888"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#666"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#555"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#444"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemini Pro</div><div class="picker-option-desc">Deep reasoning</div></div><div class="picker-option-badge">Smart</div></div>
-        <div class="picker-option selected" data-key="sonnet" onclick="selectModel('sonnet')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="var(--text2)"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Claude Sonnet</div><div class="picker-option-desc">Balanced</div></div><div class="picker-option-badge">Default</div></div>
-        <div class="picker-option" data-key="opus" onclick="selectModel('opus')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="var(--text2)"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Claude Opus</div><div class="picker-option-desc">Maximum intelligence</div></div><div class="picker-option-badge">Power</div></div>
+        <div class="picker-tabs">
+          <button class="picker-tab active" data-tab="all" onclick="switchModelTab('all')">All</button>
+          <button class="picker-tab" data-tab="google" onclick="switchModelTab('google')">Google</button>
+          <button class="picker-tab" data-tab="anthropic" onclick="switchModelTab('anthropic')">Anthropic</button>
+          <button class="picker-tab" data-tab="openai" onclick="switchModelTab('openai')">OpenAI</button>
+          <button class="picker-tab" data-tab="openrouter" onclick="switchModelTab('openrouter')">OpenRouter</button>
+        </div>
+        <div class="picker-options-list">
+          <div class="picker-option" data-key="gemini-flash" data-provider="google" onclick="selectModel('gemini-flash')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#888"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#666"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#555"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#444"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemini Flash</div><div class="picker-option-desc">Fast responses</div></div><div class="picker-option-badge">Fast</div></div>
+          <div class="picker-option" data-key="gemini-pro" data-provider="google" onclick="selectModel('gemini-pro')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#888"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#666"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#555"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#444"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemini Pro</div><div class="picker-option-desc">Deep reasoning</div></div><div class="picker-option-badge">Smart</div></div>
+          <div class="picker-option selected" data-key="sonnet" data-provider="anthropic" onclick="selectModel('sonnet')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="var(--text2)"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Claude Sonnet</div><div class="picker-option-desc">Balanced</div></div><div class="picker-option-badge">Default</div></div>
+          <div class="picker-option" data-key="opus" data-provider="anthropic" onclick="selectModel('opus')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="var(--text2)"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Claude Opus</div><div class="picker-option-desc">Maximum intelligence</div></div><div class="picker-option-badge">Power</div></div>
+          <div class="picker-option" data-key="gpt-5-chat" data-provider="openai" onclick="selectModel('gpt-5-chat')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text2)"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">GPT-5.3 Chat</div><div class="picker-option-desc">General purpose</div></div><div class="picker-option-badge">Smart</div></div>
+          <div class="picker-option" data-key="gpt-5-codex" data-provider="openai" onclick="selectModel('gpt-5-codex')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text2)"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">GPT-5.3 Codex</div><div class="picker-option-desc">Code focused</div></div><div class="picker-option-badge">Code</div></div>
+          <div class="picker-option" data-key="qwen-coder" data-provider="openrouter" onclick="selectModel('qwen-coder')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text2)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Qwen3 Coder</div><div class="picker-option-desc">Code generation</div></div><div class="picker-option-badge">Code</div></div>
+          <div class="picker-option" data-key="glm-5" data-provider="openrouter" onclick="selectModel('glm-5')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text2)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">GLM-5.1</div><div class="picker-option-desc">Fast &amp; efficient</div></div><div class="picker-option-badge">Fast</div></div>
+          <div class="picker-option" data-key="grok-4" data-provider="openrouter" onclick="selectModel('grok-4')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text2)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Grok 4</div><div class="picker-option-desc">Advanced reasoning</div></div><div class="picker-option-badge">Smart</div></div>
+          <div class="picker-option" data-key="gemma-31b" data-provider="openrouter" onclick="selectModel('gemma-31b')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text2)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemma 4 31B</div><div class="picker-option-desc">Open · No credits</div></div><div class="picker-option-badge free">Free</div></div>
+          <div class="picker-option" data-key="gemma-26b" data-provider="openrouter" onclick="selectModel('gemma-26b')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text2)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemma 4 26B</div><div class="picker-option-desc">Open · No credits</div></div><div class="picker-option-badge free">Free</div></div>
+        </div>
       </div>
       <div class="picker-dropdown right" id="mode-picker">
         <div class="picker-option selected" data-mode="chat" onclick="selectMode('chat')">
@@ -341,11 +366,12 @@
 
 <script>
 const TOKEN_KEY='rux_token';
-const MODEL_LABELS={'gemini-flash':'Gemini Flash','gemini-pro':'Gemini Pro','sonnet':'Claude Sonnet','opus':'Claude Opus'};
+const MODEL_LABELS={'gemini-flash':'Gemini Flash','gemini-pro':'Gemini Pro','sonnet':'Claude Sonnet','opus':'Claude Opus','gpt-5-chat':'GPT-5.3 Chat','gpt-5-codex':'GPT-5.3 Codex','qwen-coder':'Qwen3 Coder','glm-5':'GLM-5.1','grok-4':'Grok 4','gemma-31b':'Gemma 4 31B','gemma-26b':'Gemma 4 26B'};
 const MODE_LABELS={'chat':'Chat','agent':'Agent'};
 let token=null,userData=null,credits={balance:10.00,max:10.00,next_credit_at:0};
 let sessionId=null,mode='chat',activeConvId=null,pendingSessionId=null;
 let isLoading=false,conversationHistory=[],currentMessages=[],selectedModel='sonnet';
+let activeModelTab='all';
 let pluginConnected=false,statusPoll=null,connectPoll=null,heartbeatInterval=null,lastShownToolId=null;
 let openPicker=null,inConversation=false,convCache={};
 let agentStepCount=0,agentTotalTokens=0,agentTotalSteps=0,lastToolNameForResult='';
@@ -411,9 +437,10 @@ function updateInputState(){const ia=document.getElementById('input-area'),nc=do
 
 function setViewMode(chatting){inConversation=chatting;document.getElementById('dashboard').classList.toggle('hidden',chatting);document.getElementById('messages').classList.toggle('show',chatting);}
 function togglePicker(which){const other=which==='model'?'mode':'model';document.getElementById(other+'-picker').classList.remove('open');const mp=document.getElementById(which+'-picker');if(openPicker===which){mp.classList.remove('open');openPicker=null;return;}mp.classList.add('open');openPicker=which;}
+function switchModelTab(tab){activeModelTab=tab;document.querySelectorAll('#model-picker .picker-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));document.querySelectorAll('#model-picker .picker-option').forEach(o=>{const show=tab==='all'||o.dataset.provider===tab;o.classList.toggle('hidden',!show);});}
 function selectModel(k){selectedModel=k;updateModelUI();document.getElementById('model-picker').classList.remove('open');openPicker=null;}
 function selectMode(m){mode=m;updateModeUI();document.getElementById('mode-picker').classList.remove('open');openPicker=null;updateInputState();}
-function updateModelUI(){document.getElementById('model-label').textContent=(MODEL_LABELS[selectedModel]||'Sonnet').replace('Claude ','');document.querySelectorAll('#model-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.key===selectedModel));}
+function updateModelUI(){const lbl=MODEL_LABELS[selectedModel]||'Sonnet';document.getElementById('model-label').textContent=lbl.replace('Claude ','').replace('Gemini ','').replace('GPT-','GPT-');document.querySelectorAll('#model-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.key===selectedModel));}
 function updateModeUI(){document.getElementById('mode-label').textContent=MODE_LABELS[mode]||'Chat';document.querySelectorAll('#mode-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.mode===mode));}
 document.addEventListener('click',e=>{if(!e.target.closest('.picker-trigger')&&!e.target.closest('.picker-dropdown')){document.getElementById('model-picker').classList.remove('open');document.getElementById('mode-picker').classList.remove('open');openPicker=null;}});
 
