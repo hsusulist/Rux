@@ -3,5 +3,10 @@
     "balance": 10.0,
     "last_updated": 0,
     "max_credit": 10.0
+  },
+  "06ecf103-f6f2-4935-9f78-f20d8c6bb273": {
+    "balance": 10.0,
+    "last_updated": 0,
+    "max_credit": 10.0
   }
 }

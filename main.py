@@ -56,8 +56,62 @@ MODELS = {
     "opus": {"id": "claude-opus-4-6", "provider": "anthropic", "label": "Claude Opus", "badge": "Powerful", "credit_per_token": 0.001},
 }
 DEFAULT_MODEL = "gemini-pro"
-ADMIN_USER_ID = "c14987eb-319a-4ab1-a3f6-defaaae6d4b9"
+OWNER_ID = "c14987eb-319a-4ab1-a3f6-defaaae6d4b9"
 
+def get_user_from_token(token):
+    if not token:
+        return None
+    s = store.get_session(token)
+    if not s:
+        return None
+    return store.get_user_by_id(s["user_id"])
+
+def require_auth(f):
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        user = get_user_from_token(token)
+        if not user:
+            return jsonify({"error": "Unauthorized"}), 401
+        if user.get("blocked"):
+            return jsonify({"error": "Account blocked", "blocked": True}), 403
+        request.user = user
+        return f(*args, **kwargs)
+    wrapper.__name__ = f.__name__
+    return wrapper
+
+def require_admin(f):
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        user = get_user_from_token(token)
+        if not user or not store.is_admin(user.get("id", "")):
+            return jsonify({"error": "Forbidden"}), 403
+        request.user = user
+        return f(*args, **kwargs)
+    wrapper.__name__ = f.__name__
+    return wrapper
+
+def require_owner(f):
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        user = get_user_from_token(token)
+        if not user or user.get("id") != OWNER_ID:
+            return jsonify({"error": "Owner only"}), 403
+        request.user = user
+        return f(*args, **kwargs)
+    wrapper.__name__ = f.__name__
+    return wrapper
+
+@app.before_request
+def check_maintenance():
+    if request.path.startswith("/admin"):
+        return None
+    if request.path.startswith("/auth/login") or request.path == "/":
+        return None
+    if request.path.startswith("/static"):
+        return None
+    if store.is_maintenance():
+        return jsonify({"error": "maintenance", "message": "Site is under maintenance. Please try again later."}), 503
+        
 # ═══ IN-MEMORY STATE ═══
 sessions = {}
 sessions_lock = Lock()
@@ -82,24 +136,7 @@ def verify_password(password, hashed):
     except Exception:
         return False
 
-def get_user_from_token(token):
-    if not token:
-        return None
-    s = store.get_session(token)
-    if not s:
-        return None
-    return store.get_user_by_id(s["user_id"])
 
-def require_auth(f):
-    def wrapper(*args, **kwargs):
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        user = get_user_from_token(token)
-        if not user:
-            return jsonify({"error": "Unauthorized"}), 401
-        request.user = user
-        return f(*args, **kwargs)
-    wrapper.__name__ = f.__name__
-    return wrapper
 
 # ═══ WEB HEARTBEAT HELPERS ═══
 def update_web_heartbeat(user_id):
@@ -301,23 +338,11 @@ TOOL_DEFINITIONS = [
 
 # ═══ ADMIN ROUTES ═══
 
-def require_admin(f):
-    def wrapper(*args, **kwargs):
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        user = get_user_from_token(token)
-        if not user or user.get("id") != ADMIN_USER_ID:
-            return jsonify({"error": "Forbidden"}), 403
-        return f(*args, **kwargs)
-    wrapper.__name__ = f.__name__
-    return wrapper
-
-
 @app.route("/admin/api/users", methods=["GET"])
 @require_admin
 def admin_get_users():
     users = store.get_all_users_with_credits()
     return jsonify(users)
-
 
 @app.route("/admin/api/credits", methods=["POST"])
 @require_admin
@@ -331,10 +356,73 @@ def admin_set_credits():
     store.set_user_credits(user_id, balance, max_credit)
     return jsonify({"ok": True})
 
+@app.route("/admin/api/block", methods=["POST"])
+@require_admin
+def admin_block_user():
+    data = request.get_json(force=True)
+    user_id = data.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+    if user_id == OWNER_ID:
+        return jsonify({"error": "Cannot block owner"}), 403
+    if store.is_admin(user_id) and request.user.get("id") != OWNER_ID:
+        return jsonify({"error": "Only owner can block admins"}), 403
+    store.block_user(user_id)
+    return jsonify({"ok": True})
 
-@app.route("/admin")
-def admin_page():
-    return render_template("admin.html")
+@app.route("/admin/api/unblock", methods=["POST"])
+@require_admin
+def admin_unblock_user():
+    data = request.get_json(force=True)
+    user_id = data.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+    store.unblock_user(user_id)
+    return jsonify({"ok": True})
+
+@app.route("/admin/api/promote", methods=["POST"])
+@require_owner
+def admin_promote_user():
+    data = request.get_json(force=True)
+    user_id = data.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+    store.add_admin(user_id)
+    return jsonify({"ok": True})
+
+@app.route("/admin/api/demote", methods=["POST"])
+@require_owner
+def admin_demote_user():
+    data = request.get_json(force=True)
+    user_id = data.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+    if user_id == OWNER_ID:
+        return jsonify({"error": "Cannot demote owner"}), 403
+    store.remove_admin(user_id)
+    return jsonify({"ok": True})
+
+@app.route("/admin/api/user/<user_id>", methods=["DELETE"])
+@require_owner
+def admin_delete_user(user_id):
+    if user_id == OWNER_ID:
+        return jsonify({"error": "Cannot delete owner"}), 403
+    if not store.delete_user(user_id):
+        return jsonify({"error": "Failed to delete"}), 400
+    return jsonify({"ok": True})
+
+@app.route("/admin/api/maintenance", methods=["GET"])
+@require_admin
+def admin_get_maintenance():
+    return jsonify({"enabled": store.is_maintenance()})
+
+@app.route("/admin/api/maintenance", methods=["POST"])
+@require_admin
+def admin_set_maintenance():
+    data = request.get_json(force=True)
+    enabled = data.get("enabled", False)
+    store.set_maintenance(enabled)
+    return jsonify({"ok": True, "enabled": enabled})
 
 @app.route("/admin/api/export", methods=["GET"])
 @require_admin
@@ -342,15 +430,18 @@ def admin_export():
     data = store.export_all()
     return jsonify(data)
 
-
 @app.route("/admin/api/import", methods=["POST"])
-@require_admin
+@require_owner
 def admin_import():
     data = request.get_json(force=True)
     if not data:
         return jsonify({"error": "No data provided"}), 400
     store.import_all(data)
     return jsonify({"ok": True})
+
+@app.route("/admin")
+def admin_page():
+    return render_template("admin.html")
 
 
 # ═══ AUTH ROUTES ═══

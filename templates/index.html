@@ -368,7 +368,27 @@ document.getElementById('logout-btn').addEventListener('click',doLogout);
 
 async function enterApp(){const r=await api('/auth/me');if(!r)return;credits=r.data.credits;sessionId=r.data.session_id;updateCreditUI();if(sessionId)pluginConnected=true;updatePluginUI();enterChat();loadConversations();startWebHeartbeat();}
 
-function sendHeartbeat(){return api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>{if(!r)return;if(r.data.plugin_connected&&!pluginConnected){pluginConnected=true;updatePluginUI();updateInputState();}else if(!r.data.plugin_connected&&pluginConnected){pluginConnected=false;updatePluginUI();updateInputState();}if(r.data.credits!=null){credits.balance=r.data.credits;updateCreditUI();updateInputState();}if(r.data.session_id)sessionId=r.data.session_id;}).catch(()=>{});}
+  function sendHeartbeat(){
+    return api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>{
+      if(!r)return;
+      // Maintenance check
+      if(r.status===503 && r.data && r.data.error==='maintenance'){
+        if(!document.getElementById('maintenance-screen')){
+          const ms=document.createElement('div');ms.id='maintenance-screen';
+          ms.style.cssText='position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px';
+          ms.innerHTML='<div style="font-size:24px">⚙️</div><div style="font-size:16px;font-weight:700;color:#fff">Under Maintenance</div><div style="font-size:12px;color:#555">We\'ll be back shortly.</div>';
+          document.body.appendChild(ms);
+        }
+        return;
+      }
+      // Remove maintenance screen if site is back
+      const ms=document.getElementById('maintenance-screen');if(ms)ms.remove();
+      if(r.data.plugin_connected&&!pluginConnected){pluginConnected=true;updatePluginUI();updateInputState();}
+      else if(!r.data.plugin_connected&&pluginConnected){pluginConnected=false;updatePluginUI();updateInputState();}
+      if(r.data.credits!=null){credits.balance=r.data.credits;updateCreditUI();updateInputState();}
+      if(r.data.session_id)sessionId=r.data.session_id;
+    }).catch(()=>{});
+  }
 function startWebHeartbeat(){if(heartbeatInterval)clearInterval(heartbeatInterval);sendHeartbeat();heartbeatInterval=setInterval(sendHeartbeat,10000);}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')sendHeartbeat();});
 

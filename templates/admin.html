@@ -9,40 +9,96 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#000;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--text:#fff;--text2:#888;--muted:#555;--accent:#e6be46;--accent2:rgba(230,190,70,.1);--danger:#e5484d;--danger2:rgba(229,72,77,.12)}
+    :root{--bg:#000;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--text:#fff;--text2:#888;--muted:#555;--accent:#e6be46;--accent2:rgba(230,190,70,.1);--danger:#e5484d;--danger2:rgba(229,72,77,.12);--blue:#60a5fa;--blue2:rgba(96,165,250,.12);--green:#4ade80;--green2:rgba(74,222,128,.1)}
     body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
-    .container{max-width:1100px;margin:0 auto;padding:40px 24px}
-    .header{display:flex;align-items:center;gap:14px;margin-bottom:36px}
+    .container{max-width:1200px;margin:0 auto;padding:40px 24px}
+
+    .header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
     .header-icon{width:32px;height:32px;border:1px solid var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center}
     .header-icon svg{width:15px;height:15px;fill:var(--accent)}
     .header-title{font-size:20px;font-weight:800;letter-spacing:-.5px}
-    .header-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);background:var(--accent2);padding:3px 10px;border-radius:20px}
+    .header-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 10px;border-radius:20px}
+    .badge-owner{color:var(--accent);background:var(--accent2)}
+    .badge-admin{color:var(--blue);background:var(--blue2)}
     .header-spacer{flex:1}
     .header-status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
     .header-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-    /* Stats */
+    .maintenance-bar{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;margin-bottom:20px}
+    .maintenance-bar.hidden{display:none}
+    .maintenance-icon{font-size:16px}
+    .maintenance-text{font-size:12px;color:#f59e0b;font-weight:600;flex:1}
+    .maintenance-btn{padding:5px 12px;border-radius:6px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.1);color:#f59e0b;transition:all .12s}
+    .maintenance-btn:hover{background:rgba(245,158,11,.2)}
+
     .stats-row{display:flex;gap:12px;margin-bottom:20px}
     .stat-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
     .stat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
     .stat-value{font-size:24px;font-weight:800;letter-spacing:-1px}
-    .stat-sub{font-size:10px;color:var(--text2);margin-top:2px}
+
+    .section{margin-bottom:24px}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .section-title{font-size:13px;font-weight:700;letter-spacing:-.2px}
+    .search-box{padding:6px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none;width:220px;transition:border-color .15s}
+    .search-box:focus{border-color:var(--accent)}
+    .search-box::placeholder{color:var(--muted)}
+
+    .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    table{width:100%;border-collapse:collapse}
+    thead{background:var(--surface2)}
+    th{padding:10px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)}
+    td{padding:10px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(255,255,255,.02)}
+    .email-cell{font-weight:600;color:var(--text)}
+    .id-cell{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .credit-cell{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent)}
+    .max-cell{font-family:'JetBrains Mono',monospace;color:var(--text2)}
+    .date-cell{font-size:10px;color:var(--muted)}
+    .rbx-cell{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .empty-row td{text-align:center;color:var(--muted);padding:40px;font-style:italic}
+
+    .role-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    .role-owner{color:var(--accent);background:var(--accent2)}
+    .role-admin{color:var(--blue);background:var(--blue2)}
+    .role-user{color:var(--muted);background:var(--surface3)}
+
+    .status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    .status-active{color:var(--green);background:var(--green2)}
+    .status-blocked{color:var(--danger);background:var(--danger2)}
+
+    .actions-cell{display:flex;gap:4px;flex-wrap:wrap}
+    .btn-sm{padding:4px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .12s}
+    .btn-edit{background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
+    .btn-edit:hover{color:var(--text);border-color:var(--muted)}
+    .btn-block{background:var(--danger2);color:var(--danger);border:1px solid rgba(229,72,77,.15)}
+    .btn-block:hover{background:rgba(229,72,77,.2)}
+    .btn-unblock{background:var(--green2);color:var(--green);border:1px solid rgba(74,222,128,.15)}
+    .btn-unblock:hover{background:rgba(74,222,128,.18)}
+    .btn-promote{background:var(--blue2);color:var(--blue);border:1px solid rgba(96,165,250,.15)}
+    .btn-promote:hover{background:rgba(96,165,250,.18)}
+    .btn-demote{background:var(--accent2);color:var(--accent);border:1px solid rgba(230,190,70,.15)}
+    .btn-demote:hover{background:rgba(230,190,70,.18)}
+    .btn-delete{background:rgba(255,255,255,.03);color:#777;border:1px solid var(--border2)}
+    .btn-delete:hover{color:var(--danger);border-color:rgba(229,72,77,.3)}
+    .btn-disabled{opacity:.25;cursor:not-allowed;pointer-events:none}
 
     /* Backup card */
     .backup-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px}
     .backup-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
-    .backup-actions{display:flex;gap:8px;margin-bottom:12px}
-    .btn-sm{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .12s}
+    .backup-actions{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
     .btn-accent{background:var(--accent);color:#000}
     .btn-accent:hover{opacity:.85}
-    .btn-accent:disabled{opacity:.4;cursor:not-allowed}
+    .btn-accent:disabled,.btn-outline:disabled,.btn-danger-sm:disabled{opacity:.4;cursor:not-allowed}
     .btn-outline{background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
     .btn-outline:hover{color:var(--text);border-color:var(--muted)}
-    .btn-outline:disabled{opacity:.4;cursor:not-allowed}
-    .btn-danger{background:var(--danger2);color:var(--danger);border:1px solid rgba(229,72,77,.2)}
-    .btn-danger:hover{background:rgba(229,72,77,.18)}
-    .btn-danger:disabled{opacity:.4;cursor:not-allowed}
+    .btn-danger-sm{background:var(--danger2);color:var(--danger);border:1px solid rgba(229,72,77,.2)}
+    .btn-danger-sm:hover{background:rgba(229,72,77,.18)}
+    .btn-warn{background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.2)}
+    .btn-warn:hover{background:rgba(245,158,11,.18)}
+    .btn-green{background:var(--green2);color:var(--green);border:1px solid rgba(74,222,128,.15)}
+    .btn-green:hover{background:rgba(74,222,128,.18)}
     .backup-textarea{width:100%;height:120px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;outline:none;resize:vertical;transition:border-color .15s;line-height:1.5}
     .backup-textarea:focus{border-color:var(--accent)}
     .backup-textarea::placeholder{color:var(--muted)}
@@ -50,28 +106,18 @@
     .backup-hint{font-size:9px;color:var(--muted);line-height:1.5}
     .backup-size{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace}
 
-    /* Table */
-    .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-    table{width:100%;border-collapse:collapse}
-    thead{background:var(--surface2)}
-    th{padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)}
-    td{padding:10px 14px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
-    tr:last-child td{border-bottom:none}
-    tr:hover td{background:rgba(255,255,255,.02)}
-    .email-cell{font-weight:600;color:var(--text)}
-    .id-cell{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .pw-cell{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;transition:color .15s}
-    .pw-cell:hover{color:var(--text2)}
-    .credit-cell{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent)}
-    .max-cell{font-family:'JetBrains Mono',monospace;color:var(--text2)}
-    .actions-cell{display:flex;gap:6px}
-    .btn-edit{background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
-    .btn-edit:hover{color:var(--text);border-color:var(--muted)}
-    .rbx-cell{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
-    .date-cell{font-size:10px;color:var(--muted)}
-    .empty-row td{text-align:center;color:var(--muted);padding:40px;font-style:italic}
+    /* Overlay for import/maintenance */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    .overlay.open{opacity:1;pointer-events:all}
+    .overlay-icon{font-size:32px;margin-bottom:16px}
+    .overlay-title{font-size:16px;font-weight:700;margin-bottom:6px}
+    .overlay-sub{font-size:12px;color:var(--text2)}
+    .overlay-dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin:0 2px;animation:overlayBlink 1.2s infinite}
+    .overlay-dots span:nth-child(2){animation-delay:.2s}
+    .overlay-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes overlayBlink{0%,100%{opacity:.2}50%{opacity:1}}
 
-    /* Edit Modal */
+    /* Modal */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
     .modal-overlay.open{opacity:1;pointer-events:all}
     .modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:100%;max-width:360px;transform:translateY(12px);transition:transform .2s}
@@ -87,15 +133,14 @@
     .btn-save{width:100%;padding:9px;background:var(--accent);color:#000;border:none;border-radius:7px;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:opacity .15s}
     .btn-save:hover{opacity:.85}
     .btn-save:disabled{opacity:.4;cursor:not-allowed}
+    .btn-confirm-delete{width:100%;padding:9px;background:var(--danger);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:opacity .15s}
+    .btn-confirm-delete:hover{opacity:.85}
 
-    /* Toast */
     .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 20px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:600;color:var(--text);z-index:600;opacity:0;transition:opacity .3s;pointer-events:none}
     .toast.show{opacity:1}
 
-    /* Login */
     .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px}
     .login-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px;width:100%;max-width:340px}
-    .login-title{font-size:16px;font-weight:700;margin-bottom:4px;text-align:center}
     .login-sub{font-size:11px;color:var(--muted);margin-bottom:18px;text-align:center}
   </style>
 </head>
@@ -115,53 +160,80 @@
   <div class="header">
     <div class="header-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
     <div class="header-title">Admin Panel</div>
-    <div class="header-badge">Super Admin</div>
+    <div class="header-badge badge-owner" id="my-role-badge">Owner</div>
     <div class="header-spacer"></div>
     <div class="header-status"><div class="header-dot"></div> Live</div>
+  </div>
+
+  <div class="maintenance-bar hidden" id="maintenance-bar">
+    <span class="maintenance-icon">⚠️</span>
+    <span class="maintenance-text">Maintenance mode is ON — users cannot access the site</span>
+    <button class="maintenance-btn" onclick="toggleMaintenance(false)">Disable</button>
   </div>
 
   <div class="stats-row" id="stats-row">
     <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value" id="stat-users">—</div></div>
     <div class="stat-card"><div class="stat-label">Total Credits</div><div class="stat-value" id="stat-credits">—</div></div>
     <div class="stat-card"><div class="stat-label">Avg Credits</div><div class="stat-value" id="stat-avg">—</div></div>
+    <div class="stat-card"><div class="stat-label">Admins</div><div class="stat-value" id="stat-admins">—</div></div>
+    <div class="stat-card"><div class="stat-label">Blocked</div><div class="stat-value" id="stat-blocked">—</div></div>
   </div>
 
-  <!-- ═══ BACKUP / RESTORE ═══ -->
+  <!-- Backup -->
   <div class="backup-card">
-    <div class="backup-label">Data Backup</div>
+    <div class="backup-label">Data Backup &amp; Migration</div>
     <div class="backup-actions">
       <button class="btn-sm btn-accent" id="export-btn" onclick="exportData()">Export All Data</button>
-      <button class="btn-sm btn-danger" id="import-btn" onclick="importData()">Import Data</button>
       <button class="btn-sm btn-outline" id="copy-btn" onclick="copyExport()">Copy</button>
+      <button class="btn-sm btn-danger-sm" id="import-btn" onclick="importData()">Import Data</button>
+      <div style="flex:1"></div>
+      <button class="btn-sm btn-warn" id="maintenance-on-btn" onclick="toggleMaintenance(true)">Enable Maintenance</button>
     </div>
-    <textarea class="backup-textarea" id="backup-textarea" placeholder="Click Export to generate data, or paste previously exported data here and click Import to restore."></textarea>
+    <textarea class="backup-textarea" id="backup-textarea" placeholder="Click Export to generate data. Paste previously exported data here and click Import to restore."></textarea>
     <div class="backup-footer">
-      <div class="backup-hint">Export before republishing. Paste the data back and Import to restore all accounts, credits, and conversations.</div>
+      <div class="backup-hint">Export before republishing. Import restores all accounts, credits, and conversations. Enable maintenance before importing to lock out users.</div>
       <div class="backup-size" id="backup-size"></div>
     </div>
   </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Email</th>
-          <th>Password Hash</th>
-          <th>Roblox ID</th>
-          <th>Credit</th>
-          <th>Max</th>
-          <th>Created</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="users-tbody">
-        <tr class="empty-row"><td colspan="8">Loading...</td></tr>
-      </tbody>
-    </table>
+  <!-- Users -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Users</div>
+      <input class="search-box" id="search-box" placeholder="Search email or ID..." oninput="filterUsers()" />
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Rbx ID</th>
+            <th>Credit</th>
+            <th>Max</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr class="empty-row"><td colspan="9">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
+<!-- Progress Overlay -->
+<div class="overlay" id="overlay">
+  <div class="overlay-icon">⚙️</div>
+  <div class="overlay-title" id="overlay-title">Importing data...</div>
+  <div class="overlay-sub" id="overlay-sub">Site is in maintenance mode. Please wait.</div>
+  <div class="overlay-dots" style="margin-top:12px"><span></span><span></span><span></span></div>
+</div>
+
+<!-- Edit Modal -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal" style="position:relative">
     <button class="modal-close" onclick="closeModal()">&#10005;</button>
@@ -180,16 +252,25 @@
   </div>
 </div>
 
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeDeleteModal()">&#10005;</button>
+    <div class="modal-title" style="color:var(--danger)">Delete User</div>
+    <div class="modal-sub" id="delete-email">This will permanently delete this user, their credits, conversations, and sessions.</div>
+    <input type="hidden" id="delete-user-id" />
+    <button class="btn-confirm-delete" id="confirm-delete-btn" onclick="confirmDelete()">Delete permanently</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-  const ADMIN_IDS = [
-    'c14987eb-319a-4ab1-a3f6-defaaae6d4b9',
-    // Add more admin IDs below:
-    // 'your-friends-uuid-here',
-  ];
+const OWNER_ID = 'c14987eb-319a-4ab1-a3f6-defaaae6d4b9';
 let token = localStorage.getItem('rux_token');
 let pollInterval = null;
+let allUsers = [];
+let isOwner = false;
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -201,18 +282,33 @@ async function api(path, opts = {}) {
   const headers = opts.headers || {};
   if (token) headers['Authorization'] = 'Bearer ' + token;
   const res = await fetch(path, { ...opts, headers });
-  return { ok: res.ok, status: res.status, data: await res.json() };
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
 }
 
 async function checkAuth() {
   if (!token) { showDenied(); return; }
   const r = await api('/auth/me');
-    if (!r.ok || !r.data || !r.data.user || !ADMIN_IDS.includes(r.data.user.id)) {
-    showDenied(); return;
+  if (!r.ok || !r.data || !r.data.user) { showDenied(); return; }
+  // Check admin via the users API (any admin can access it)
+  const r2 = await api('/admin/api/users');
+  if (!r2.ok) { showDenied(); return; }
+
+  isOwner = r.data.user.id === OWNER_ID;
+  document.getElementById('my-role-badge').className = 'header-badge ' + (isOwner ? 'badge-owner' : 'badge-admin');
+  document.getElementById('my-role-badge').textContent = isOwner ? 'Owner' : 'Admin';
+
+  // Hide owner-only buttons if not owner
+  if (!isOwner) {
+    document.querySelectorAll('.btn-promote,.btn-demote,.btn-delete').forEach(b => b.classList.add('btn-disabled'));
+    document.getElementById('import-btn').classList.add('btn-disabled');
+    document.getElementById('maintenance-on-btn').style.display = 'none';
   }
+
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-panel').style.display = '';
   loadUsers();
+  checkMaintenance();
   pollInterval = setInterval(loadUsers, 5000);
 }
 
@@ -230,46 +326,101 @@ function formatDate(ts) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
 function renderUsers(users) {
+  allUsers = users;
   const tbody = document.getElementById('users-tbody');
   if (!users.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No users yet</td></tr>';
-    return;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No users yet</td></tr>';
+    updateStats(users); return;
   }
 
+  updateStats(users);
+  filterUsers();
+}
+
+function updateStats(users) {
   document.getElementById('stat-users').textContent = users.length;
   const totalCredits = users.reduce((s, u) => s + u.balance, 0);
   document.getElementById('stat-credits').textContent = totalCredits.toFixed(2);
-  document.getElementById('stat-avg').textContent = (totalCredits / users.length).toFixed(2);
+  document.getElementById('stat-avg').textContent = users.length ? (totalCredits / users.length).toFixed(2) : '0';
+  document.getElementById('stat-admins').textContent = users.filter(u => u.is_admin).length;
+  document.getElementById('stat-blocked').textContent = users.filter(u => u.blocked).length;
+}
 
-  tbody.innerHTML = users.map(u => `
-    <tr>
+function filterUsers() {
+  const q = document.getElementById('search-box').value.toLowerCase().trim();
+  const filtered = q ? allUsers.filter(u => u.email.toLowerCase().includes(q) || u.id.toLowerCase().includes(q)) : allUsers;
+  renderUserRows(filtered);
+}
+
+function renderUserRows(users) {
+  const tbody = document.getElementById('users-tbody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No results</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = users.map(u => {
+    const isMe = u.id === OWNER_ID;
+    const roleBadge = u.is_owner ? '<span class="role-badge role-owner">Owner</span>' : u.is_admin ? '<span class="role-badge role-admin">Admin</span>' : '<span class="role-badge role-user">User</span>';
+    const statusBadge = u.blocked ? '<span class="status-badge status-blocked">Blocked</span>' : '<span class="status-badge status-active">Active</span>';
+    const canModify = !isMe && (isOwner || !u.is_admin);
+
+    let actions = `<button class="btn-sm btn-edit" onclick="openEdit('${u.id}','${escAttr(u.email)}',${u.balance},${u.max_credit})">Edit</button>`;
+
+    if (!isMe) {
+      if (u.blocked) {
+        actions += `<button class="btn-sm btn-unblock" onclick="unblockUser('${u.id}')">Unblock</button>`;
+      } else if (canModify) {
+        actions += `<button class="btn-sm btn-block" onclick="blockUser('${u.id}')">Block</button>`;
+      }
+      if (isOwner && !u.is_owner) {
+        if (u.is_admin) {
+          actions += `<button class="btn-sm btn-demote" onclick="demoteUser('${u.id}')">Demote</button>`;
+        } else {
+          actions += `<button class="btn-sm btn-promote" onclick="promoteUser('${u.id}')">Promote</button>`;
+        }
+        actions += `<button class="btn-sm btn-delete" onclick="openDeleteModal('${u.id}','${escAttr(u.email)}')">Delete</button>`;
+      }
+    }
+
+    return `<tr>
       <td class="id-cell" title="${u.id}">${u.id.slice(0, 8)}…</td>
       <td class="email-cell">${escHtml(u.email)}</td>
-      <td class="pw-cell" title="Click to copy" onclick="copyHash('${escAttr(u.password_hash)}')">${escHtml(u.password_hash ? u.password_hash.slice(0, 20) + '…' : 'none')}</td>
+      <td>${roleBadge}</td>
+      <td>${statusBadge}</td>
       <td class="rbx-cell">${u.roblox_id || '—'}</td>
       <td class="credit-cell">${u.balance.toFixed(2)}</td>
       <td class="max-cell">${u.max_credit.toFixed(0)}</td>
       <td class="date-cell">${formatDate(u.created_at)}</td>
-      <td class="actions-cell">
-        <button class="btn-sm btn-edit" onclick="openEdit('${u.id}','${escAttr(u.email)}',${u.balance},${u.max_credit})">Edit</button>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escAttr(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
-
-function copyHash(hash) {
-  navigator.clipboard.writeText(hash);
-  showToast('Hash copied to clipboard');
+      <td class="actions-cell">${actions}</td>
+    </tr>`;
+  }).join('');
 }
 
 async function loadUsers() {
   const r = await api('/admin/api/users');
-  if (r.ok && Array.isArray(r.data)) {
-    renderUsers(r.data);
+  if (r.ok && Array.isArray(r.data)) renderUsers(r.data);
+}
+
+/* ═══ MAINTENANCE ═══ */
+async function checkMaintenance() {
+  const r = await api('/admin/api/maintenance');
+  if (r.ok) document.getElementById('maintenance-bar').classList.toggle('hidden', !r.data.enabled);
+}
+
+async function toggleMaintenance(enabled) {
+  const r = await api('/admin/api/maintenance', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled }),
+  });
+  if (r.ok) {
+    document.getElementById('maintenance-bar').classList.toggle('hidden', !enabled);
+    showToast(enabled ? 'Maintenance mode ON' : 'Maintenance mode OFF');
   }
 }
 
@@ -281,7 +432,7 @@ async function exportData() {
 
   try {
     const r = await api('/admin/api/export');
-    if (!r.ok) { showToast('Export failed'); return; }
+    if (!r.ok) { showToast('Export failed: ' + (r.data?.error || 'Unknown')); return; }
     const json = JSON.stringify(r.data, null, 2);
     ta.value = json;
     const size = new Blob([json]).size;
@@ -296,29 +447,28 @@ async function exportData() {
 
 /* ═══ IMPORT ═══ */
 async function importData() {
+  if (!isOwner) { showToast('Only the owner can import data'); return; }
   const ta = document.getElementById('backup-textarea');
   const raw = ta.value.trim();
-
-  if (!raw) {
-    showToast('Paste exported data into the text area first');
-    return;
-  }
+  if (!raw) { showToast('Paste exported data into the text area first'); return; }
 
   let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (e) {
-    showToast('Invalid JSON — paste the exact data from Export');
-    return;
-  }
-
-  if (!parsed.users && !parsed.credits && !parsed.sessions) {
-    showToast('Data does not look like a valid Rux backup');
-    return;
-  }
+  try { parsed = JSON.parse(raw); }
+  catch (e) { showToast('Invalid JSON — paste the exact data from Export'); return; }
+  if (!parsed.users && !parsed.credits && !parsed.sessions) { showToast('Not a valid Rux backup'); return; }
 
   const btn = document.getElementById('import-btn');
-  btn.disabled = true; btn.textContent = 'Importing...';
+  const overlay = document.getElementById('overlay');
+
+  // Enable maintenance first
+  await api('/admin/api/maintenance', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled: true }),
+  });
+
+  overlay.classList.add('open');
+  btn.disabled = true;
 
   try {
     const r = await api('/admin/api/import', {
@@ -326,20 +476,34 @@ async function importData() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(parsed),
     });
+
     if (r.ok) {
-      showToast('Data imported successfully — refreshing');
+      document.getElementById('overlay-title').textContent = 'Import complete';
+      document.getElementById('overlay-sub').textContent = 'Disabling maintenance mode...';
+      await new Promise(r => setTimeout(r, 1000));
+
+      await api('/admin/api/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: false }),
+      });
+
+      showToast('Data imported successfully');
       loadUsers();
+      checkMaintenance();
     } else {
       showToast('Import failed: ' + (r.data?.error || 'Unknown'));
     }
   } catch (e) {
     showToast('Import error: ' + e.message);
   } finally {
-    btn.disabled = false; btn.textContent = 'Import Data';
+    overlay.classList.remove('open');
+    document.getElementById('overlay-title').textContent = 'Importing data...';
+    document.getElementById('overlay-sub').textContent = 'Site is in maintenance mode. Please wait.';
+    btn.disabled = false;
   }
 }
 
-/* ═══ COPY ═══ */
 function copyExport() {
   const ta = document.getElementById('backup-textarea');
   if (!ta.value.trim()) { showToast('Nothing to copy — Export first'); return; }
@@ -353,6 +517,52 @@ function formatBytes(bytes) {
   return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
+/* ═══ BLOCK / UNBLOCK ═══ */
+async function blockUser(id) {
+  const r = await api('/admin/api/block', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: id }) });
+  if (r.ok) { showToast('User blocked'); loadUsers(); }
+  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
+}
+
+async function unblockUser(id) {
+  const r = await api('/admin/api/unblock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: id }) });
+  if (r.ok) { showToast('User unblocked'); loadUsers(); }
+  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
+}
+
+/* ═══ PROMOTE / DEMOTE ═══ */
+async function promoteUser(id) {
+  const r = await api('/admin/api/promote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: id }) });
+  if (r.ok) { showToast('User promoted to admin'); loadUsers(); }
+  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
+}
+
+async function demoteUser(id) {
+  const r = await api('/admin/api/demote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: id }) });
+  if (r.ok) { showToast('Admin demoted to user'); loadUsers(); }
+  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
+}
+
+/* ═══ DELETE ═══ */
+function openDeleteModal(id, email) {
+  document.getElementById('delete-user-id').value = id;
+  document.getElementById('delete-email').textContent = `Permanently delete ${email}? This cannot be undone.`;
+  document.getElementById('delete-modal').classList.add('open');
+}
+function closeDeleteModal() { document.getElementById('delete-modal').classList.remove('open'); }
+
+async function confirmDelete() {
+  const id = document.getElementById('delete-user-id').value;
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled = true; btn.textContent = 'Deleting...';
+
+  const r = await api('/admin/api/user/' + id, { method: 'DELETE' });
+  btn.disabled = false; btn.textContent = 'Delete permanently';
+
+  if (r.ok) { showToast('User deleted'); closeDeleteModal(); loadUsers(); }
+  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
+}
+
 /* ═══ EDIT MODAL ═══ */
 function openEdit(id, email, balance, max) {
   document.getElementById('edit-user-id').value = id;
@@ -361,10 +571,7 @@ function openEdit(id, email, balance, max) {
   document.getElementById('edit-max').value = max;
   document.getElementById('edit-modal').classList.add('open');
 }
-
-function closeModal() {
-  document.getElementById('edit-modal').classList.remove('open');
-}
+function closeModal() { document.getElementById('edit-modal').classList.remove('open'); }
 
 async function saveCredits() {
   const userId = document.getElementById('edit-user-id').value;
@@ -376,25 +583,17 @@ async function saveCredits() {
   btn.disabled = true; btn.textContent = 'Saving...';
 
   const r = await api('/admin/api/credits', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id: userId, balance, max_credit: maxCredit }),
   });
 
   btn.disabled = false; btn.textContent = 'Save Changes';
-
-  if (r.ok) {
-    showToast('Credits updated');
-    closeModal();
-    loadUsers();
-  } else {
-    showToast('Failed: ' + (r.data?.error || 'Unknown'));
-  }
+  if (r.ok) { showToast('Credits updated'); closeModal(); loadUsers(); }
+  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
 }
 
-document.getElementById('edit-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
+document.getElementById('edit-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.getElementById('delete-modal').addEventListener('click', function(e) { if (e.target === this) closeDeleteModal(); });
 
 checkAuth();
 </script>
