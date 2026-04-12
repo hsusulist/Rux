@@ -27,19 +27,25 @@ import store
 
 app = Flask(__name__)
 
-anthropic_client = Anthropic(
-    api_key=os.environ.get("AI_INTEGRATIONS_ANTHROPIC_API_KEY"),
-    base_url=os.environ.get("AI_INTEGRATIONS_ANTHROPIC_BASE_URL"),
-)
-
-if GEMINI_AVAILABLE:
-    gemini_client = google_genai.Client(
-        api_key=os.environ.get("AI_INTEGRATIONS_GEMINI_API_KEY"),
-        http_options={
-            "api_version": "",
-            "base_url": os.environ.get("AI_INTEGRATIONS_GEMINI_BASE_URL"),
-        },
+try:
+    anthropic_client = Anthropic(
+        api_key=os.environ.get("AI_INTEGRATIONS_ANTHROPIC_API_KEY"),
+        base_url=os.environ.get("AI_INTEGRATIONS_ANTHROPIC_BASE_URL"),
     )
+except Exception:
+    anthropic_client = None
+
+if GEMINI_AVAILABLE and os.environ.get("AI_INTEGRATIONS_GEMINI_API_KEY"):
+    try:
+        gemini_client = google_genai.Client(
+            api_key=os.environ.get("AI_INTEGRATIONS_GEMINI_API_KEY"),
+            http_options={
+                "api_version": "",
+                "base_url": os.environ.get("AI_INTEGRATIONS_GEMINI_BASE_URL"),
+            },
+        )
+    except Exception:
+        gemini_client = None
 else:
     gemini_client = None
 
