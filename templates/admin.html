@@ -21,11 +21,36 @@
     .header-status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
     .header-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-    .stats-row{display:flex;gap:12px;margin-bottom:28px}
+
+    /* Stats */
+    .stats-row{display:flex;gap:12px;margin-bottom:20px}
     .stat-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
     .stat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
     .stat-value{font-size:24px;font-weight:800;letter-spacing:-1px}
     .stat-sub{font-size:10px;color:var(--text2);margin-top:2px}
+
+    /* Backup card */
+    .backup-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px}
+    .backup-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
+    .backup-actions{display:flex;gap:8px;margin-bottom:12px}
+    .btn-sm{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .12s}
+    .btn-accent{background:var(--accent);color:#000}
+    .btn-accent:hover{opacity:.85}
+    .btn-accent:disabled{opacity:.4;cursor:not-allowed}
+    .btn-outline{background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
+    .btn-outline:hover{color:var(--text);border-color:var(--muted)}
+    .btn-outline:disabled{opacity:.4;cursor:not-allowed}
+    .btn-danger{background:var(--danger2);color:var(--danger);border:1px solid rgba(229,72,77,.2)}
+    .btn-danger:hover{background:rgba(229,72,77,.18)}
+    .btn-danger:disabled{opacity:.4;cursor:not-allowed}
+    .backup-textarea{width:100%;height:120px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;outline:none;resize:vertical;transition:border-color .15s;line-height:1.5}
+    .backup-textarea:focus{border-color:var(--accent)}
+    .backup-textarea::placeholder{color:var(--muted)}
+    .backup-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+    .backup-hint{font-size:9px;color:var(--muted);line-height:1.5}
+    .backup-size{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+    /* Table */
     .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
     table{width:100%;border-collapse:collapse}
     thead{background:var(--surface2)}
@@ -40,7 +65,6 @@
     .credit-cell{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent)}
     .max-cell{font-family:'JetBrains Mono',monospace;color:var(--text2)}
     .actions-cell{display:flex;gap:6px}
-    .btn-sm{padding:4px 10px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .12s}
     .btn-edit{background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
     .btn-edit:hover{color:var(--text);border-color:var(--muted)}
     .rbx-cell{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
@@ -63,8 +87,12 @@
     .btn-save{width:100%;padding:9px;background:var(--accent);color:#000;border:none;border-radius:7px;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:opacity .15s}
     .btn-save:hover{opacity:.85}
     .btn-save:disabled{opacity:.4;cursor:not-allowed}
+
+    /* Toast */
     .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 20px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:600;color:var(--text);z-index:600;opacity:0;transition:opacity .3s;pointer-events:none}
     .toast.show{opacity:1}
+
+    /* Login */
     .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px}
     .login-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px;width:100%;max-width:340px}
     .login-title{font-size:16px;font-weight:700;margin-bottom:4px;text-align:center}
@@ -91,11 +119,28 @@
     <div class="header-spacer"></div>
     <div class="header-status"><div class="header-dot"></div> Live</div>
   </div>
+
   <div class="stats-row" id="stats-row">
     <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value" id="stat-users">—</div></div>
     <div class="stat-card"><div class="stat-label">Total Credits</div><div class="stat-value" id="stat-credits">—</div></div>
     <div class="stat-card"><div class="stat-label">Avg Credits</div><div class="stat-value" id="stat-avg">—</div></div>
   </div>
+
+  <!-- ═══ BACKUP / RESTORE ═══ -->
+  <div class="backup-card">
+    <div class="backup-label">Data Backup</div>
+    <div class="backup-actions">
+      <button class="btn-sm btn-accent" id="export-btn" onclick="exportData()">Export All Data</button>
+      <button class="btn-sm btn-danger" id="import-btn" onclick="importData()">Import Data</button>
+      <button class="btn-sm btn-outline" id="copy-btn" onclick="copyExport()">Copy</button>
+    </div>
+    <textarea class="backup-textarea" id="backup-textarea" placeholder="Click Export to generate data, or paste previously exported data here and click Import to restore."></textarea>
+    <div class="backup-footer">
+      <div class="backup-hint">Export before republishing. Paste the data back and Import to restore all accounts, credits, and conversations.</div>
+      <div class="backup-size" id="backup-size"></div>
+    </div>
+  </div>
+
   <div class="table-wrap">
     <table>
       <thead>
@@ -224,6 +269,87 @@ async function loadUsers() {
   }
 }
 
+/* ═══ EXPORT ═══ */
+async function exportData() {
+  const btn = document.getElementById('export-btn');
+  const ta = document.getElementById('backup-textarea');
+  btn.disabled = true; btn.textContent = 'Exporting...';
+
+  try {
+    const r = await api('/admin/api/export');
+    if (!r.ok) { showToast('Export failed'); return; }
+    const json = JSON.stringify(r.data, null, 2);
+    ta.value = json;
+    const size = new Blob([json]).size;
+    document.getElementById('backup-size').textContent = formatBytes(size);
+    showToast('Data exported — copy and save before republishing');
+  } catch (e) {
+    showToast('Export error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Export All Data';
+  }
+}
+
+/* ═══ IMPORT ═══ */
+async function importData() {
+  const ta = document.getElementById('backup-textarea');
+  const raw = ta.value.trim();
+
+  if (!raw) {
+    showToast('Paste exported data into the text area first');
+    return;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    showToast('Invalid JSON — paste the exact data from Export');
+    return;
+  }
+
+  if (!parsed.users && !parsed.credits && !parsed.sessions) {
+    showToast('Data does not look like a valid Rux backup');
+    return;
+  }
+
+  const btn = document.getElementById('import-btn');
+  btn.disabled = true; btn.textContent = 'Importing...';
+
+  try {
+    const r = await api('/admin/api/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parsed),
+    });
+    if (r.ok) {
+      showToast('Data imported successfully — refreshing');
+      loadUsers();
+    } else {
+      showToast('Import failed: ' + (r.data?.error || 'Unknown'));
+    }
+  } catch (e) {
+    showToast('Import error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Import Data';
+  }
+}
+
+/* ═══ COPY ═══ */
+function copyExport() {
+  const ta = document.getElementById('backup-textarea');
+  if (!ta.value.trim()) { showToast('Nothing to copy — Export first'); return; }
+  navigator.clipboard.writeText(ta.value);
+  showToast('Copied to clipboard');
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+/* ═══ EDIT MODAL ═══ */
 function openEdit(id, email, balance, max) {
   document.getElementById('edit-user-id').value = id;
   document.getElementById('modal-email').textContent = email;

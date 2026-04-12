@@ -253,3 +253,50 @@ def set_user_credits(user_id, balance, max_credit):
         credits[user_id]["balance"] = float(balance)
         credits[user_id]["max_credit"] = float(max_credit)
         _save("credits.json", credits)
+
+# ═══════════════════════════════════════════
+#  EXPORT / IMPORT
+# ═══════════════════════════════════════════
+
+def export_all():
+    with _lock:
+        result = {}
+        # Main JSON files
+        for filename in ["users.json", "sessions.json", "credits.json", "plugins.json"]:
+            result[filename.replace(".json", "")] = _load(filename)
+
+        # Conversation lists per user
+        conv_lists_dir = DATA_DIR / "conv_lists"
+        conv_lists = {}
+        if conv_lists_dir.exists():
+            for f in conv_lists_dir.glob("*.json"):
+                conv_lists[f.stem] = json.loads(f.read_text(encoding="utf-8"))
+        result["conv_lists"] = conv_lists
+
+        # Individual conversations
+        convs_dir = DATA_DIR / "convs"
+        convs = {}
+        if convs_dir.exists():
+            for f in convs_dir.glob("*.json"):
+                convs[f.stem] = json.loads(f.read_text(encoding="utf-8"))
+        result["convs"] = convs
+
+        return result
+
+
+def import_all(data):
+    with _lock:
+        # Main files
+        for key in ["users", "sessions", "credits", "plugins"]:
+            if key in data:
+                _save(f"{key}.json", data[key])
+
+        # Conversation lists
+        if "conv_lists" in data:
+            for user_id, conv_list_data in data["conv_lists"].items():
+                _save(f"conv_lists/{user_id}.json", conv_list_data)
+
+        # Conversations
+        if "convs" in data:
+            for conv_id, conv_data in data["convs"].items():
+                _save(f"convs/{conv_id}.json", conv_data)

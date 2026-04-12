@@ -71,7 +71,6 @@
     .agent-progress{position:absolute;top:0;left:0;right:0;height:2px;background:var(--border);z-index:16;opacity:0;transition:opacity .3s}
     .agent-progress.active{opacity:1}
     .agent-progress-bar{height:100%;background:linear-gradient(90deg,var(--lp-blue),var(--lp-purple));transition:width .5s ease;width:0%}
-
     .agent-status{position:absolute;top:2px;left:0;right:0;z-index:15;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 24px;background:linear-gradient(180deg,var(--bg) 60%,transparent);opacity:0;pointer-events:none;transition:opacity .25s}
     .agent-status.active{opacity:1}
     .agent-status-dot{width:6px;height:6px;border-radius:50%;background:var(--lp-green);animation:agentPulse 1.2s infinite}
@@ -85,46 +84,32 @@
     .messages::-webkit-scrollbar{width:3px}
     .messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
-    /* ── USER / SIMPLE ASSISTANT MSG ── */
-    .msg-row{display:flex;padding:5px 24px;gap:12px;max-width:720px;width:100%;margin:0 auto;animation:msgIn .25s ease both}
-    .msg-row.user{flex-direction:row-reverse}
-    .msg-row.system-row{justify-content:center;max-width:100%;padding:3px 24px}
-    @keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    .msg-avatar{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-    .msg-avatar svg{width:13px;height:13px}
-    .msg-row.user .msg-avatar{background:var(--text)}
-    .msg-row.user .msg-avatar svg{fill:#000}
-    .msg-row.assistant .msg-avatar{border:1px solid var(--border2)}
-    .msg-row.assistant .msg-avatar svg{fill:var(--accent)}
-    .msg-body{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
-    .msg-sender{font-size:9px;font-weight:600;letter-spacing:.3px;color:var(--muted);text-transform:uppercase}
-    .msg-row.user .msg-sender{text-align:right}
-    .msg-bubble{padding:9px 13px;border-radius:10px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
-    .msg-row.user .msg-bubble{background:var(--text);color:#000;border-top-right-radius:3px;align-self:flex-end}
-    .msg-row.assistant .msg-bubble{background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-top-left-radius:3px}
-    .system-msg{font-size:10px;color:var(--muted);font-style:italic;padding:3px 10px;border-radius:16px}
-
     /* ═══════════════════════════════════════
-       AGENT LOG ROWS
+       ALL LOG ROWS — unified format
        ═══════════════════════════════════════ */
     .log-row{display:flex;align-items:flex-start;gap:8px;padding:4px 24px;max-width:720px;width:100%;margin:0 auto;animation:logSlide .18s ease both}
     @keyframes logSlide{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)}}
     .log-row:hover{background:rgba(255,255,255,.015)}
-    .log-time{font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;min-width:52px;padding-top:2px;flex-shrink:0}
-    .log-icon{font-size:13px;min-width:20px;text-align:center;flex-shrink:0;padding-top:1px;filter:grayscale(1) brightness(0.65)}
+    .log-time{font-family:'JetBrains Mono',monospace;font-size:9px;color:#333;min-width:52px;padding-top:3px;flex-shrink:0}
+    .log-icon{font-size:13px;min-width:20px;text-align:center;flex-shrink:0;padding-top:2px;filter:grayscale(1) brightness(0.65)}
     .log-content{flex:1;min-width:0}
-    .log-title{font-size:12px;font-weight:500;line-height:1.55}
+    .log-title{font-size:12px;font-weight:500;line-height:1.65;word-break:break-word;white-space:pre-wrap}
     .log-detail{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#555;margin-top:2px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
 
     /* type colors */
     .log-row.log-system .log-title{color:var(--muted)}
+    .log-row.log-user .log-title{color:var(--text)}
     .log-row.log-thinking .log-title{color:var(--lp-purple)}
     .log-row.log-tool .log-title{color:var(--lp-blue)}
     .log-row.log-result .log-title{color:var(--lp-green)}
     .log-row.log-warn .log-title{color:var(--lp-yellow)}
     .log-row.log-error .log-title{color:var(--lp-red)}
-    .log-row.log-output .log-title{color:var(--text);font-weight:400}
+    .log-row.log-output .log-title{color:var(--text2)}
     .log-row.log-credit .log-title{color:var(--lp-yellow)}
+
+    /* response formatting inside log titles */
+    .log-title strong{color:var(--text);font-weight:600}
+    .log-title code{font-family:'JetBrains Mono',monospace;font-size:11px;background:#1a1a2a;color:var(--lp-purple);padding:1px 5px;border-radius:3px}
 
     /* code chips */
     .lc{background:#1a1a2a;color:var(--lp-purple);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:10px}
@@ -132,7 +117,11 @@
     .lg{color:var(--lp-green)}
     .ly{color:var(--lp-yellow)}
 
-    .log-divider{height:1px;background:#111;margin:4px 24px;max-width:720px}
+    .log-divider{height:1px;background:#111;margin:6px 24px;max-width:720px}
+
+    /* system row — centered italic */
+    .system-row{display:flex;justify-content:center;padding:3px 24px;max-width:100%;width:100%;margin:0 auto}
+    .system-msg{font-size:10px;color:var(--muted);font-style:italic;padding:3px 10px;border-radius:16px}
 
     /* thinking dots */
     .log-dots{display:inline-flex;gap:2px;vertical-align:middle;margin-left:4px}
@@ -140,16 +129,6 @@
     .log-dots span:nth-child(2){animation-delay:.2s}
     .log-dots span:nth-child(3){animation-delay:.4s}
     @keyframes logBlink{0%,100%{opacity:.2}50%{opacity:1}}
-
-    /* ═══ RESPONSE BLOCK — the final assistant output ═══ */
-    .response-block{max-width:720px;width:100%;margin:0 auto;padding:6px 24px 8px;animation:logSlide .22s ease both}
-    .response-block-inner{padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;border-top-left-radius:3px}
-    .response-block-header{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-    .response-block-dot{width:5px;height:5px;border-radius:50%;background:var(--lp-green);filter:grayscale(1) brightness(0.7)}
-    .response-block-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
-    .response-block-text{font-size:13px;line-height:1.7;color:var(--text2);white-space:pre-wrap;word-break:break-word}
-    .response-block-text strong{color:var(--text);font-weight:600}
-    .response-block-text code{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:#1a1a2a;color:var(--lp-purple);padding:1px 5px;border-radius:3px}
 
     .plan-banner{display:none;position:absolute;top:0;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;z-index:15;animation:bannerIn .2s ease both}
     .plan-banner.show{display:block}
@@ -369,10 +348,8 @@ let sessionId=null,mode='chat',activeConvId=null,pendingSessionId=null;
 let isLoading=false,conversationHistory=[],currentMessages=[],selectedModel='sonnet';
 let pluginConnected=false,statusPoll=null,connectPoll=null,heartbeatInterval=null,lastShownToolId=null;
 let openPicker=null,inConversation=false,convCache={};
-
-/* Agent log state */
 let agentStepCount=0,agentTotalTokens=0,agentTotalSteps=0,lastToolNameForResult='';
-let hadToolActivity=false; // tracks if current request used tools
+let hadToolActivity=false;
 
 function getToken(){return localStorage.getItem(TOKEN_KEY)}
 function setToken(t){token=t;localStorage.setItem(TOKEN_KEY,t)}
@@ -437,9 +414,6 @@ const chatInput=document.getElementById('chat-input');
 chatInput.addEventListener('input',()=>{chatInput.style.height='auto';chatInput.style.height=Math.min(chatInput.scrollHeight,200)+'px';});
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
 
-const userSVG=`<svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>`;
-const botSVG=`<svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`;
-
 /* ═══ AGENT UI HELPERS ═══ */
 function _pad(n){return String(n).padStart(2,'0')}
 function _now(){const d=new Date();return`${_pad(d.getHours())}:${_pad(d.getMinutes())}:${_pad(d.getSeconds())}`}
@@ -448,40 +422,69 @@ function setAgentProgress(pct){document.getElementById('agent-progress-bar').sty
 function setAgentStatus(text,active){const bar=document.getElementById('agent-progress');const status=document.getElementById('agent-status');const statusText=document.getElementById('agent-status-text');bar.classList.toggle('active',active);status.classList.toggle('active',active);statusText.textContent=text;}
 function updateAgentStepUI(){document.getElementById('agent-status-step').textContent=agentTotalSteps>0?`Step ${agentStepCount}/${agentTotalSteps}`:`Step ${agentStepCount}`;document.getElementById('agent-status-tokens').textContent=agentTotalTokens>0?`${agentTotalTokens.toLocaleString()} tokens`:'';}
 
-/* ═══ RENDER MESSAGE ═══ */
+/* ═══ FORMAT RESPONSE TEXT ═══ */
+function formatResponseText(text){
+  let s=escHtml(text);
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
+  return s;
+}
+
+/* ═══ RENDER MESSAGE — everything is a log row ═══ */
 function renderMessage(m){
   const msgs=document.getElementById('messages');
 
-  if(m.role==='system'){const r=document.createElement('div');r.classList.add('msg-row','system-row');const s=document.createElement('div');s.classList.add('system-msg');s.textContent=m.text;r.appendChild(s);msgs.appendChild(r);return;}
+  /* System — centered italic */
+  if(m.role==='system'){
+    const r=document.createElement('div');r.classList.add('system-row');
+    const s=document.createElement('div');s.classList.add('system-msg');s.textContent=m.text;
+    r.appendChild(s);msgs.appendChild(r);return;
+  }
 
-  /* Log entries */
-  if(m.isLogEntry){const r=document.createElement('div');r.classList.add('log-row','log-'+(m.logType||'system'));r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">${m.logIcon||''}</span><div class="log-content"><div class="log-title">${m.logTitle||''}</div>${m.logDetail?`<div class="log-detail">${m.logDetail}</div>`:''}</div>`;msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;}
+  /* Log entry (tools, thinking, results, credits, etc.) */
+  if(m.isLogEntry){
+    const r=document.createElement('div');r.classList.add('log-row','log-'+(m.logType||'system'));
+    r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">${m.logIcon||''}</span><div class="log-content"><div class="log-title">${m.logTitle||''}</div>${m.logDetail?`<div class="log-detail">${m.logDetail}</div>`:''}</div>`;
+    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
+  }
+
+  /* Log divider */
   if(m.isLogDivider){const d=document.createElement('div');d.className='log-divider';msgs.appendChild(d);return;}
-  if(m.isThinking){const r=document.createElement('div');r.classList.add('log-row','log-thinking');r.id='thinking-log-row';r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🧠</span><div class="log-content"><div class="log-title">Thinking <div class="log-dots"><span></span><span></span><span></span></div></div></div>`;msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;}
 
-  /* Old tool event from saved convos — render as log row */
-  if(m.isToolEvent){const r=document.createElement('div');r.classList.add('log-row','log-tool');r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🔧</span><div class="log-content"><div class="log-title">Tool → <span class="lc">${escHtml(m.toolName||'')}</span></div>${m.toolArgs?`<div class="log-detail">${escHtml(m.toolArgs)}</div>`:''}</div>`;msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;}
+  /* Thinking animation */
+  if(m.isThinking){
+    const r=document.createElement('div');r.classList.add('log-row','log-thinking');r.id='thinking-log-row';
+    r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🧠</span><div class="log-content"><div class="log-title">Thinking <div class="log-dots"><span></span><span></span><span></span></div></div></div>`;
+    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
+  }
 
-  /* Response block — assistant reply after tool usage */
-  if(m.isResponseBlock){const r=document.createElement('div');r.className='response-block';r.innerHTML=`<div class="response-block-inner"><div class="response-block-header"><div class="response-block-dot"></div><div class="response-block-label">Response</div></div><div class="response-block-text">${formatResponseText(m.text)}</div></div>`;msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;}
+  /* Old tool event from saved convos */
+  if(m.isToolEvent){
+    const r=document.createElement('div');r.classList.add('log-row','log-tool');
+    r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🔧</span><div class="log-content"><div class="log-title">Tool → <span class="lc">${escHtml(m.toolName||'')}</span></div>${m.toolArgs?`<div class="log-detail">${escHtml(m.toolArgs)}</div>`:''}</div>`;
+    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
+  }
 
-  /* User / simple assistant bubble */
-  const r=document.createElement('div');r.classList.add('msg-row',m.role);
-  const a=document.createElement('div');a.classList.add('msg-avatar');a.innerHTML=m.role==='user'?userSVG:botSVG;
-  const b=document.createElement('div');b.classList.add('msg-body');
-  const sn=document.createElement('div');sn.classList.add('msg-sender');sn.textContent=m.role==='user'?'You':'Rux';
-  const bl=document.createElement('div');bl.classList.add('msg-bubble');bl.textContent=m.text;
-  b.appendChild(sn);b.appendChild(bl);r.appendChild(a);r.appendChild(b);msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;
-}
+  /* Old response block from saved convos — render as output log */
+  if(m.isResponseBlock){
+    const r=document.createElement('div');r.classList.add('log-row','log-output');
+    r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">⚡</span><div class="log-content"><div class="log-title">${formatResponseText(m.text||'')}</div></div>`;
+    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
+  }
 
-/* Format response text: bold, inline code, basic structure */
-function formatResponseText(text){
-  let s=escHtml(text);
-  /* **bold** */
-  s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  /* `code` */
-  s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
-  return s;
+  /* ═══ USER MESSAGE — log row ═══ */
+  if(m.role==='user'){
+    const r=document.createElement('div');r.classList.add('log-row','log-user');
+    r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">▸</span><div class="log-content"><div class="log-title">${escHtml(m.text||'')}</div></div>`;
+    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
+  }
+
+  /* ═══ ASSISTANT MESSAGE — log row ═══ */
+  if(m.role==='assistant'){
+    const r=document.createElement('div');r.classList.add('log-row','log-output');
+    r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">⚡</span><div class="log-content"><div class="log-title">${formatResponseText(m.text||'')}</div></div>`;
+    msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;return;
+  }
 }
 
 function pushMsg(m){currentMessages.push(m);renderMessage(m);}
@@ -490,13 +493,9 @@ function pushLogDivider(){renderMessage({isLogDivider:true});}
 function addThinking(){renderMessage({isThinking:true});}
 function removeThinking(){const e=document.getElementById('thinking-log-row');if(e)e.remove();}
 
-/* Push assistant response — uses response-block when tools were used, normal bubble otherwise */
+/* Push assistant reply — always as a log-output row */
 function pushAssistantReply(text){
-  if(hadToolActivity){
-    pushMsg({isResponseBlock:true,text});
-  }else{
-    pushMsg({role:'assistant',text});
-  }
+  pushMsg({role:'assistant',text,logTime:_now()});
   conversationHistory.push({role:'assistant',content:text});
   saveConv();
 }
@@ -587,7 +586,8 @@ async function sendMessage(){
   if(!activeConvId)startNewConv();
   isLoading=true;chatInput.value='';chatInput.style.height='auto';
   document.getElementById('send-btn').disabled=true;
-  conversationHistory.push({role:'user',content:text});pushMsg({role:'user',text});
+  conversationHistory.push({role:'user',content:text});
+  pushMsg({role:'user',text,logTime:_now()});
 
   agentStepCount=0;agentTotalTokens=0;agentTotalSteps=0;lastToolNameForResult='';
   hadToolActivity=false;

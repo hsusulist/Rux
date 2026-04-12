@@ -299,7 +299,7 @@ TOOL_DEFINITIONS = [
     {"name": "restore_script", "description": "Restore a script to the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
 ]
 
-# ═══ AUTH ROUTES ═══
+# ═══ ADMIN ROUTES ═══
 
 def require_admin(f):
     def wrapper(*args, **kwargs):
@@ -336,6 +336,24 @@ def admin_set_credits():
 def admin_page():
     return render_template("admin.html")
 
+@app.route("/admin/api/export", methods=["GET"])
+@require_admin
+def admin_export():
+    data = store.export_all()
+    return jsonify(data)
+
+
+@app.route("/admin/api/import", methods=["POST"])
+@require_admin
+def admin_import():
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    store.import_all(data)
+    return jsonify({"ok": True})
+
+
+# ═══ AUTH ROUTES ═══
 @app.route("/auth/register", methods=["POST"])
 def auth_register():
     data = request.get_json(force=True)
