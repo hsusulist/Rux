@@ -28,6 +28,15 @@ The app is served via Gunicorn:
 gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app
 ```
 
+## Checkpoint & Rollback System
+
+Scripts can be rolled back to a saved state ("checkpoint"):
+- **Auto-checkpoint**: Created automatically when an agent task is approved. As the agent reads scripts via `read_script`, their original content is captured server-side and stored in the checkpoint.
+- **AI-created checkpoints**: The AI can call `create_checkpoint(label, scripts)` and `list_checkpoints()` — these are server-side tools resolved in `/plugin/poll` without plugin involvement.
+- **Web UI**: The "History" button in the input bar opens the checkpoint panel listing all saved checkpoints with restore/delete buttons.
+- **Restore**: Sets a `restore_queue` of `write_script` calls in the session, which the plugin processes one at a time via the normal poll/tool_result cycle without AI involvement.
+- **Storage**: Checkpoints stored in `data/checkpoints/{user_id}.json`.
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
@@ -39,8 +48,12 @@ gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app
 | `/ai` | POST | Chat or Agent mode AI request |
 | `/ai/approve` | POST | Approves agent plan and starts execution |
 | `/plugin/heartbeat` | POST | Plugin sends heartbeat every 2s |
-| `/plugin/poll` | POST | Plugin polls for tool calls |
+| `/plugin/poll` | POST | Plugin polls for tool calls (resolves server-side tools here) |
 | `/plugin/tool_result` | POST | Plugin sends back tool execution results |
+| `/api/checkpoints` | GET | List user's checkpoints |
+| `/api/checkpoints` | POST | Create a checkpoint |
+| `/api/checkpoints/<id>` | DELETE | Delete a checkpoint |
+| `/api/checkpoints/<id>/restore` | POST | Start restoring a checkpoint |
 
 ## Plugin Setup
 In the Roblox plugin script, set `SERVER_BASE_URL` to your Replit app URL (e.g. `https://your-repl.replit.app`).

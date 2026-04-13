@@ -353,6 +353,38 @@ def delete_conv(user_id, conv_id):
 
 
 # ═══════════════════════════════════════════
+#  CHECKPOINTS
+# ═══════════════════════════════════════════
+
+def get_checkpoints(user_id):
+    with _lock:
+        return _load(f"checkpoints/{user_id}.json")
+
+
+def get_checkpoint(user_id, checkpoint_id):
+    with _lock:
+        data = _load(f"checkpoints/{user_id}.json")
+        return data.get(checkpoint_id)
+
+
+def save_checkpoint(user_id, checkpoint_id, checkpoint_data):
+    with _lock:
+        data = _load(f"checkpoints/{user_id}.json")
+        data[checkpoint_id] = checkpoint_data
+        _save(f"checkpoints/{user_id}.json", data)
+
+
+def delete_checkpoint(user_id, checkpoint_id):
+    with _lock:
+        data = _load(f"checkpoints/{user_id}.json")
+        if checkpoint_id not in data:
+            return False
+        del data[checkpoint_id]
+        _save(f"checkpoints/{user_id}.json", data)
+        return True
+
+
+# ═══════════════════════════════════════════
 #  ADMIN VIEWS
 # ═══════════════════════════════════════════
 

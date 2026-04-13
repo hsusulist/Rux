@@ -217,6 +217,35 @@
     .logout-float{position:fixed;top:12px;right:16px;z-index:40}
     .icon-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;cursor:pointer;color:var(--text2);transition:all .12s}
     .icon-btn:hover{color:var(--text);border-color:var(--muted)}
+
+    /* ═══ CHECKPOINT PANEL ═══ */
+    .checkpoint-panel{position:absolute;bottom:calc(100% + 8px);left:0;right:0;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:8px;box-shadow:0 -8px 32px rgba(0,0,0,.6);z-index:51;display:none;animation:pickerIn .15s ease both}
+    .checkpoint-panel.open{display:block}
+    .cp-header{display:flex;align-items:center;justify-content:space-between;padding:3px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:5px}
+    .cp-title{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+    .cp-count{font-size:9px;font-weight:600;padding:1px 6px;border-radius:10px;background:var(--surface3);color:var(--muted)}
+    .cp-close-btn{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:0 2px;line-height:1;transition:color .1s}
+    .cp-close-btn:hover{color:var(--text)}
+    .cp-list{display:flex;flex-direction:column;gap:2px;max-height:220px;overflow-y:auto}
+    .cp-list::-webkit-scrollbar{width:2px}
+    .cp-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+    .cp-empty{font-size:10.5px;color:var(--muted);text-align:center;padding:18px 0;font-style:italic}
+    .cp-item{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;border:1px solid transparent;transition:background .1s}
+    .cp-item:hover{background:var(--surface3);border-color:var(--border)}
+    .cp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--border2)}
+    .cp-dot.has{background:rgba(251,191,36,.6)}
+    .cp-info{flex:1;min-width:0}
+    .cp-label{font-size:11.5px;font-weight:500;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cp-meta{font-size:9px;color:var(--muted);margin-top:1px}
+    .cp-actions{display:flex;gap:3px;flex-shrink:0}
+    .cp-btn{padding:3px 8px;border-radius:5px;font-size:9.5px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:1px solid var(--border);background:var(--surface3);color:var(--text2);transition:all .1s;white-space:nowrap}
+    .cp-btn:hover{color:var(--text);border-color:var(--border2)}
+    .cp-btn:disabled{opacity:.35;cursor:not-allowed}
+    .cp-btn.restore{color:var(--lp-green);border-color:rgba(74,222,128,.2);background:rgba(74,222,128,.04)}
+    .cp-btn.restore:not(:disabled):hover{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.4)}
+    .cp-btn.del{color:var(--text2)}
+    .cp-btn.del:hover{color:var(--lp-red);border-color:rgba(229,72,77,.3);background:rgba(229,72,77,.06)}
+    .cp-trigger-badge{width:14px;height:14px;border-radius:50%;background:var(--lp-yellow);color:#000;font-size:7px;font-weight:700;display:flex;align-items:center;justify-content:center;position:absolute;top:-4px;right:-4px}
     .icon-btn svg{width:13px;height:13px;fill:currentColor}
   </style>
 </head>
@@ -311,6 +340,15 @@
           <div class="picker-option-body"><div class="picker-option-name">Agent</div><div class="picker-option-desc">Multi-step tasks</div></div>
         </div>
       </div>
+      <div class="checkpoint-panel" id="checkpoint-panel">
+        <div class="cp-header">
+          <div class="cp-title">Checkpoints <span class="cp-count" id="cp-count">0</span></div>
+          <button class="cp-close-btn" onclick="closeCheckpointPanel()">&#10005;</button>
+        </div>
+        <div class="cp-list" id="cp-list">
+          <div class="cp-empty">No checkpoints yet. Run an agent task to create one.</div>
+        </div>
+      </div>
       <div class="input-shell">
         <div class="shell-left">
           <button class="picker-trigger" id="model-trigger" onclick="togglePicker('model')">
@@ -329,6 +367,11 @@
             <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
             <span id="mode-label">Chat</span>
             <svg class="chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <button class="picker-trigger" id="checkpoint-trigger" onclick="toggleCheckpointPanel()" title="Checkpoints" style="position:relative">
+            <svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+            <span id="cp-trigger-label">History</span>
+            <div class="cp-trigger-badge" id="cp-trigger-badge" style="display:none">0</div>
           </button>
           <button class="send-btn" id="send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
         </div>
@@ -616,7 +659,7 @@ async function pollForResult(sid){
         if(d.reply){pushAssistantReply(d.reply);}
         setAgentProgress(100);setAgentStatus('Done',false);agentStepCount=0;lastToolNameForResult='';
         setTimeout(()=>{document.getElementById('agent-progress').classList.remove('active');},2000);
-        saveConv();return;
+        saveConv();loadCheckpoints();return;
       }
       if(d.status==='error'){removeThinking();lastShownToolId=null;pushLog('error','❌','Execution failed','Check Studio connection and try again');setAgentStatus('Error',true);pushMsg({role:'assistant',text:'Execution failed. Check Studio connection.'});saveConv();return;}
     }catch(e){break;}
@@ -656,7 +699,125 @@ async function sendMessage(){
   finally{isLoading=false;document.getElementById('send-btn').disabled=false;}
 }
 
-(async function(){const t=getToken();if(t){token=t;const r=await api('/auth/me');if(r&&r.ok){userData=r.data.user;credits=r.data.credits;sessionId=r.data.session_id;updateCreditUI();if(sessionId)pluginConnected=true;updatePluginUI();enterChat();return;}}window.location.href='/';})();
+/* ═══ CHECKPOINT SYSTEM ═══ */
+let checkpoints=[];
+let cpPanelOpen=false;
+
+function _cpFmt(ts){
+  const d=new Date(ts);
+  const now=new Date();
+  const diff=Math.floor((now-d)/1000);
+  if(diff<60)return 'just now';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  return d.toLocaleDateString();
+}
+
+async function loadCheckpoints(){
+  if(!token)return;
+  const r=await api('/api/checkpoints');
+  if(r&&r.ok){
+    checkpoints=r.data||[];
+    renderCheckpoints();
+  }
+}
+
+function renderCheckpoints(){
+  const list=document.getElementById('cp-list');
+  const count=document.getElementById('cp-count');
+  const badge=document.getElementById('cp-trigger-badge');
+  if(!list)return;
+  count.textContent=checkpoints.length;
+  if(checkpoints.length>0){
+    badge.textContent=checkpoints.length>9?'9+':checkpoints.length;
+    badge.style.display='flex';
+  }else{
+    badge.style.display='none';
+  }
+  if(checkpoints.length===0){
+    list.innerHTML='<div class="cp-empty">No checkpoints yet. Run an agent task to create one automatically.</div>';
+    return;
+  }
+  list.innerHTML='';
+  checkpoints.forEach(cp=>{
+    const hasScripts=cp.scripts_count>0;
+    const div=document.createElement('div');
+    div.className='cp-item';
+    div.id='cp-item-'+cp.id;
+    div.innerHTML=`<div class="cp-dot ${hasScripts?'has':''}"></div><div class="cp-info"><div class="cp-label">${escHtml(cp.label)}</div><div class="cp-meta">${_cpFmt(cp.created_at)} · ${cp.scripts_count} script${cp.scripts_count!==1?'s':''}</div></div><div class="cp-actions"><button class="cp-btn restore" id="cp-restore-${cp.id}" onclick="restoreCheckpoint('${cp.id}','${escHtml(cp.label).replace(/'/g,"\\'")}',this)" ${!hasScripts||!pluginConnected?'disabled':''} title="${hasScripts?'Restore scripts in Studio':'No scripts captured in this checkpoint'}">Restore</button><button class="cp-btn del" onclick="deleteCheckpoint('${cp.id}',this)">✕</button></div>`;
+    list.appendChild(div);
+  });
+}
+
+function toggleCheckpointPanel(){
+  if(cpPanelOpen)closeCheckpointPanel();
+  else openCheckpointPanel();
+}
+
+function openCheckpointPanel(){
+  if(openPicker){document.getElementById(openPicker+'-picker')&&document.getElementById(openPicker+'-picker').classList.remove('open');openPicker=null;}
+  loadCheckpoints();
+  document.getElementById('checkpoint-panel').classList.add('open');
+  cpPanelOpen=true;
+}
+
+function closeCheckpointPanel(){
+  document.getElementById('checkpoint-panel').classList.remove('open');
+  cpPanelOpen=false;
+}
+
+async function deleteCheckpoint(id,btn){
+  btn.disabled=true;
+  const r=await api('/api/checkpoints/'+id,{method:'DELETE'});
+  if(r&&r.data&&r.data.ok){
+    checkpoints=checkpoints.filter(c=>c.id!==id);
+    const item=document.getElementById('cp-item-'+id);
+    if(item)item.remove();
+    const count=document.getElementById('cp-count');
+    const badge=document.getElementById('cp-trigger-badge');
+    count.textContent=checkpoints.length;
+    if(checkpoints.length===0){
+      badge.style.display='none';
+      document.getElementById('cp-list').innerHTML='<div class="cp-empty">No checkpoints yet.</div>';
+    }else{
+      badge.textContent=checkpoints.length>9?'9+':checkpoints.length;
+    }
+  }else{btn.disabled=false;}
+}
+
+async function restoreCheckpoint(id,label,btn){
+  if(!pluginConnected){pushLog('error','❌','Cannot restore: Studio not connected');closeCheckpointPanel();return;}
+  if(!confirm(`Restore checkpoint "${label}"?\n\nThis will write the saved scripts back to Studio.`))return;
+  btn.disabled=true;btn.textContent='Restoring…';
+  closeCheckpointPanel();
+  pushLogDivider();
+  pushLog('warn','🔄',`Restoring checkpoint: <span class="lc">${escHtml(label)}</span>`,'Writing scripts back to Studio…');
+  setAgentStatus('Restoring',true);setAgentProgress(5);
+  try{
+    const r=await api('/api/checkpoints/'+id+'/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId})});
+    if(!r||!r.data||!r.data.ok){
+      pushLog('error','❌','Restore failed: '+(r&&r.data&&r.data.error?r.data.error:'Unknown error'));
+      setAgentStatus('Error',true);
+      if(btn){btn.disabled=false;btn.textContent='Restore';}
+      return;
+    }
+    const scriptCount=r.data.scripts_count||0;
+    lastToolNameForResult='write_script';
+    await pollForResult(sessionId);
+    pushLog('result','✅',`Checkpoint restored: ${scriptCount} script${scriptCount!==1?'s':''} rolled back`,'Changes sent to Studio');
+    pushLogDivider();
+  }catch(e){
+    pushLog('error','❌','Restore error: '+escHtml(e.message));
+    setAgentStatus('Error',true);
+    if(btn){btn.disabled=false;btn.textContent='Restore';}
+  }
+}
+
+document.addEventListener('click',e=>{
+  if(cpPanelOpen&&!e.target.closest('#checkpoint-panel')&&!e.target.closest('#checkpoint-trigger'))closeCheckpointPanel();
+});
+
+(async function(){const t=getToken();if(t){token=t;const r=await api('/auth/me');if(r&&r.ok){userData=r.data.user;credits=r.data.credits;sessionId=r.data.session_id;updateCreditUI();if(sessionId)pluginConnected=true;updatePluginUI();enterChat();loadCheckpoints();return;}}window.location.href='/';})();
 document.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();window.open('/admin','_blank');}});
 </script>
 </body>

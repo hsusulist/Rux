@@ -202,6 +202,8 @@ def get_session(session_id):
                 "plugin_id": None, "logs": [], "latest_reply": "",
                 "latest_context": {}, "model_key": DEFAULT_MODEL,
                 "user_id": None, "accumulated_cost": 0.0,
+                "script_cache": {}, "current_checkpoint_id": None,
+                "restore_queue": [], "restore_checkpoint_label": "",
             }
         return sessions[session_id]
 
@@ -344,19 +346,25 @@ def call_openai_compat(client, model_id, messages):
 SYSTEM_PROMPT = """You are Rux, a Roblox Studio and Luau expert AI assistant connected to a live Roblox Studio plugin via a tool bridge.
 
 TOOLS:
-- You have direct access to tools (read_script, write_script, list_scripts, get_script_tree, search_code, create_script, delete_script, snapshot_script, restore_script, diff_script, check_errors, get_instance_tree, get_properties, set_property, find_instance, get_selection, get_current_script, get_place_metadata, find_usages, get_output_log, get_error_log).
+- You have direct access to tools (read_script, write_script, list_scripts, get_script_tree, search_code, create_script, delete_script, snapshot_script, restore_script, diff_script, check_errors, get_instance_tree, get_properties, set_property, find_instance, get_selection, get_current_script, get_place_metadata, find_usages, get_output_log, get_error_log, create_checkpoint, list_checkpoints).
 - CRITICAL: You may only call ONE tool per response. Never call multiple tools at once. Call one tool, wait for the result, then decide your next step.
 - Always use list_scripts or get_script_tree first before trying to read a specific script by name.
 - Prefer get_script_tree over get_instance_tree — get_instance_tree returns extremely large data. Use find_instance or get_script_tree instead.
 - get_output_log and get_error_log may return empty results — tell the user to check the Studio Output window directly if needed.
 - If a tool result is truncated, use more specific tools like read_script or find_instance.
 
+CHECKPOINTS:
+- A checkpoint is automatically created at the start of every agent task, capturing the state of scripts before they are modified.
+- You may also call create_checkpoint(label, scripts) explicitly when you want to save the content of specific scripts at any point. Pass the script names and their current source code (which you have already read via read_script) in the scripts dict.
+- Call list_checkpoints() to see what checkpoints are saved for the current user.
+- The user can restore any checkpoint from the web UI to roll back changes.
+
 RULES:
 - Be precise, safe, and incremental.
 - In agent mode, first produce a numbered plan before using tools.
 - In chat mode, call tools directly — no plan needed.
 - Prefer inspection before writing.
-- Before editing any script, call snapshot_script first.
+- Before editing any script, call read_script first so the original is captured by the checkpoint system.
 - Keep changes minimal and explain what changed.
 - If a tool returns an error, recover gracefully and try the next best step.
 - Stop when the task is complete and give a concise summary.
@@ -385,7 +393,104 @@ TOOL_DEFINITIONS = [
     {"name": "snapshot_script", "description": "Save a snapshot of a script before modification.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "diff_script", "description": "Show differences against the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "restore_script", "description": "Restore a script to the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
+    {"name": "create_checkpoint", "description": "Save a named checkpoint of one or more scripts so the user can roll back later. Call this before or after making edits. Pass the script names and their current source code.", "input_schema": {"type": "object", "properties": {"label": {"type": "string", "description": "A short label, e.g. 'Before fixing PlayerController'"}, "scripts": {"type": "object", "description": "Dict mapping script names to their source code", "additionalProperties": {"type": "string"}}}, "required": ["label", "scripts"]}},
+    {"name": "list_checkpoints", "description": "List all checkpoints saved for the current user. Returns id, label, timestamp, and number of scripts in each checkpoint.", "input_schema": {"type": "object", "properties": {}}},
 ]
+
+SERVER_SIDE_TOOLS = {"create_checkpoint", "list_checkpoints"}
+
+# ═══ CHECKPOINT HELPERS ═══
+
+def _extract_script_source(result_data):
+    if isinstance(result_data, dict):
+        for key in ("source", "code", "content", "script", "text"):
+            val = result_data.get(key)
+            if val and isinstance(val, str):
+                return val
+    return None
+
+
+def _resolve_server_tool(session, tc):
+    name = tc.get("name")
+    args = tc.get("arguments", {})
+    user_id = session.get("user_id")
+    if name == "create_checkpoint":
+        label = args.get("label", "Checkpoint")
+        scripts = args.get("scripts", {})
+        ckpt_id = "ckpt-" + str(uuid.uuid4())
+        existing_scripts = {}
+        if user_id:
+            auto_id = session.get("current_checkpoint_id")
+            if auto_id:
+                existing = store.get_checkpoint(user_id, auto_id)
+                if existing:
+                    existing_scripts = existing.get("scripts", {})
+        merged = dict(existing_scripts)
+        merged.update(scripts)
+        ckpt_data = {
+            "id": ckpt_id, "label": label,
+            "created_at": int(time.time() * 1000),
+            "scripts": merged,
+        }
+        if user_id:
+            store.save_checkpoint(user_id, ckpt_id, ckpt_data)
+        return {"ok": True, "checkpoint_id": ckpt_id, "label": label, "scripts_saved": len(merged)}
+    elif name == "list_checkpoints":
+        if not user_id:
+            return {"checkpoints": []}
+        ckpts = store.get_checkpoints(user_id)
+        result_list = sorted(
+            [{"id": c["id"], "label": c["label"], "created_at": c["created_at"], "scripts_count": len(c.get("scripts", {}))} for c in ckpts.values()],
+            key=lambda x: x["created_at"], reverse=True,
+        )
+        return {"checkpoints": result_list[:20]}
+    return {"ok": True}
+
+
+def _continue_agent_with_result(session, tc, result_data):
+    user_id = session.get("user_id")
+    mk = session.get("model_key", DEFAULT_MODEL)
+    mi = resolve_model(mk)
+    cpt = mi["credit_per_token"]
+    if mi["provider"] != "anthropic" or not anthropic_client:
+        session["status"] = "error"
+        session["pending_tool_call"] = None
+        return None
+    prior = session.get("agent_messages", [])
+    tool_result_str = json.dumps(result_data, ensure_ascii=False)
+    tr = {"type": "tool_result", "tool_use_id": tc["id"], "content": tool_result_str}
+    cont = prior + [{"role": "user", "content": [tr]}]
+    try:
+        r = call_anthropic(mi["id"], cont, tools=TOOL_DEFINITIONS)
+        first_tc, _, ft = extract_tool_info(r.content)
+        if first_tc:
+            assistant_content = build_assistant_content(r.content, first_tc["id"])
+        else:
+            assistant_content = content_blocks_to_dicts(r.content)
+        session["agent_messages"] = cont + [{"role": "assistant", "content": assistant_content}]
+        session["step_count"] = session.get("step_count", 0) + 1
+        output_tokens = r.usage.output_tokens
+        cost = round(output_tokens * cpt, 6)
+        if user_id:
+            store.deduct_credits(user_id, cost)
+        session["accumulated_cost"] = session.get("accumulated_cost", 0) + cost
+        if ft:
+            session["accumulated_reply"] = session.get("accumulated_reply", "") + ft
+        if first_tc:
+            session["pending_tool_call"] = first_tc
+            session["status"] = "running"
+            return first_tc
+        else:
+            session["pending_tool_call"] = None
+            session["status"] = "done"
+            session["latest_reply"] = session.get("accumulated_reply", "") or ft
+            return None
+    except Exception as e:
+        print(f"[Rux] _continue_agent_with_result error: {e}")
+        session["status"] = "error"
+        session["pending_tool_call"] = None
+        return None
+
 
 # ═══ ADMIN ROUTES ═══
 
@@ -872,6 +977,30 @@ def approve_agent():
         }), 403
 
     try:
+        # Auto-create a checkpoint before execution starts
+        agent_msgs = session.get("agent_messages", [])
+        user_msg_label = "Agent run"
+        for m in agent_msgs:
+            if m.get("role") == "user":
+                content = m.get("content", "")
+                if isinstance(content, str):
+                    if "User message:" in content:
+                        user_msg_label = content.split("User message:")[1].split("\n")[0].strip()[:60]
+                    else:
+                        user_msg_label = content[:60]
+                    break
+        auto_ckpt_id = "ckpt-" + str(uuid.uuid4())
+        store.save_checkpoint(user["id"], auto_ckpt_id, {
+            "id": auto_ckpt_id,
+            "label": f"Before: {user_msg_label}",
+            "created_at": int(time.time() * 1000),
+            "scripts": {},
+            "auto": True,
+        })
+        session["current_checkpoint_id"] = auto_ckpt_id
+        session["script_cache"] = {}
+        session["restore_queue"] = []
+
         prior = session.get("agent_messages", [])
         prior.append({"role": "user", "content": "The plan is approved. Start executing now. Use one tool at a time."})
         r = call_anthropic(mi["id"], prior, tools=TOOL_DEFINITIONS)
@@ -945,6 +1074,19 @@ def plugin_poll():
                 plugin_disconnected = True
                 info["status"] = "connected"
 
+    # Resolve server-side tools without plugin involvement
+    pending_tc = session.get("pending_tool_call")
+    resolved = 0
+    while pending_tc and pending_tc.get("name") in SERVER_SIDE_TOOLS and resolved < 5:
+        synthetic = _resolve_server_tool(session, pending_tc)
+        pending_tc = _continue_agent_with_result(session, pending_tc, synthetic)
+        resolved += 1
+
+    # If no pending tool call but restore queue has items, pop next
+    if not session.get("pending_tool_call") and session.get("restore_queue") and session.get("status") == "restoring":
+        next_write = session["restore_queue"].pop(0)
+        session["pending_tool_call"] = next_write
+
     return jsonify({
         "status_message": session["status"],
         "tool_call": session.get("pending_tool_call"),
@@ -961,6 +1103,24 @@ def plugin_tool_result():
     mk = session.get("model_key", DEFAULT_MODEL)
     mi = resolve_model(mk)
     cpt = mi["credit_per_token"]
+
+    # Restore mode: handle queue advance before any provider/step checks
+    if session.get("status") == "restoring":
+        balance = 0
+        if user_id:
+            balance, _ = store.get_credits(user_id)
+        restore_queue = session.get("restore_queue", [])
+        pc_restore = session.get("pending_tool_call")
+        session["pending_tool_call"] = None
+        if restore_queue:
+            next_write = restore_queue.pop(0)
+            session["pending_tool_call"] = next_write
+            return jsonify({"reply": "Restoring...", "status": "tool_requested", "tool_call": next_write, "credits": round(balance, 2), "tokens_used": 0})
+        else:
+            session["status"] = "done"
+            n = session.get("restore_scripts_count", 0)
+            session["latest_reply"] = f"Checkpoint restored: {n} script{'s' if n != 1 else ''} rolled back."
+            return jsonify({"reply": session["latest_reply"], "status": "done", "credits": round(balance, 2), "tokens_used": 0})
 
     if mi["provider"] != "anthropic":
         session["status"] = "error"
@@ -987,6 +1147,32 @@ def plugin_tool_result():
             return jsonify({"reply": "Session expired. Start a new conversation.", "status": "error"}), 200
 
         tool_result_data = data.get("tool_result", {})
+
+        # ── Checkpoint: intercept read_script results ──
+        tool_name = pc.get("name", "")
+        tool_args = pc.get("arguments", {})
+        ckpt_id = session.get("current_checkpoint_id")
+        if tool_name == "read_script" and ckpt_id and user_id:
+            script_name = tool_args.get("name", "")
+            source = _extract_script_source(tool_result_data)
+            if script_name and source:
+                session.setdefault("script_cache", {})[script_name] = source
+                ckpt = store.get_checkpoint(user_id, ckpt_id)
+                if ckpt and script_name not in ckpt.get("scripts", {}):
+                    ckpt.setdefault("scripts", {})[script_name] = source
+                    store.save_checkpoint(user_id, ckpt_id, ckpt)
+        elif tool_name == "write_script" and ckpt_id and user_id:
+            script_name = tool_args.get("name", "")
+            new_code = tool_args.get("code", "")
+            before_code = session.get("script_cache", {}).get(script_name)
+            if script_name and before_code:
+                ckpt = store.get_checkpoint(user_id, ckpt_id)
+                if ckpt and script_name not in ckpt.get("scripts", {}):
+                    ckpt.setdefault("scripts", {})[script_name] = before_code
+                    store.save_checkpoint(user_id, ckpt_id, ckpt)
+            if script_name and new_code:
+                session.setdefault("script_cache", {})[script_name] = new_code
+
         tool_result_data = truncate_tool_result(tool_result_data)
         tool_result_str = json.dumps(tool_result_data, ensure_ascii=False)
 
@@ -1093,6 +1279,77 @@ def delete_conversation(conv_id):
     user = request.user
     store.delete_conv(user["id"], conv_id)
     return jsonify({"ok": True})
+
+# ═══ CHECKPOINT ROUTES ═══
+@app.route("/api/checkpoints", methods=["GET"])
+@require_auth
+def get_checkpoints_route():
+    user = request.user
+    ckpts = store.get_checkpoints(user["id"])
+    result = sorted(
+        [{"id": c["id"], "label": c["label"], "created_at": c["created_at"], "scripts_count": len(c.get("scripts", {})), "auto": c.get("auto", False)} for c in ckpts.values()],
+        key=lambda x: x["created_at"], reverse=True,
+    )
+    return jsonify(result)
+
+
+@app.route("/api/checkpoints", methods=["POST"])
+@require_auth
+def create_checkpoint_route():
+    user = request.user
+    data = request.get_json(force=True)
+    label = data.get("label", "Manual checkpoint")
+    scripts = data.get("scripts", {})
+    ckpt_id = "ckpt-" + str(uuid.uuid4())
+    ckpt_data = {
+        "id": ckpt_id,
+        "label": label,
+        "created_at": int(time.time() * 1000),
+        "scripts": scripts,
+        "auto": False,
+    }
+    store.save_checkpoint(user["id"], ckpt_id, ckpt_data)
+    return jsonify({"ok": True, "id": ckpt_id})
+
+
+@app.route("/api/checkpoints/<ckpt_id>", methods=["DELETE"])
+@require_auth
+def delete_checkpoint_route(ckpt_id):
+    user = request.user
+    ok = store.delete_checkpoint(user["id"], ckpt_id)
+    return jsonify({"ok": ok})
+
+
+@app.route("/api/checkpoints/<ckpt_id>/restore", methods=["POST"])
+@require_auth
+def restore_checkpoint_route(ckpt_id):
+    user = request.user
+    data = request.get_json(force=True)
+    session_id = data.get("session_id")
+    if not session_id:
+        return jsonify({"error": "Missing session_id"}), 400
+    ckpt = store.get_checkpoint(user["id"], ckpt_id)
+    if not ckpt:
+        return jsonify({"error": "Checkpoint not found"}), 404
+    scripts = ckpt.get("scripts", {})
+    if not scripts:
+        return jsonify({"error": "Checkpoint has no saved scripts"}), 400
+    session = get_session(session_id)
+    restore_calls = [
+        {"id": "restore-" + str(uuid.uuid4()), "name": "write_script", "arguments": {"name": name, "code": code}}
+        for name, code in scripts.items()
+    ]
+    first = restore_calls.pop(0) if restore_calls else None
+    if not first:
+        return jsonify({"error": "No scripts to restore"}), 400
+    session["restore_queue"] = restore_calls
+    session["restore_scripts_count"] = len(scripts)
+    session["pending_tool_call"] = first
+    session["status"] = "restoring"
+    session["latest_reply"] = ""
+    session["accumulated_reply"] = ""
+    return jsonify({"ok": True, "scripts_count": len(scripts), "label": ckpt["label"]})
+
 
 # ═══ STATUS / MODELS / PAGES ═══
 @app.route("/status", methods=["GET"])
