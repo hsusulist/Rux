@@ -1312,18 +1312,19 @@ def delete_conversation(conv_id):
 @require_auth
 def get_checkpoints_route():
     user = request.user
+    filter_session_id = request.args.get("session_id")
     ckpts = store.get_checkpoints(user["id"])
-    result = sorted(
-        [
-            {
-                "id": c["id"], "label": c["label"], "created_at": c["created_at"],
-                "scripts_count": len(c.get("scripts", {})), "auto": c.get("auto", False),
-                "session_id": c.get("session_id"),
-            }
-            for c in ckpts.values()
-        ],
-        key=lambda x: x["created_at"], reverse=True,
-    )
+    result = []
+    for c in ckpts.values():
+        if filter_session_id and c.get("session_id") != filter_session_id:
+            continue
+        script_names = list(c.get("scripts", {}).keys())
+        result.append({
+            "id": c["id"], "label": c["label"], "created_at": c["created_at"],
+            "scripts_count": len(script_names), "auto": c.get("auto", False),
+            "session_id": c.get("session_id"), "script_names": script_names,
+        })
+    result.sort(key=lambda x: x["created_at"], reverse=True)
     return jsonify(result)
 
 
@@ -1369,8 +1370,8 @@ def restore_checkpoint_route(ckpt_id):
     if not scripts:
         return jsonify({"error": "Checkpoint has no saved scripts"}), 400
     session = get_session(session_id)
-    # Verify the session belongs to this user
-    if session.get("user_id") and session["user_id"] != user["id"]:
+    # Strict: session must be owned by this user (reject if unset or mismatched)
+    if session.get("user_id") != user["id"]:
         return jsonify({"error": "Forbidden"}), 403
     restore_calls = [
         {"id": "restore-" + str(uuid.uuid4()), "name": "write_script", "arguments": {"name": sname, "code": code}}

@@ -715,7 +715,8 @@ function _cpFmt(ts){
 
 async function loadCheckpoints(){
   if(!token)return;
-  const r=await api('/api/checkpoints');
+  const qs=sessionId?'?session_id='+encodeURIComponent(sessionId):'';
+  const r=await api('/api/checkpoints'+qs);
   if(r&&r.ok){
     checkpoints=r.data||[];
     renderCheckpoints();
@@ -741,10 +742,14 @@ function renderCheckpoints(){
   list.innerHTML='';
   checkpoints.forEach(cp=>{
     const hasScripts=cp.scripts_count>0;
+    const names=cp.script_names||[];
+    const preview=names.slice(0,4).map(n=>`<span class="lc" style="font-size:9px">${escHtml(n)}</span>`).join(' ');
+    const more=names.length>4?`<span style="color:var(--muted);font-size:9px">+${names.length-4} more</span>`:'';
+    const scriptsList=hasScripts?`<div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;">${preview}${more}</div>`:'';
     const div=document.createElement('div');
     div.className='cp-item';
     div.id='cp-item-'+cp.id;
-    div.innerHTML=`<div class="cp-dot ${hasScripts?'has':''}"></div><div class="cp-info"><div class="cp-label">${escHtml(cp.label)}</div><div class="cp-meta">${_cpFmt(cp.created_at)} · ${cp.scripts_count} script${cp.scripts_count!==1?'s':''}</div></div><div class="cp-actions"><button class="cp-btn restore" id="cp-restore-${cp.id}" onclick="restoreCheckpoint('${cp.id}','${escHtml(cp.label).replace(/'/g,"\\'")}',this)" ${!hasScripts||!pluginConnected?'disabled':''} title="${hasScripts?'Restore scripts in Studio':'No scripts captured in this checkpoint'}">Restore</button><button class="cp-btn del" onclick="deleteCheckpoint('${cp.id}',this)">✕</button></div>`;
+    div.innerHTML=`<div class="cp-dot ${hasScripts?'has':''}"></div><div class="cp-info"><div class="cp-label">${escHtml(cp.label)}</div><div class="cp-meta">${_cpFmt(cp.created_at)} · ${cp.scripts_count} script${cp.scripts_count!==1?'s':''}</div>${scriptsList}</div><div class="cp-actions"><button class="cp-btn restore" id="cp-restore-${cp.id}" onclick="restoreCheckpoint('${cp.id}','${escHtml(cp.label).replace(/'/g,"\\'")}',this)" ${!hasScripts||!pluginConnected?'disabled':''} title="${hasScripts?'Restore scripts in Studio':'No scripts captured in this checkpoint'}">Restore</button><button class="cp-btn del" onclick="deleteCheckpoint('${cp.id}',this)">✕</button></div>`;
     list.appendChild(div);
   });
 }
