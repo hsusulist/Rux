@@ -204,6 +204,7 @@ def get_session(session_id):
                 "user_id": None, "accumulated_cost": 0.0,
                 "script_cache": {}, "current_checkpoint_id": None,
                 "restore_queue": [], "restore_checkpoint_label": "",
+                "_session_id": session_id,
             }
         return sessions[session_id]
 
@@ -356,8 +357,9 @@ TOOLS:
 CHECKPOINTS:
 - A checkpoint is automatically created at the start of every agent task, capturing the state of scripts before they are modified.
 - You may also call create_checkpoint(label, scripts) explicitly when you want to save the content of specific scripts at any point. Pass the script names and their current source code (which you have already read via read_script) in the scripts dict.
-- Call list_checkpoints() to see what checkpoints are saved for the current user.
-- The user can restore any checkpoint from the web UI to roll back changes.
+- Call list_checkpoints() to see what checkpoints are saved for the current session.
+- Call restore_checkpoint(checkpoint_id) to retrieve saved script contents from a checkpoint; then use write_script for each script to apply the rollback.
+- The user can also restore any checkpoint from the web UI to roll back changes.
 
 RULES:
 - Be precise, safe, and incremental.
@@ -394,10 +396,11 @@ TOOL_DEFINITIONS = [
     {"name": "diff_script", "description": "Show differences against the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "restore_script", "description": "Restore a script to the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "create_checkpoint", "description": "Save a named checkpoint of one or more scripts so the user can roll back later. Call this before or after making edits. Pass the script names and their current source code.", "input_schema": {"type": "object", "properties": {"label": {"type": "string", "description": "A short label, e.g. 'Before fixing PlayerController'"}, "scripts": {"type": "object", "description": "Dict mapping script names to their source code", "additionalProperties": {"type": "string"}}}, "required": ["label", "scripts"]}},
-    {"name": "list_checkpoints", "description": "List all checkpoints saved for the current user. Returns id, label, timestamp, and number of scripts in each checkpoint.", "input_schema": {"type": "object", "properties": {}}},
+    {"name": "list_checkpoints", "description": "List all checkpoints saved for the current session. Returns id, label, timestamp, and number of scripts in each checkpoint.", "input_schema": {"type": "object", "properties": {}}},
+    {"name": "restore_checkpoint", "description": "Retrieve the saved script contents from a checkpoint by ID so you can restore them. After getting the result, call write_script for each script to apply the rollback.", "input_schema": {"type": "object", "properties": {"checkpoint_id": {"type": "string", "description": "The checkpoint ID (from list_checkpoints)"}}, "required": ["checkpoint_id"]}},
 ]
 
-SERVER_SIDE_TOOLS = {"create_checkpoint", "list_checkpoints"}
+SERVER_SIDE_TOOLS = {"create_checkpoint", "list_checkpoints", "restore_checkpoint"}
 
 # ═══ CHECKPOINT HELPERS ═══
 
@@ -431,6 +434,7 @@ def _resolve_server_tool(session, tc):
             "id": ckpt_id, "label": label,
             "created_at": int(time.time() * 1000),
             "scripts": merged,
+            "session_id": session.get("_session_id"),
         }
         if user_id:
             store.save_checkpoint(user_id, ckpt_id, ckpt_data)
@@ -439,11 +443,33 @@ def _resolve_server_tool(session, tc):
         if not user_id:
             return {"checkpoints": []}
         ckpts = store.get_checkpoints(user_id)
+        sid = session.get("_session_id")
         result_list = sorted(
-            [{"id": c["id"], "label": c["label"], "created_at": c["created_at"], "scripts_count": len(c.get("scripts", {}))} for c in ckpts.values()],
+            [
+                {"id": c["id"], "label": c["label"], "created_at": c["created_at"], "scripts_count": len(c.get("scripts", {}))}
+                for c in ckpts.values()
+                if not sid or c.get("session_id") == sid
+            ],
             key=lambda x: x["created_at"], reverse=True,
         )
         return {"checkpoints": result_list[:20]}
+    elif name == "restore_checkpoint":
+        checkpoint_id = args.get("checkpoint_id", "")
+        if not user_id or not checkpoint_id:
+            return {"error": "Missing checkpoint_id or not authenticated"}
+        ckpt = store.get_checkpoint(user_id, checkpoint_id)
+        if not ckpt:
+            return {"error": f"Checkpoint '{checkpoint_id}' not found"}
+        scripts = ckpt.get("scripts", {})
+        if not scripts:
+            return {"error": "Checkpoint has no saved scripts to restore"}
+        return {
+            "ok": True,
+            "checkpoint_id": checkpoint_id,
+            "label": ckpt["label"],
+            "scripts": scripts,
+            "message": f"Checkpoint has {len(scripts)} script(s). Use write_script for each script name in 'scripts' to restore them.",
+        }
     return {"ok": True}
 
 
@@ -996,6 +1022,7 @@ def approve_agent():
             "created_at": int(time.time() * 1000),
             "scripts": {},
             "auto": True,
+            "session_id": session_id,
         })
         session["current_checkpoint_id"] = auto_ckpt_id
         session["script_cache"] = {}
@@ -1287,7 +1314,14 @@ def get_checkpoints_route():
     user = request.user
     ckpts = store.get_checkpoints(user["id"])
     result = sorted(
-        [{"id": c["id"], "label": c["label"], "created_at": c["created_at"], "scripts_count": len(c.get("scripts", {})), "auto": c.get("auto", False)} for c in ckpts.values()],
+        [
+            {
+                "id": c["id"], "label": c["label"], "created_at": c["created_at"],
+                "scripts_count": len(c.get("scripts", {})), "auto": c.get("auto", False),
+                "session_id": c.get("session_id"),
+            }
+            for c in ckpts.values()
+        ],
         key=lambda x: x["created_at"], reverse=True,
     )
     return jsonify(result)
@@ -1335,9 +1369,12 @@ def restore_checkpoint_route(ckpt_id):
     if not scripts:
         return jsonify({"error": "Checkpoint has no saved scripts"}), 400
     session = get_session(session_id)
+    # Verify the session belongs to this user
+    if session.get("user_id") and session["user_id"] != user["id"]:
+        return jsonify({"error": "Forbidden"}), 403
     restore_calls = [
-        {"id": "restore-" + str(uuid.uuid4()), "name": "write_script", "arguments": {"name": name, "code": code}}
-        for name, code in scripts.items()
+        {"id": "restore-" + str(uuid.uuid4()), "name": "write_script", "arguments": {"name": sname, "code": code}}
+        for sname, code in scripts.items()
     ]
     first = restore_calls.pop(0) if restore_calls else None
     if not first:
