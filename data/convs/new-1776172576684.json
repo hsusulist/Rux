@@ -1,0 +1,30 @@
+{
+  "id": "new-1776172576684",
+  "title": "hi",
+  "messages": [
+    {
+      "role": "user",
+      "text": "hi",
+      "logTime": "20:16:16"
+    },
+    {
+      "role": "assistant",
+      "text": "Hello! I'm Rux, your Roblox Studio and Luau expert. How can I help you with your project today? Whether you need to build something, write some code, or debug an issue, just let me know!",
+      "logTime": "20:16:24"
+    }
+  ],
+  "history": [
+    {
+      "role": "user",
+      "content": "hi"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! I'm Rux, your Roblox Studio and Luau expert. How can I help you with your project today? Whether you need to build something, write some code, or debug an issue, just let me know!"
+    }
+  ],
+  "mode": "chat",
+  "model": "gemma-26b",
+  "sessionId": "6d82d925-4037-4d3d-8b44-2949667f29e0",
+  "updatedAt": 1776172584517
+}

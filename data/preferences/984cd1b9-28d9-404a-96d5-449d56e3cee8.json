@@ -1,9 +1,9 @@
 {
-  "sound_enabled": false,
-  "default_model": "gemini-flash",
-  "default_mode": "chat",
+  "auto_scroll": true,
   "compact_mode": false,
-  "show_thinking": true,
+  "default_mode": "chat",
+  "default_model": "gemma-26b",
   "show_credits_log": true,
-  "auto_scroll": true
+  "show_thinking": true,
+  "sound_enabled": false
 }

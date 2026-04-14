@@ -1,8 +1,14 @@
 [
   {
+    "admin_id": "",
     "amount": -0.0014,
     "reason": "AI chat (Gemini Flash)",
-    "admin_id": "",
     "timestamp": 1776171077923
+  },
+  {
+    "amount": 0,
+    "reason": "AI chat (Gemma 4 26B)",
+    "admin_id": "",
+    "timestamp": 1776172584458
   }
 ]
