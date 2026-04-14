@@ -9,7 +9,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 MAX_CREDITS = 10.0
 CREDIT_INTERVAL_MS = 6 * 60 * 60 * 1000
 
-OWNER_ID = "c14987eb-319a-4ab1-a3f6-defaaae6d4b9"
+OWNER_ID = "984cd1b9-28d9-404a-96d5-449d56e3cee8"
 
 _lock = threading.Lock()
 
