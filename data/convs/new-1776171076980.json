@@ -1,0 +1,30 @@
+{
+  "id": "new-1776171076980",
+  "title": "hi",
+  "messages": [
+    {
+      "role": "user",
+      "text": "hi",
+      "logTime": "19:51:16"
+    },
+    {
+      "role": "assistant",
+      "text": "Hello! How can I help you with your Roblox Studio project today?",
+      "logTime": "19:51:17"
+    }
+  ],
+  "history": [
+    {
+      "role": "user",
+      "content": "hi"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! How can I help you with your Roblox Studio project today?"
+    }
+  ],
+  "mode": "chat",
+  "model": "gemini-flash",
+  "sessionId": "cdce6440-b5d2-427f-b72d-e9d364ad8402",
+  "updatedAt": 1776171078003
+}
