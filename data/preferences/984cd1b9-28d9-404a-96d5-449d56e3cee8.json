@@ -1,6 +1,6 @@
 {
   "sound_enabled": false,
-  "default_model": "sonnet",
+  "default_model": "gemini-flash",
   "default_mode": "chat",
   "compact_mode": false,
   "show_thinking": true,

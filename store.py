@@ -376,6 +376,8 @@ def set_user_credits(user_id, balance, max_credit):
 def save_credit_entry(user_id, amount, reason, admin_id=None):
     with _lock:
         history = _load(f"credit_history/{user_id}.json")
+        if not isinstance(history, list):
+            history = []
         entry = {
             "amount": round(amount, 6),
             "reason": reason or "",
@@ -391,6 +393,8 @@ def save_credit_entry(user_id, amount, reason, admin_id=None):
 def get_credit_history(user_id, limit=50):
     with _lock:
         history = _load(f"credit_history/{user_id}.json")
+        if not isinstance(history, list):
+            history = []
         return history[-limit:]
 
 
