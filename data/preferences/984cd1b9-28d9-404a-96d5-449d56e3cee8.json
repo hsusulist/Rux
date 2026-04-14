@@ -1,0 +1,9 @@
+{
+  "sound_enabled": false,
+  "default_model": "gpt-5-chat",
+  "default_mode": "chat",
+  "compact_mode": false,
+  "show_thinking": true,
+  "show_credits_log": true,
+  "auto_scroll": true
+}

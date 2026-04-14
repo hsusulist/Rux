@@ -650,8 +650,8 @@ function handleResponse(d){
   if(d.reply&&d.status==='done'){
     removeThinking();pushAssistantReply(d.reply);setAgentProgress(100);setAgentStatus('Done',false);
     setTimeout(()=>{document.getElementById('agent-progress').classList.remove('active')},2000)
-  }else if(d.reply&&d.status!=='done'){if(d.reply.trim()){pushLog('thinking','💭','Status',escHtml(d.reply.slice(0,120)))}}
-  if(d.tokens_used){agentTotalTokens+=d.tokens_used;updateAgentStepUI();pushLog('credit','💰',d.tokens_used+' tokens used','Balance: '+credits.balance.toFixed(2))}
+  }else if(d.reply&&d.status!=='done'){if(mode==='agent'&&d.reply.trim()){pushLog('thinking','💭','Status',escHtml(d.reply.slice(0,120)))}}
+  if(d.tokens_used){agentTotalTokens+=d.tokens_used;updateAgentStepUI();if(mode==='agent'){pushLog('credit','💰',d.tokens_used+' tokens used','Balance: '+credits.balance.toFixed(2))}}
 }
 
 /* ═══ POLL FOR RESULT ═══ */
@@ -696,11 +696,7 @@ async function sendMessage(){
   pushMsg({role:'user',text,logTime:_now()});
   agentStepCount=0;agentTotalTokens=0;agentTotalSteps=0;lastToolNameForResult='';
   hadToolActivity=false;
-  updateAgentStepUI();setAgentProgress(3);setAgentStatus('Running',true);
-  const modelLabel=MODEL_LABELS[selectedModel]||'Sonnet';
-  pushLog('system','⚙️','Session started',`mode: <span class="lb">${escHtml(mode)}</span> · model: <span class="lb">${escHtml(modelLabel)}</span>`);
-  pushLogDivider();
-  pushLog('thinking',mode==='agent'?'📋':'🧠',mode==='agent'?'Generating plan...':'Processing...');
+  if(mode==='agent'){updateAgentStepUI();setAgentProgress(3);setAgentStatus('Running',true);const modelLabel=MODEL_LABELS[selectedModel]||'Sonnet';pushLog('system','⚙️','Session started',`mode: <span class="lb">${escHtml(mode)}</span> · model: <span class="lb">${escHtml(modelLabel)}</span>`);pushLogDivider();pushLog('thinking','📋','Generating plan...');}
   addThinking();
   currentAbortController=new AbortController();
   try{
