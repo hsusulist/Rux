@@ -1,6 +1,6 @@
 {
   "sound_enabled": false,
-  "default_model": "gpt-5-chat",
+  "default_model": "sonnet",
   "default_mode": "chat",
   "compact_mode": false,
   "show_thinking": true,
