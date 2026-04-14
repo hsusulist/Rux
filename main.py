@@ -7,6 +7,7 @@ import secrets
 import traceback
 from flask import Flask, request, jsonify, render_template
 from threading import Lock
+from functools import wraps
 
 try:
     import bcrypt
@@ -88,6 +89,30 @@ MODELS = {
 DEFAULT_MODEL = "gemini-pro"
 OWNER_ID = "418f27dc-3ad3-48f6-b725-a00de0091926"
 
+
+# ═══ RATE LIMITING ═══
+def rate_limit(action="api", limit=30, window_ms=60000):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            token = request.headers.get("Authorization", "").replace("Bearer ", "")
+            user = get_user_from_token(token)
+            if not user:
+                return jsonify({"error": "Unauthorized"}), 401
+            allowed, remaining, reset_at = store.check_rate_limit(user["id"], action, limit, window_ms)
+            if not allowed:
+                resp = jsonify({"error": "Rate limit exceeded", "retry_at": reset_at})
+                resp.headers["Retry-After"] = str(max(0, (reset_at - int(time.time() * 1000)) // 1000))
+                return resp, 429
+            resp = f(*args, **kwargs)
+            if hasattr(resp, 'headers'):
+                resp.headers["X-RateLimit-Remaining"] = str(remaining)
+            return resp
+        wrapper.__name__ = f.__name__
+        return wrapper
+    return decorator
+
+
 def get_user_from_token(token):
     if not token:
         return None
@@ -139,9 +164,11 @@ def check_maintenance():
         return None
     if request.path.startswith("/static"):
         return None
+    if request.path == "/health":
+        return None
     if store.is_maintenance():
         return jsonify({"error": "maintenance", "message": "Site is under maintenance. Please try again later."}), 503
-        
+
 # ═══ IN-MEMORY STATE ═══
 sessions = {}
 sessions_lock = Lock()
@@ -165,8 +192,6 @@ def verify_password(password, hashed):
         return bcrypt.checkpw(password.encode(), hashed.encode())
     except Exception:
         return False
-
-
 
 # ═══ WEB HEARTBEAT HELPERS ═══
 def update_web_heartbeat(user_id):
@@ -346,31 +371,24 @@ def call_openai_compat(client, model_id, messages):
 
 SYSTEM_PROMPT = """You are Rux, a Roblox Studio and Luau expert AI assistant connected to a live Roblox Studio plugin via a tool bridge.
 
-TOOLS:
-- You have direct access to tools (read_script, write_script, list_scripts, get_script_tree, search_code, create_script, delete_script, snapshot_script, restore_script, diff_script, check_errors, get_instance_tree, get_properties, set_property, find_instance, get_selection, get_current_script, get_place_metadata, find_usages, get_output_log, get_error_log, create_checkpoint, list_checkpoints).
-- CRITICAL: You may only call ONE tool per response. Never call multiple tools at once. Call one tool, wait for the result, then decide your next step.
-- Always use list_scripts or get_script_tree first before trying to read a specific script by name.
-- Prefer get_script_tree over get_instance_tree — get_instance_tree returns extremely large data. Use find_instance or get_script_tree instead.
-- get_output_log and get_error_log may return empty results — tell the user to check the Studio Output window directly if needed.
-- If a tool result is truncated, use more specific tools like read_script or find_instance.
+    TOOLS:
+    - You have direct access to tools for reading, writing, creating, and deleting scripts, searching code, inspecting and modifying the instance tree, and adding new instances.
+    - CRITICAL: You may only call ONE tool per response. Never call multiple tools at once. Call one tool, wait for the result, then decide your next step.
+    - Always use list_scripts or get_script_tree first before trying to read a specific script by name.
+    - Prefer get_script_tree over get_instance_tree — get_instance_tree returns extremely large data. Use find_instance or get_script_tree instead.
+    - get_output_log and get_error_log may return empty results — tell the user to check the Studio Output window directly if needed.
+    - If a tool result is truncated, use more specific tools like read_script or find_instance.
 
-CHECKPOINTS:
-- A checkpoint is automatically created at the start of every agent task, capturing the state of scripts before they are modified.
-- You may also call create_checkpoint(label, scripts) explicitly when you want to save the content of specific scripts at any point. Pass the script names and their current source code (which you have already read via read_script) in the scripts dict.
-- Call list_checkpoints() to see what checkpoints are saved for the current session.
-- Call restore_checkpoint(checkpoint_id) to retrieve saved script contents from a checkpoint; then use write_script for each script to apply the rollback.
-- The user can also restore any checkpoint from the web UI to roll back changes.
-
-RULES:
-- Be precise, safe, and incremental.
-- In agent mode, first produce a numbered plan before using tools.
-- In chat mode, call tools directly — no plan needed.
-- Prefer inspection before writing.
-- Before editing any script, call read_script first so the original is captured by the checkpoint system.
-- Keep changes minimal and explain what changed.
-- If a tool returns an error, recover gracefully and try the next best step.
-- Stop when the task is complete and give a concise summary.
-- Never make up script contents or tool results — always use real tool output.
+    INSTANCE OPERATIONS:
+    - get_properties(path): Read all properties of any part, folder, tool, or other instance. Use this to inspect Position, Size, Transparency, CanCollide, Anchored, Color, Material, etc.
+    - set_property(path, property, value): Change any writable property on any instance. Use this to move objects (Position/CFrame), rename (Name), make transparent (Transparency=1), disable collision (CanCollide=false), anchor (Anchored=true), change color/material, reparent (Parent), etc. Call once per property change.
+    - add_instance(class_name, parent_path, name, properties?): Create a new Roblox Instance under a parent. Supports any class: Folder, Part, Tool, SpawnLocation, MeshPart, PointLight, Sound, Decal, etc. Use the optional properties dict to set initial values like Transparency, CanCollide, Anchored, Position, Size, Material, Color.
+    - To build complex structures, chain add_instance calls. Example workflow:
+      1. add_instance("Folder", "Workspace", "MyWeapon")
+      2. add_instance("Tool", "Workspace.MyWeapon", "Sword")
+      3. add_instance("Part", "Workspace.MyWeapon.Sword", "Handle", {"Transparency": 1, "CanCollide": false, "Anchored": false, "Size": {1, 1, 4}})
+      4. add_instance("Script", "Workspace.MyWeapon.Sword", "SwordScript")
+    - Use find_instance or get_properties to verify your changes after making them.
 """
 
 TOOL_DEFINITIONS = [
@@ -385,9 +403,10 @@ TOOL_DEFINITIONS = [
     {"name": "get_error_log", "description": "Get recent error log lines available through the plugin.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "search_code", "description": "Search all scripts for a query string.", "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
     {"name": "find_usages", "description": "Search all scripts for usages of a variable or function name.", "input_schema": {"type": "object", "properties": {"variable_name": {"type": "string"}}, "required": ["variable_name"]}},
-    {"name": "get_instance_tree", "description": "Get the Explorer instance tree. WARNING: Returns very large data. Prefer get_script_tree or find_instance.", "input_schema": {"type": "object", "properties": {}}},
-    {"name": "get_properties", "description": "Get properties for an instance path.", "input_schema": {"type": "object", "properties": {"instance_path": {"type": "string"}}, "required": ["instance_path"]}},
-    {"name": "set_property", "description": "Set a property on an instance path.", "input_schema": {"type": "object", "properties": {"instance_path": {"type": "string"}, "property": {"type": "string"}, "value": {}}, "required": ["instance_path", "property", "value"]}},
+    {"name": "get_instance_tree", "description": "Get the Explorer instance tree. WARNING: Returns very large data.", "input_schema": {"type": "object", "properties": {}}},
+    {"name": "get_properties", "description": "Get all properties of an instance by its path in the Explorer tree. Returns name, class, position, size, color, transparency, collision, and all other readable properties. Use find_instance first if you don't know the exact path.", "input_schema": {"type": "object", "properties": {"instance_path": {"type": "string", "description": "Full path in the Explorer, e.g. 'Workspace.PlayerController' or 'Workspace.Map.Folder1.Part5'"}}, "required": ["instance_path"]}},
+    {"name": "set_property", "description": "Set a property on any instance by path. Can change Name, Position, Size, Transparency, CanCollide, Anchored, Color, Material, Parent, CFrame, and any other writable property. Use this to move objects, rename them, make them transparent, disable collisions, etc. You may set multiple properties by calling this tool once per property.", "input_schema": {"type": "object", "properties": {"instance_path": {"type": "string", "description": "Full path, e.g. 'Workspace.Map.Wall'"}, "property": {"type": "string", "description": "Property name, e.g. 'Name', 'Transparency', 'CanCollide', 'Position', 'Anchored', 'Parent'"}, "value": {"description": "The new value. Strings for Name/Parent, numbers for Transparency/Size, booleans for CanCollide/Anchored, tables for Position/Color (e.g. {0, 5, 0})"}}, "required": ["instance_path", "property", "value"]}},
+    {"name": "add_instance", "description": "Create a new Roblox Instance (Folder, Part, Tool, SpawnLocation, MeshPart, PointLight, Script, LocalScript, ModuleScript, Sound, Decal, BillboardGui, Attachment, etc.) under a parent path. Optionally set initial properties like Name, Transparency, CanCollide, Anchored, Position, Size, Color, Material, and more. This is how you build structures — e.g. add a Folder, then add a Tool inside it, then add a Part named Handle inside the Tool with CanCollide=false and Transparency=1.", "input_schema": {"type": "object", "properties": {"class_name": {"type": "string", "description": "The Roblox class to create, e.g. 'Folder', 'Part', 'Tool', 'SpawnLocation', 'MeshPart', 'PointLight', 'Sound', 'Decal', 'BillboardGui'"}, "parent_path": {"type": "string", "description": "Full path of the parent instance, e.g. 'Workspace', 'Workspace.Map', 'StarterPlayer.StarterPlayerScripts'"}, "name": {"type": "string", "description": "Name for the new instance"}, "properties": {"type": "object", "description": "Optional initial properties to set on the new instance, e.g. {\"Transparency\": 1, \"CanCollide\": false, \"Anchored\": true, \"Position\": {0, 10, 0}, \"Size\": {4, 1, 4}, \"Material\": \"SmoothPlastic\", \"Color\": {255, 0, 0}}", "additionalProperties": {}}}, "required": ["class_name", "parent_path", "name"]}},
     {"name": "find_instance", "description": "Find an instance anywhere in the game by name.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "get_selection", "description": "Return the current Explorer selection.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "get_current_script", "description": "Return the currently selected or active script name and source if available.", "input_schema": {"type": "object", "properties": {}}},
@@ -395,9 +414,9 @@ TOOL_DEFINITIONS = [
     {"name": "snapshot_script", "description": "Save a snapshot of a script before modification.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "diff_script", "description": "Show differences against the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "restore_script", "description": "Restore a script to the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
-    {"name": "create_checkpoint", "description": "Save a named checkpoint of one or more scripts so the user can roll back later. Call this before or after making edits. Pass the script names and their current source code.", "input_schema": {"type": "object", "properties": {"label": {"type": "string", "description": "A short label, e.g. 'Before fixing PlayerController'"}, "scripts": {"type": "object", "description": "Dict mapping script names to their source code", "additionalProperties": {"type": "string"}}}, "required": ["label", "scripts"]}},
-    {"name": "list_checkpoints", "description": "List all checkpoints saved for the current session. Returns id, label, timestamp, and number of scripts in each checkpoint.", "input_schema": {"type": "object", "properties": {}}},
-    {"name": "restore_checkpoint", "description": "Retrieve the saved script contents from a checkpoint by ID so you can restore them. After getting the result, call write_script for each script to apply the rollback.", "input_schema": {"type": "object", "properties": {"checkpoint_id": {"type": "string", "description": "The checkpoint ID (from list_checkpoints)"}}, "required": ["checkpoint_id"]}},
+    {"name": "create_checkpoint", "description": "Save a named checkpoint of one or more scripts.", "input_schema": {"type": "object", "properties": {"label": {"type": "string"}, "scripts": {"type": "object", "additionalProperties": {"type": "string"}}}, "required": ["label", "scripts"]}},
+    {"name": "list_checkpoints", "description": "List all checkpoints saved for the current session.", "input_schema": {"type": "object", "properties": {}}},
+    {"name": "restore_checkpoint", "description": "Retrieve saved script contents from a checkpoint by ID.", "input_schema": {"type": "object", "properties": {"checkpoint_id": {"type": "string"}}, "required": ["checkpoint_id"]}},
 ]
 
 SERVER_SIDE_TOOLS = {"create_checkpoint", "list_checkpoints", "restore_checkpoint"}
@@ -411,7 +430,6 @@ def _extract_script_source(result_data):
             if val and isinstance(val, str):
                 return val
     return None
-
 
 def _resolve_server_tool(session, tc):
     name = tc.get("name")
@@ -445,11 +463,8 @@ def _resolve_server_tool(session, tc):
         ckpts = store.get_checkpoints(user_id)
         sid = session.get("_session_id")
         result_list = sorted(
-            [
-                {"id": c["id"], "label": c["label"], "created_at": c["created_at"], "scripts_count": len(c.get("scripts", {}))}
-                for c in ckpts.values()
-                if not sid or c.get("session_id") == sid
-            ],
+            [{"id": c["id"], "label": c["label"], "created_at": c["created_at"], "scripts_count": len(c.get("scripts", {}))}
+             for c in ckpts.values() if not sid or c.get("session_id") == sid],
             key=lambda x: x["created_at"], reverse=True,
         )
         return {"checkpoints": result_list[:20]}
@@ -463,15 +478,9 @@ def _resolve_server_tool(session, tc):
         scripts = ckpt.get("scripts", {})
         if not scripts:
             return {"error": "Checkpoint has no saved scripts to restore"}
-        return {
-            "ok": True,
-            "checkpoint_id": checkpoint_id,
-            "label": ckpt["label"],
-            "scripts": scripts,
-            "message": f"Checkpoint has {len(scripts)} script(s). Use write_script for each script name in 'scripts' to restore them.",
-        }
+        return {"ok": True, "checkpoint_id": checkpoint_id, "label": ckpt["label"], "scripts": scripts,
+                "message": f"Checkpoint has {len(scripts)} script(s). Use write_script for each to restore."}
     return {"ok": True}
-
 
 def _continue_agent_with_result(session, tc, result_data):
     user_id = session.get("user_id")
@@ -518,7 +527,34 @@ def _continue_agent_with_result(session, tc, result_data):
         return None
 
 
-# ═══ ADMIN ROUTES ═══
+# ═══ WEBHOOK HELPER ═══
+def _fire_webhook(event_type, payload):
+    """Fire webhook if configured."""
+    try:
+        webhooks = store.get_webhooks()
+        url = webhooks.get("url", "")
+        if not url:
+            return
+        import urllib.request
+        data = json.dumps({"event": event_type, "payload": payload, "timestamp": int(time.time() * 1000)}).encode()
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass  # Webhook failures should never break the request
+
+
+# ═══ HEALTH CHECK ═══
+@app.route("/health", methods=["GET"])
+def health_check():
+    now = time.time()
+    with plugin_registry_lock:
+        active_plugins = sum(1 for p in plugin_registry.values() if now - p["last_seen"] < 15)
+    return jsonify({"status": "ok", "timestamp": int(time.time()), "active_plugins": active_plugins, "maintenance": store.is_maintenance()})
+
+
+# ═══════════════════════════════════════════════════════════════
+#  ADMIN ROUTES
+# ═══════════════════════════════════════════════════════════════
 
 @app.route("/admin/api/users", methods=["GET"])
 @require_admin
@@ -533,10 +569,45 @@ def admin_set_credits():
     user_id = data.get("user_id")
     balance = data.get("balance")
     max_credit = data.get("max_credit")
+    reason = data.get("reason", "Admin credit adjustment")
     if not user_id or balance is None or max_credit is None:
         return jsonify({"error": "Missing fields"}), 400
     store.set_user_credits(user_id, balance, max_credit)
+    store.save_credit_entry(user_id, float(balance) - float(store.get_credits(user_id)[0]), reason, request.user.get("id"))
+    store.save_audit_entry(request.user.get("id", ""), "set_credits", user_id, f"balance={balance} max={max_credit} reason={reason}")
+    _fire_webhook("credits_changed", {"user_id": user_id, "balance": balance, "admin_id": request.user.get("id")})
     return jsonify({"ok": True})
+
+@app.route("/admin/api/credits/grant", methods=["POST"])
+@require_admin
+def admin_grant_credits():
+    data = request.get_json(force=True)
+    user_id = data.get("user_id")
+    amount = data.get("amount")
+    reason = data.get("reason", "Admin grant")
+    if not user_id or amount is None:
+        return jsonify({"error": "Missing fields"}), 400
+    amount = float(amount)
+    balance, last_updated = store.get_credits(user_id)
+    max_credit = float(store.get_all_users_with_credits()[0].get("max_credit", store.MAX_CREDITS)) if store.get_user_by_id(user_id) else store.MAX_CREDITS
+    # Get actual max_credit for this user
+    users_list = store.get_all_users_with_credits()
+    for u in users_list:
+        if u["id"] == user_id:
+            max_credit = u.get("max_credit", store.MAX_CREDITS)
+            break
+    new_balance = round(min(balance + amount, max_credit), 6)
+    store.set_user_credits(user_id, new_balance, max_credit)
+    store.save_credit_entry(user_id, amount, reason, request.user.get("id"))
+    store.save_audit_entry(request.user.get("id", ""), "grant_credits", user_id, f"amount=+{amount} reason={reason}")
+    return jsonify({"ok": True, "new_balance": new_balance})
+
+@app.route("/admin/api/credits/history", methods=["GET"])
+@require_admin
+def admin_credit_history():
+    limit = int(request.args.get("limit", 100))
+    history = store.get_global_credit_history(limit)
+    return jsonify(history)
 
 @app.route("/admin/api/block", methods=["POST"])
 @require_admin
@@ -550,6 +621,8 @@ def admin_block_user():
     if store.is_admin(user_id) and request.user.get("id") != OWNER_ID:
         return jsonify({"error": "Only owner can block admins"}), 403
     store.block_user(user_id)
+    store.save_audit_entry(request.user.get("id", ""), "block_user", user_id)
+    _fire_webhook("user_blocked", {"user_id": user_id, "admin_id": request.user.get("id")})
     return jsonify({"ok": True})
 
 @app.route("/admin/api/unblock", methods=["POST"])
@@ -560,6 +633,7 @@ def admin_unblock_user():
     if not user_id:
         return jsonify({"error": "Missing user_id"}), 400
     store.unblock_user(user_id)
+    store.save_audit_entry(request.user.get("id", ""), "unblock_user", user_id)
     return jsonify({"ok": True})
 
 @app.route("/admin/api/promote", methods=["POST"])
@@ -570,6 +644,7 @@ def admin_promote_user():
     if not user_id:
         return jsonify({"error": "Missing user_id"}), 400
     store.add_admin(user_id)
+    store.save_audit_entry(request.user.get("id", ""), "promote_user", user_id)
     return jsonify({"ok": True})
 
 @app.route("/admin/api/demote", methods=["POST"])
@@ -582,6 +657,7 @@ def admin_demote_user():
     if user_id == OWNER_ID:
         return jsonify({"error": "Cannot demote owner"}), 403
     store.remove_admin(user_id)
+    store.save_audit_entry(request.user.get("id", ""), "demote_user", user_id)
     return jsonify({"ok": True})
 
 @app.route("/admin/api/user/<user_id>", methods=["DELETE"])
@@ -591,6 +667,25 @@ def admin_delete_user(user_id):
         return jsonify({"error": "Cannot delete owner"}), 403
     if not store.delete_user(user_id):
         return jsonify({"error": "Failed to delete"}), 400
+    store.save_audit_entry(request.user.get("id", ""), "delete_user", user_id)
+    _fire_webhook("user_deleted", {"user_id": user_id})
+    return jsonify({"ok": True})
+
+@app.route("/admin/api/user/<user_id>/detail", methods=["GET"])
+@require_admin
+def admin_user_detail(user_id):
+    detail = store.get_user_detail(user_id)
+    if not detail:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify(detail)
+
+@app.route("/admin/api/user/<user_id>/note", methods=["POST"])
+@require_admin
+def admin_set_user_note(user_id):
+    data = request.get_json(force=True)
+    note = data.get("note", "")
+    store.set_user_note(user_id, note)
+    store.save_audit_entry(request.user.get("id", ""), "set_note", user_id, f"note_length={len(note)}")
     return jsonify({"ok": True})
 
 @app.route("/admin/api/maintenance", methods=["GET"])
@@ -604,6 +699,8 @@ def admin_set_maintenance():
     data = request.get_json(force=True)
     enabled = data.get("enabled", False)
     store.set_maintenance(enabled)
+    store.save_audit_entry(request.user.get("id", ""), "toggle_maintenance", "", f"enabled={enabled}")
+    _fire_webhook("maintenance_toggled", {"enabled": enabled, "admin_id": request.user.get("id")})
     return jsonify({"ok": True, "enabled": enabled})
 
 @app.route("/admin/api/export", methods=["GET"])
@@ -619,25 +716,359 @@ def admin_import():
     if not data:
         return jsonify({"error": "No data provided"}), 400
     store.import_all(data)
+    store.save_audit_entry(request.user.get("id", ""), "import_data", "", f"keys={list(data.keys())}")
     return jsonify({"ok": True})
+
+# ═══ ADMIN: STATS ═══
+@app.route("/admin/api/stats", methods=["GET"])
+@require_admin
+def admin_stats():
+    stats = store.get_system_stats()
+    return jsonify(stats)
+
+# ═══ ADMIN: AUDIT LOG ═══
+@app.route("/admin/api/audit-log", methods=["GET"])
+@require_admin
+def admin_audit_log():
+    limit = int(request.args.get("limit", 100))
+    offset = int(request.args.get("offset", 0))
+    action_filter = request.args.get("action")
+    log = store.get_audit_log(limit, offset, action_filter)
+    return jsonify(log)
+
+# ═══ ADMIN: SESSIONS ═══
+@app.route("/admin/api/sessions", methods=["GET"])
+@require_admin
+def admin_get_sessions():
+    sessions = store.get_all_sessions()
+    return jsonify(sessions)
+
+@app.route("/admin/api/sessions/<path:token_prefix>", methods=["DELETE"])
+@require_admin
+def admin_force_logout(token_prefix):
+    # Find matching session token
+    all_sessions = store.get_all_sessions()
+    for s in all_sessions:
+        if s["token_full"].startswith(token_prefix[:8]):
+            store.delete_session(s["token_full"])
+            store.save_audit_entry(request.user.get("id", ""), "force_logout", s["user_id"], f"token={s['token_preview']}")
+            return jsonify({"ok": True})
+    return jsonify({"error": "Session not found"}), 404
+
+@app.route("/admin/api/sessions/user/<user_id>", methods=["DELETE"])
+@require_admin
+def admin_logout_all_user(user_id):
+    count = store.delete_all_user_sessions(user_id)
+    store.save_audit_entry(request.user.get("id", ""), "logout_all", user_id, f"count={count}")
+    return jsonify({"ok": True, "count": count})
+
+# ═══ ADMIN: BULK OPERATIONS ═══
+@app.route("/admin/api/bulk/block", methods=["POST"])
+@require_admin
+def admin_bulk_block():
+    data = request.get_json(force=True)
+    user_ids = data.get("user_ids", [])
+    if not user_ids:
+        return jsonify({"error": "Missing user_ids"}), 400
+    blocked = []
+    for uid in user_ids:
+        if uid == OWNER_ID:
+            continue
+        if store.is_admin(uid) and request.user.get("id") != OWNER_ID:
+            continue
+        store.block_user(uid)
+        blocked.append(uid)
+    store.save_audit_entry(request.user.get("id", ""), "bulk_block", "", f"count={len(blocked)} ids={blocked[:5]}")
+    return jsonify({"ok": True, "blocked": blocked})
+
+@app.route("/admin/api/bulk/unblock", methods=["POST"])
+@require_admin
+def admin_bulk_unblock():
+    data = request.get_json(force=True)
+    user_ids = data.get("user_ids", [])
+    if not user_ids:
+        return jsonify({"error": "Missing user_ids"}), 400
+    for uid in user_ids:
+        store.unblock_user(uid)
+    store.save_audit_entry(request.user.get("id", ""), "bulk_unblock", "", f"count={len(user_ids)}")
+    return jsonify({"ok": True})
+
+@app.route("/admin/api/bulk/credits", methods=["POST"])
+@require_admin
+def admin_bulk_credits():
+    data = request.get_json(force=True)
+    user_ids = data.get("user_ids", [])
+    amount = data.get("amount")
+    reason = data.get("reason", "Bulk credit grant")
+    if not user_ids or amount is None:
+        return jsonify({"error": "Missing fields"}), 400
+    amount = float(amount)
+    granted = []
+    users_list = store.get_all_users_with_credits()
+    for uid in user_ids:
+        balance = 0
+        max_credit = store.MAX_CREDITS
+        for u in users_list:
+            if u["id"] == uid:
+                balance = u["balance"]
+                max_credit = u.get("max_credit", store.MAX_CREDITS)
+                break
+        new_balance = round(min(balance + amount, max_credit), 6)
+        store.set_user_credits(uid, new_balance, max_credit)
+        store.save_credit_entry(uid, amount, reason, request.user.get("id"))
+        granted.append(uid)
+    store.save_audit_entry(request.user.get("id", ""), "bulk_grant_credits", "", f"amount=+{amount} count={len(granted)}")
+    return jsonify({"ok": True, "granted": granted})
+
+@app.route("/admin/api/bulk/delete", methods=["POST"])
+@require_owner
+def admin_bulk_delete():
+    data = request.get_json(force=True)
+    user_ids = data.get("user_ids", [])
+    if not user_ids:
+        return jsonify({"error": "Missing user_ids"}), 400
+    deleted = []
+    for uid in user_ids:
+        if uid == OWNER_ID:
+            continue
+        if store.delete_user(uid):
+            deleted.append(uid)
+    store.save_audit_entry(request.user.get("id", ""), "bulk_delete", "", f"count={len(deleted)}")
+    return jsonify({"ok": True, "deleted": deleted})
+
+# ═══ ADMIN: ANNOUNCEMENTS ═══
+@app.route("/admin/api/announcements", methods=["GET"])
+@require_admin
+def admin_get_announcements():
+    anns = store.get_announcements()
+    return jsonify(anns)
+
+@app.route("/admin/api/announcements", methods=["POST"])
+@require_admin
+def admin_create_announcement():
+    data = request.get_json(force=True)
+    title = data.get("title", "")
+    body = data.get("body", "")
+    ann_type = data.get("type", "info")
+    expires_at = data.get("expires_at", 0)
+    if not title:
+        return jsonify({"error": "Missing title"}), 400
+    ann_data = {
+        "id": "ann-" + str(uuid.uuid4()),
+        "title": title,
+        "body": body,
+        "type": ann_type,
+        "enabled": True,
+        "expires_at": expires_at,
+        "created_at": int(time.time() * 1000),
+        "admin_id": request.user.get("id", ""),
+    }
+    store.save_announcement(ann_data)
+    store.save_audit_entry(request.user.get("id", ""), "create_announcement", "", f"title={title}")
+    return jsonify({"ok": True, "id": ann_data["id"]})
+
+@app.route("/admin/api/announcements/<ann_id>", methods=["PATCH"])
+@require_admin
+def admin_update_announcement(ann_id):
+    data = request.get_json(force=True)
+    store.update_announcement(ann_id, data)
+    store.save_audit_entry(request.user.get("id", ""), "update_announcement", "", f"id={ann_id}")
+    return jsonify({"ok": True})
+
+@app.route("/admin/api/announcements/<ann_id>", methods=["DELETE"])
+@require_admin
+def admin_delete_announcement(ann_id):
+    store.delete_announcement(ann_id)
+    store.save_audit_entry(request.user.get("id", ""), "delete_announcement", "", f"id={ann_id}")
+    return jsonify({"ok": True})
+
+# ═══ ADMIN: EMAIL BANS ═══
+@app.route("/admin/api/email-bans", methods=["GET"])
+@require_admin
+def admin_get_email_bans():
+    bans = store.get_email_bans()
+    return jsonify(list(bans.values()))
+
+@app.route("/admin/api/email-bans", methods=["POST"])
+@require_admin
+def admin_add_email_ban():
+    data = request.get_json(force=True)
+    pattern = data.get("pattern", "")
+    reason = data.get("reason", "")
+    if not pattern:
+        return jsonify({"error": "Missing pattern"}), 400
+    ban_id = store.add_email_ban(pattern, request.user.get("id", ""), reason)
+    store.save_audit_entry(request.user.get("id", ""), "add_email_ban", "", f"pattern={pattern}")
+    return jsonify({"ok": True, "id": ban_id})
+
+@app.route("/admin/api/email-bans/<ban_id>", methods=["DELETE"])
+@require_admin
+def admin_delete_email_ban(ban_id):
+    store.delete_email_ban(ban_id)
+    store.save_audit_entry(request.user.get("id", ""), "delete_email_ban", "", f"id={ban_id}")
+    return jsonify({"ok": True})
+
+# ═══ ADMIN: INVITES ═══
+@app.route("/admin/api/invites", methods=["GET"])
+@require_admin
+def admin_get_invites():
+    invites = store.get_invites()
+    return jsonify(list(invites.values()))
+
+@app.route("/admin/api/invites", methods=["POST"])
+@require_admin
+def admin_create_invite():
+    data = request.get_json(force=True)
+    code = data.get("code") or secrets.token_urlsafe(8).upper()[:8]
+    max_uses = data.get("max_uses", 1)
+    expires_hours = data.get("expires_hours", 0)
+    expires_at = int((time.time() + expires_hours * 3600) * 1000) if expires_hours else 0
+    store.create_invite(code, max_uses, expires_at, request.user.get("id", ""))
+    store.save_audit_entry(request.user.get("id", ""), "create_invite", "", f"code={code} max_uses={max_uses}")
+    return jsonify({"ok": True, "code": code})
+
+@app.route("/admin/api/invites/<code>", methods=["DELETE"])
+@require_admin
+def admin_delete_invite(code):
+    store.delete_invite(code)
+    store.save_audit_entry(request.user.get("id", ""), "delete_invite", "", f"code={code}")
+    return jsonify({"ok": True})
+
+# ═══ ADMIN: SYSTEM CONFIG ═══
+@app.route("/admin/api/config", methods=["GET"])
+@require_admin
+def admin_get_config():
+    config = store.get_config()
+    return jsonify(config)
+
+@app.route("/admin/api/config", methods=["POST"])
+@require_owner
+def admin_save_config():
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    config = store.save_config(data)
+    store.save_audit_entry(request.user.get("id", ""), "update_config", "", f"keys={list(data.keys())}")
+    return jsonify({"ok": True, "config": config})
+
+# ═══ ADMIN: CONVERSATIONS (MODERATION) ═══
+@app.route("/admin/api/conversations", methods=["GET"])
+@require_admin
+def admin_get_conversations():
+    limit = int(request.args.get("limit", 200))
+    search = request.args.get("search", "").lower()
+    convs = store.get_all_conversations(limit)
+    if search:
+        convs = [c for c in convs if search in c.get("title", "").lower() or search in c.get("user_id", "")]
+    return jsonify(convs)
+
+@app.route("/admin/api/conversations/<conv_id>", methods=["GET"])
+@require_admin
+def admin_get_conversation(conv_id):
+    conv = store.get_conv(conv_id)
+    if not conv:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(conv)
+
+@app.route("/admin/api/conversations/<conv_id>/flag", methods=["POST"])
+@require_admin
+def admin_flag_conversation(conv_id):
+    data = request.get_json(force=True)
+    reason = data.get("reason", "Flagged by admin")
+    store.flag_conversation(conv_id, reason, request.user.get("id", ""))
+    store.save_audit_entry(request.user.get("id", ""), "flag_conversation", "", f"conv_id={conv_id} reason={reason}")
+    return jsonify({"ok": True})
+
+# ═══ ADMIN: CHECKPOINTS ═══
+@app.route("/admin/api/checkpoints", methods=["GET"])
+@require_admin
+def admin_get_checkpoints():
+    limit = int(request.args.get("limit", 200))
+    ckpts = store.get_all_checkpoints(limit)
+    return jsonify(ckpts)
+
+# ═══ ADMIN: PLUGIN STATUS ═══
+@app.route("/admin/api/plugin-status", methods=["GET"])
+@require_admin
+def admin_plugin_status():
+    now = time.time()
+    with plugin_registry_lock:
+        result = []
+        for pid, info in plugin_registry.items():
+            result.append({
+                "plugin_id": pid,
+                "session_id": info.get("session_id", ""),
+                "user_id": info.get("user_id", ""),
+                "last_seen": info.get("last_seen", 0),
+                "status": info.get("status", ""),
+                "active": (now - info.get("last_seen", 0)) < 15,
+            })
+    return jsonify(result)
+
+# ═══ ADMIN: WEBHOOKS ═══
+@app.route("/admin/api/webhooks", methods=["GET"])
+@require_admin
+def admin_get_webhooks():
+    return jsonify(store.get_webhooks())
+
+@app.route("/admin/api/webhooks", methods=["POST"])
+@require_owner
+def admin_save_webhooks():
+    data = request.get_json(force=True)
+    store.save_webhooks(data)
+    store.save_audit_entry(request.user.get("id", ""), "update_webhooks", "", f"url={data.get('url', '')[:30]}")
+    return jsonify({"ok": True})
+
+@app.route("/admin/api/webhooks/test", methods=["POST"])
+@require_admin
+def admin_test_webhook():
+    webhooks = store.get_webhooks()
+    url = webhooks.get("url", "")
+    if not url:
+        return jsonify({"error": "No webhook URL configured"}), 400
+    try:
+        import urllib.request
+        payload = json.dumps({"event": "test", "payload": {"message": "Test from Rux Admin"}, "timestamp": int(time.time() * 1000)}).encode()
+        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+        resp = urllib.request.urlopen(req, timeout=5)
+        return jsonify({"ok": True, "status": resp.status})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)[:200]})
 
 @app.route("/admin")
 def admin_page():
     return render_template("admin.html")
 
 
-# ═══ AUTH ROUTES ═══
+# ═══════════════════════════════════════════════════════════════
+#  AUTH ROUTES
+# ═══════════════════════════════════════════════════════════════
+
 @app.route("/auth/register", methods=["POST"])
 def auth_register():
     data = request.get_json(force=True)
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     roblox_id = data.get("roblox_id") or ""
+    invite_code = data.get("invite_code") or ""
 
     if not email or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         return jsonify({"error": "Invalid email"}), 400
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+    # Email ban check
+    if store.check_email_banned(email):
+        return jsonify({"error": "Registration not allowed for this email"}), 403
+
+    # Invite code check
+    config = store.get_config()
+    if config.get("invite_only", False):
+        if not invite_code:
+            return jsonify({"error": "Invite code required"}), 400
+        ok, msg = store.use_invite(invite_code)
+        if not ok:
+            return jsonify({"error": msg}), 400
 
     existing = store.get_user_by_email(email)
     if existing:
@@ -645,10 +1076,17 @@ def auth_register():
 
     user_id = str(uuid.uuid4())
     store.save_user(user_id, email, hash_password(password), roblox_id)
+
+    # Use config for starting credits
+    starting = config.get("default_starting_credits", store.MAX_CREDITS)
     store.init_credits(user_id)
+    if starting != store.MAX_CREDITS:
+        store.set_user_credits(user_id, starting, config.get("max_credits_default", store.MAX_CREDITS))
 
     token = str(uuid.uuid4())
     store.save_session(token, user_id)
+
+    _fire_webhook("user_registered", {"user_id": user_id, "email": email})
 
     return jsonify({"token": token, "user": {"id": user_id, "email": email}})
 
@@ -664,6 +1102,9 @@ def auth_login():
 
     if not verify_password(password, user["password_hash"]):
         return jsonify({"error": "Invalid email or password"}), 401
+
+    if user.get("blocked"):
+        return jsonify({"error": "Account blocked", "blocked": True}), 403
 
     token = str(uuid.uuid4())
     store.save_session(token, user["id"])
@@ -688,10 +1129,17 @@ def auth_me():
 
     update_web_heartbeat(user["id"])
 
+    prefs = store.get_preferences(user["id"])
+
+    # Active announcements
+    announcements = store.get_active_announcements()
+
     return jsonify({
-        "user": {"id": user["id"], "email": user["email"]},
+        "user": {"id": user["id"], "email": user["email"], "roblox_id": user.get("roblox_id", "")},
         "credits": {"balance": round(balance, 2), "max": store.MAX_CREDITS, "next_credit_at": next_at},
         "session_id": session_id,
+        "preferences": prefs,
+        "announcements": announcements,
     })
 
 @app.route("/auth/logout", methods=["POST"])
@@ -702,6 +1150,72 @@ def auth_logout():
     store.delete_session(token)
     clear_web_heartbeat(user["id"])
     return jsonify({"ok": True})
+
+@app.route("/auth/change-password", methods=["POST"])
+@require_auth
+def auth_change_password():
+    user = request.user
+    data = request.get_json(force=True)
+    current_password = data.get("current_password", "")
+    new_password = data.get("new_password", "")
+    if not current_password or not new_password:
+        return jsonify({"error": "Both current and new password are required"}), 400
+    if len(new_password) < 6:
+        return jsonify({"error": "New password must be at least 6 characters"}), 400
+    fresh_user = store.get_user_by_id(user["id"])
+    if not fresh_user:
+        return jsonify({"error": "User not found"}), 404
+    if not verify_password(current_password, fresh_user["password_hash"]):
+        return jsonify({"error": "Current password is incorrect"}), 401
+    new_hash = hash_password(new_password)
+    store.update_user_password(user["id"], new_hash)
+    current_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    store.delete_all_user_sessions(user["id"])
+    store.save_session(current_token, user["id"])
+    return jsonify({"ok": True, "message": "Password changed successfully"})
+
+@app.route("/auth/delete-account", methods=["POST"])
+@require_auth
+def auth_delete_account():
+    user = request.user
+    data = request.get_json(force=True)
+    password = data.get("password", "")
+    if not password:
+        return jsonify({"error": "Password confirmation required"}), 400
+    if user["id"] == OWNER_ID:
+        return jsonify({"error": "Cannot delete owner account"}), 403
+    fresh_user = store.get_user_by_id(user["id"])
+    if not fresh_user:
+        return jsonify({"error": "User not found"}), 404
+    if not verify_password(password, fresh_user["password_hash"]):
+        return jsonify({"error": "Incorrect password"}), 401
+    store.self_delete_account(user["id"])
+    return jsonify({"ok": True, "message": "Account deleted successfully"})
+
+@app.route("/auth/update-roblox-id", methods=["POST"])
+@require_auth
+def auth_update_roblox_id():
+    user = request.user
+    data = request.get_json(force=True)
+    roblox_id = data.get("roblox_id", "")
+    store.update_user_roblox_id(user["id"], roblox_id)
+    return jsonify({"ok": True})
+
+# ═══ PREFERENCES ROUTES ═══
+@app.route("/api/preferences", methods=["GET"])
+@require_auth
+def get_preferences():
+    prefs = store.get_preferences(request.user["id"])
+    return jsonify(prefs)
+
+@app.route("/api/preferences", methods=["POST"])
+@require_auth
+def save_preferences():
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    prefs = store.save_preferences(request.user["id"], data)
+    return jsonify({"ok": True, "preferences": prefs})
 
 # ═══ WEB HEARTBEAT ROUTE ═══
 @app.route("/web/heartbeat", methods=["POST"])
@@ -721,11 +1235,15 @@ def web_heartbeat():
                 session_id = active_session.get("session_id")
 
     balance, _ = store.get_credits(user["id"])
+
+    announcements = store.get_active_announcements()
+
     return jsonify({
         "ok": True,
         "plugin_connected": plugin_connected,
         "session_id": session_id,
         "credits": round(balance, 2),
+        "announcements": announcements,
     })
 
 # ═══ WEB DISCONNECT ROUTE ═══
@@ -833,10 +1351,7 @@ def ai():
     if balance <= 0:
         balance2, last_upd = store.get_credits(user["id"])
         next_at = last_upd + store.CREDIT_INTERVAL_MS if last_upd > 0 else 0
-        return jsonify({
-            "error": "no_credits", "balance": round(balance2, 2),
-            "next_credit_at": next_at,
-        }), 403
+        return jsonify({"error": "no_credits", "balance": round(balance2, 2), "next_credit_at": next_at}), 403
 
     data = request.get_json(force=True)
     session_id = data.get("session_id") or str(uuid.uuid4())
@@ -865,6 +1380,7 @@ def ai():
                 output_tokens = r.usage.output_tokens
                 cost = round(output_tokens * cpt, 6)
                 balance, _ = store.deduct_credits(user["id"], cost)
+                store.save_credit_entry(user["id"], -cost, f"AI chat ({mi['label']})")
 
                 first_tc, all_tcs, reply_text = extract_tool_info(r.content)
 
@@ -872,7 +1388,7 @@ def ai():
                     assistant_content = build_assistant_content(r.content, first_tc["id"])
                     if len(all_tcs) > 1:
                         print(f"[Rux] WARNING: {len(all_tcs)} tool_use blocks, executing first: {first_tc['name']}")
-                        reply_text += f"\n\n[Calling {len(all_tcs)} tools one at a time. Starting with {first_tc['name']}.]"
+                        reply_text += f"\n\n[Calling {len(all_tcs)} tools one at a time.]"
 
                     session["pending_tool_call"] = first_tc
                     session["agent_messages"] = msgs + [{"role": "assistant", "content": assistant_content}]
@@ -891,40 +1407,39 @@ def ai():
                 return jsonify({
                     "session_id": session_id, "reply": reply_text,
                     "tool_calls": [], "plan": None, "status": "done",
-                    "model": mi["label"], "credits": round(balance, 2),
-                    "tokens_used": output_tokens,
+                    "model": mi["label"], "credits": round(balance, 2), "tokens_used": output_tokens,
                 })
             elif prov in ("openai", "openrouter"):
                 client = openai_client if prov == "openai" else openrouter_client
                 reply, output_tokens = call_openai_compat(client, mid, msgs)
                 cost = round(output_tokens * cpt, 6)
                 balance, _ = store.deduct_credits(user["id"], cost)
+                store.save_credit_entry(user["id"], -cost, f"AI chat ({mi['label']})")
                 session["latest_reply"] = reply
                 session["status"] = "done"
                 return jsonify({
                     "session_id": session_id, "reply": reply,
                     "tool_calls": [], "plan": None, "status": "done",
-                    "model": mi["label"], "credits": round(balance, 2),
-                    "tokens_used": output_tokens,
+                    "model": mi["label"], "credits": round(balance, 2), "tokens_used": output_tokens,
                 })
             else:
                 reply, output_tokens = call_gemini(mid, msgs)
                 cost = round(output_tokens * cpt, 6)
                 balance, _ = store.deduct_credits(user["id"], cost)
+                store.save_credit_entry(user["id"], -cost, f"AI chat ({mi['label']})")
                 session["latest_reply"] = reply
                 session["status"] = "done"
                 return jsonify({
                     "session_id": session_id, "reply": reply,
                     "tool_calls": [], "plan": None, "status": "done",
-                    "model": mi["label"], "credits": round(balance, 2),
-                    "tokens_used": output_tokens,
+                    "model": mi["label"], "credits": round(balance, 2), "tokens_used": output_tokens,
                 })
 
         elif mode == "agent":
             if prov != "anthropic":
                 return jsonify({
                     "session_id": session_id,
-                    "reply": "Agent mode requires a Claude model. Please switch to Claude Sonnet or Claude Opus.",
+                    "reply": "Agent mode requires a Claude model.",
                     "tool_calls": [], "plan": None, "status": "done",
                     "model": mi["label"], "credits": round(balance, 2), "tokens_used": 0,
                 })
@@ -938,6 +1453,7 @@ def ai():
             output_tokens = r.usage.output_tokens
             cost = round(output_tokens * cpt, 6)
             balance, _ = store.deduct_credits(user["id"], cost)
+            store.save_credit_entry(user["id"], -cost, f"Agent plan ({mi['label']})")
             plan = "".join(b.text for b in r.content if hasattr(b, 'type') and b.type == "text")
             session["plan"] = plan
             session["agent_messages"] = pm + [{"role": "assistant", "content": content_blocks_to_dicts(r.content)}]
@@ -988,22 +1504,13 @@ def approve_agent():
     cpt = mi["credit_per_token"]
     if mi["provider"] != "anthropic":
         session["status"] = "error"
-        return jsonify({
-            "session_id": session_id, "reply": "Agent mode requires a Claude model.",
-            "tool_calls": [], "plan": session.get("plan"),
-            "status": "error", "credits": 0, "tokens_used": 0,
-        }), 400
+        return jsonify({"session_id": session_id, "reply": "Agent mode requires a Claude model.", "tool_calls": [], "plan": session.get("plan"), "status": "error", "credits": 0, "tokens_used": 0}), 400
 
     balance, _ = store.get_credits(user["id"])
     if balance <= 0:
-        return jsonify({
-            "session_id": session_id, "reply": "No credits remaining.",
-            "tool_calls": [], "plan": session.get("plan"),
-            "status": "error", "credits": round(balance, 2), "tokens_used": 0,
-        }), 403
+        return jsonify({"session_id": session_id, "reply": "No credits remaining.", "tool_calls": [], "plan": session.get("plan"), "status": "error", "credits": round(balance, 2), "tokens_used": 0}), 403
 
     try:
-        # Auto-create a checkpoint before execution starts
         agent_msgs = session.get("agent_messages", [])
         user_msg_label = "Agent run"
         for m in agent_msgs:
@@ -1017,12 +1524,9 @@ def approve_agent():
                     break
         auto_ckpt_id = "ckpt-" + str(uuid.uuid4())
         store.save_checkpoint(user["id"], auto_ckpt_id, {
-            "id": auto_ckpt_id,
-            "label": f"Before: {user_msg_label}",
-            "created_at": int(time.time() * 1000),
-            "scripts": {},
-            "auto": True,
-            "session_id": session_id,
+            "id": auto_ckpt_id, "label": f"Before: {user_msg_label}",
+            "created_at": int(time.time() * 1000), "scripts": {},
+            "auto": True, "session_id": session_id,
         })
         session["current_checkpoint_id"] = auto_ckpt_id
         session["script_cache"] = {}
@@ -1036,6 +1540,7 @@ def approve_agent():
         output_tokens = r.usage.output_tokens
         cost = round(output_tokens * cpt, 6)
         balance, _ = store.deduct_credits(user["id"], cost)
+        store.save_credit_entry(user["id"], -cost, f"Agent execute ({mi['label']})")
         session["accumulated_cost"] = session.get("accumulated_cost", 0) + cost
 
         first_tc, all_tcs, ft = extract_tool_info(r.content)
@@ -1049,16 +1554,14 @@ def approve_agent():
             return jsonify({
                 "session_id": session_id, "reply": ft or "Executing.",
                 "tool_calls": [first_tc], "plan": session["plan"],
-                "status": "tool_requested", "credits": round(balance, 2),
-                "tokens_used": output_tokens,
+                "status": "tool_requested", "credits": round(balance, 2), "tokens_used": output_tokens,
             })
         session["latest_reply"] = ft
         session["status"] = "done"
         return jsonify({
             "session_id": session_id, "reply": ft,
             "tool_calls": [], "plan": session["plan"],
-            "status": "done", "credits": round(balance, 2),
-            "tokens_used": output_tokens,
+            "status": "done", "credits": round(balance, 2), "tokens_used": output_tokens,
         })
     except Exception as e:
         print(f"[Rux] /ai/approve error: {traceback.format_exc()}")
@@ -1101,7 +1604,6 @@ def plugin_poll():
                 plugin_disconnected = True
                 info["status"] = "connected"
 
-    # Resolve server-side tools without plugin involvement
     pending_tc = session.get("pending_tool_call")
     resolved = 0
     while pending_tc and pending_tc.get("name") in SERVER_SIDE_TOOLS and resolved < 5:
@@ -1109,7 +1611,6 @@ def plugin_poll():
         pending_tc = _continue_agent_with_result(session, pending_tc, synthetic)
         resolved += 1
 
-    # If no pending tool call but restore queue has items, pop next
     if not session.get("pending_tool_call") and session.get("restore_queue") and session.get("status") == "restoring":
         next_write = session["restore_queue"].pop(0)
         session["pending_tool_call"] = next_write
@@ -1131,7 +1632,6 @@ def plugin_tool_result():
     mi = resolve_model(mk)
     cpt = mi["credit_per_token"]
 
-    # Restore mode: handle queue advance before any provider/step checks
     if session.get("status") == "restoring":
         balance = 0
         if user_id:
@@ -1175,7 +1675,6 @@ def plugin_tool_result():
 
         tool_result_data = data.get("tool_result", {})
 
-        # ── Checkpoint: intercept read_script results ──
         tool_name = pc.get("name", "")
         tool_args = pc.get("arguments", {})
         ckpt_id = session.get("current_checkpoint_id")
@@ -1220,6 +1719,7 @@ def plugin_tool_result():
         cost = round(output_tokens * cpt, 6)
         if user_id:
             balance, _ = store.deduct_credits(user_id, cost)
+            store.save_credit_entry(user_id, -cost, f"Agent tool ({mi['label']})")
         else:
             balance = 0
         session["accumulated_cost"] = session.get("accumulated_cost", 0) + cost
@@ -1253,52 +1753,36 @@ def plugin_tool_result():
         print(f"[Rux] /plugin/tool_result error: {traceback.format_exc()}")
         session["status"] = "error"
         session["pending_tool_call"] = None
-        return jsonify({
-            "reply": f"Error processing tool result: {error_str[:300]}",
-            "status": "error",
-        }), 200
+        return jsonify({"reply": f"Error processing tool result: {error_str[:300]}", "status": "error"}), 200
 
-# ═══ CONVERSATION ROUTES ═══
+# ═══ CONVERSATION ROUTES
+
 @app.route("/api/conversations", methods=["GET"])
 @require_auth
 def get_conversations():
     user = request.user
-    data = store.get_conv_list(user["id"])
-    return jsonify(data)
-
-@app.route("/api/conversations/<conv_id>", methods=["GET"])
-@require_auth
-def get_conversation(conv_id):
-    user = request.user
     conv_list = store.get_conv_list(user["id"])
-    if not conv_list or conv_id not in conv_list:
-        return jsonify({"error": "Not found"}), 404
-    data = store.get_conv(conv_id)
-    if not data:
-        return jsonify({"error": "Not found"}), 404
-    return jsonify(data)
+    return jsonify(conv_list)
 
 @app.route("/api/conversations", methods=["POST"])
 @require_auth
 def save_conversation():
     user = request.user
     data = request.get_json(force=True)
-    conv_id = data.get("id")
-    if not conv_id:
-        return jsonify({"error": "Missing id"}), 400
+    conv_id = data.get("id") or f"conv-{uuid.uuid4()}"
+    store.save_conv(user["id"], conv_id, data)
+    return jsonify({"ok": True, "id": conv_id})
 
-    conv_data = {
-        "id": conv_id,
-        "title": data.get("title", "Conversation"),
-        "messages": data.get("messages", []),
-        "history": data.get("history", []),
-        "mode": data.get("mode", "chat"),
-        "model": data.get("model", "sonnet"),
-        "sessionId": data.get("sessionId"),
-        "updatedAt": data.get("updatedAt", int(time.time() * 1000)),
-    }
-    store.save_conv(user["id"], conv_id, conv_data)
-    return jsonify({"ok": True})
+@app.route("/api/conversations/<conv_id>", methods=["GET"])
+@require_auth
+def get_conversation(conv_id):
+    user = request.user
+    conv = store.get_conv(conv_id)
+    if not conv:
+        return jsonify({"error": "Not found"}), 404
+    if conv.get("user_id") and conv["user_id"] != user["id"]:
+        return jsonify({"error": "Forbidden"}), 403
+    return jsonify(conv)
 
 @app.route("/api/conversations/<conv_id>", methods=["DELETE"])
 @require_auth
@@ -1307,112 +1791,104 @@ def delete_conversation(conv_id):
     store.delete_conv(user["id"], conv_id)
     return jsonify({"ok": True})
 
-# ═══ CHECKPOINT ROUTES ═══
+# ═══ CHECKPOINT ROUTES
+
 @app.route("/api/checkpoints", methods=["GET"])
 @require_auth
-def get_checkpoints_route():
+def get_checkpoints():
     user = request.user
-    filter_session_id = request.args.get("session_id")
     ckpts = store.get_checkpoints(user["id"])
     result = []
-    for c in ckpts.values():
-        if filter_session_id and c.get("session_id") != filter_session_id:
-            continue
-        script_names = list(c.get("scripts", {}).keys())
+    for ckpt_id, ckpt in ckpts.items():
         result.append({
-            "id": c["id"], "label": c["label"], "created_at": c["created_at"],
-            "scripts_count": len(script_names), "auto": c.get("auto", False),
-            "session_id": c.get("session_id"), "script_names": script_names,
+            "id": ckpt_id,
+            "label": ckpt.get("label", ""),
+            "created_at": ckpt.get("created_at", 0),
+            "scripts_count": len(ckpt.get("scripts", {})),
+            "script_names": list(ckpt.get("scripts", {}).keys()),
+            "auto": ckpt.get("auto", False),
         })
-    result.sort(key=lambda x: x["created_at"], reverse=True)
+    result.sort(key=lambda x: x.get("created_at", 0), reverse=True)
     return jsonify(result)
 
-
-@app.route("/api/checkpoints", methods=["POST"])
+@app.route("/api/checkpoints/<checkpoint_id>", methods=["DELETE"])
 @require_auth
-def create_checkpoint_route():
+def delete_checkpoint(checkpoint_id):
     user = request.user
-    data = request.get_json(force=True)
-    label = data.get("label", "Manual checkpoint")
-    scripts = data.get("scripts", {})
-    ckpt_id = "ckpt-" + str(uuid.uuid4())
-    ckpt_data = {
-        "id": ckpt_id,
-        "label": label,
-        "created_at": int(time.time() * 1000),
-        "scripts": scripts,
-        "auto": False,
-    }
-    store.save_checkpoint(user["id"], ckpt_id, ckpt_data)
-    return jsonify({"ok": True, "id": ckpt_id})
+    if store.delete_checkpoint(user["id"], checkpoint_id):
+        return jsonify({"ok": True})
+    return jsonify({"error": "Not found"}), 404
 
-
-@app.route("/api/checkpoints/<ckpt_id>", methods=["DELETE"])
+@app.route("/api/checkpoints/<checkpoint_id>/restore", methods=["POST"])
 @require_auth
-def delete_checkpoint_route(ckpt_id):
+def restore_checkpoint_route(checkpoint_id):
     user = request.user
-    ok = store.delete_checkpoint(user["id"], ckpt_id)
-    return jsonify({"ok": ok})
-
-
-@app.route("/api/checkpoints/<ckpt_id>/restore", methods=["POST"])
-@require_auth
-def restore_checkpoint_route(ckpt_id):
-    user = request.user
-    data = request.get_json(force=True)
-    session_id = data.get("session_id")
-    if not session_id:
-        return jsonify({"error": "Missing session_id"}), 400
-    ckpt = store.get_checkpoint(user["id"], ckpt_id)
+    data = request.get_json(force=True) or {}
+    ckpt = store.get_checkpoint(user["id"], checkpoint_id)
     if not ckpt:
         return jsonify({"error": "Checkpoint not found"}), 404
+
     scripts = ckpt.get("scripts", {})
     if not scripts:
-        return jsonify({"error": "Checkpoint has no saved scripts"}), 400
-    session = get_session(session_id)
-    # Strict: session must be owned by this user (reject if unset or mismatched)
-    if session.get("user_id") != user["id"]:
-        return jsonify({"error": "Forbidden"}), 403
-    restore_calls = [
-        {"id": "restore-" + str(uuid.uuid4()), "name": "write_script", "arguments": {"name": sname, "code": code}}
-        for sname, code in scripts.items()
-    ]
-    first = restore_calls.pop(0) if restore_calls else None
-    if not first:
         return jsonify({"error": "No scripts to restore"}), 400
-    session["restore_queue"] = restore_calls
+
+    sid = data.get("session_id")
+    if not sid:
+        active = store.get_user_plugin(user["id"])
+        sid = active.get("session_id") if active else None
+    if not sid:
+        return jsonify({"error": "No active session. Connect Studio first."}), 400
+
+    session = get_session(sid)
+
+    restore_queue = []
+    for script_name, source in scripts.items():
+        restore_queue.append({
+            "id": f"restore-{uuid.uuid4()}",
+            "name": "write_script",
+            "arguments": {"name": script_name, "code": source},
+        })
+
+    session["restore_queue"] = restore_queue
     session["restore_scripts_count"] = len(scripts)
-    session["pending_tool_call"] = first
     session["status"] = "restoring"
-    session["latest_reply"] = ""
-    session["accumulated_reply"] = ""
-    return jsonify({"ok": True, "scripts_count": len(scripts), "label": ckpt["label"]})
+    session["pending_tool_call"] = restore_queue[0] if restore_queue else None
 
-
-# ═══ STATUS / MODELS / PAGES ═══
-@app.route("/status", methods=["GET"])
-def get_status():
-    now = time.time()
-    with plugin_registry_lock:
-        active = [p for p in plugin_registry.values() if now - p["last_seen"] < 15]
-    latest = active[0] if active else None
     return jsonify({
-        "plugin_connected": bool(active),
-        "plugin_count": len(active),
-        "selected_instance": latest["selected_instance"] if latest else None,
+        "ok": True,
+        "scripts_count": len(scripts),
+        "checkpoint_id": checkpoint_id,
+        "label": ckpt.get("label", ""),
     })
 
-@app.route("/models", methods=["GET"])
-def get_models():
-    return jsonify(MODELS)
+# ═══ STATUS ROUTE
 
-@app.route("/")
-def landing():
-    return render_template("landing.html")
+@app.route("/status", methods=["GET"])
+@require_auth
+def status_check():
+    user = request.user
+    active_session = store.get_user_plugin(user["id"])
+    plugin_connected = False
+    sid = None
+    if active_session:
+        pid = active_session.get("plugin_id")
+        with plugin_registry_lock:
+            if pid and pid in plugin_registry and time.time() - plugin_registry[pid]["last_seen"] < 15:
+                plugin_connected = True
+                sid = active_session.get("session_id")
+    balance, _ = store.get_credits(user["id"])
+    return jsonify({
+        "plugin_connected": plugin_connected,
+        "session_id": sid,
+        "credits": round(balance, 2),
+    })
+
+# ═══ PAGE ROUTES
 
 @app.route("/app")
-def chat_app():
+def app_page():
     return render_template("index.html")
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+@app.route("/")
+def index():
+    return render_template("landing.html")

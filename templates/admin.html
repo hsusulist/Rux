@@ -9,592 +9,1526 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#000;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--text:#fff;--text2:#888;--muted:#555;--accent:#e6be46;--accent2:rgba(230,190,70,.1);--danger:#e5484d;--danger2:rgba(229,72,77,.12);--blue:#60a5fa;--blue2:rgba(96,165,250,.12);--green:#4ade80;--green2:rgba(74,222,128,.1)}
+    :root{--bg:#000;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--border3:#2a2a2a;--text:#fff;--text2:#888;--text3:#666;--muted:#555;--accent:#e6be46;--accent2:rgba(230,190,70,.1);--danger:#e5484d;--danger2:rgba(229,72,77,.12);--blue:#60a5fa;--blue2:rgba(96,165,250,.12);--green:#4ade80;--green2:rgba(74,222,128,.1);--orange:#f59e0b;--orange2:rgba(245,158,11,.1);--purple:#a78bfa;--purple2:rgba(167,139,250,.12)}
     body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
-    .container{max-width:1200px;margin:0 auto;padding:40px 24px}
 
-    .header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
-    .header-icon{width:32px;height:32px;border:1px solid var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center}
-    .header-icon svg{width:15px;height:15px;fill:var(--accent)}
-    .header-title{font-size:20px;font-weight:800;letter-spacing:-.5px}
-    .header-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 10px;border-radius:20px}
+    /* ═══ LAYOUT ═══ */
+    .app{display:none;height:100vh;flex-direction:column}
+    .app.show{display:flex}
+
+    /* ═══ TOP BAR ═══ */
+    .topbar{display:flex;align-items:center;height:48px;padding:0 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+    .topbar-icon{width:26px;height:26px;border-radius:5px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+    .topbar-icon svg{width:12px;height:12px;fill:#000}
+    .topbar-title{font-size:14px;font-weight:800;letter-spacing:-.4px;margin-left:10px}
+    .topbar-badge{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:2px 8px;border-radius:100px;margin-left:8px}
     .badge-owner{color:var(--accent);background:var(--accent2)}
     .badge-admin{color:var(--blue);background:var(--blue2)}
-    .header-spacer{flex:1}
-    .header-status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
-    .header-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .topbar-spacer{flex:1}
+    .topbar-maint{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .12s}
+    .topbar-maint.on{background:rgba(245,158,11,.12);color:var(--orange);border:1px solid rgba(245,158,11,.2)}
+    .topbar-maint.off{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
+    .topbar-maint:hover{opacity:.8}
+    .topbar-dot{width:6px;height:6px;border-radius:50%;animation:dotPulse 2s infinite}
+    .topbar-maint.on .topbar-dot{background:var(--orange)}
+    .topbar-maint.off .topbar-dot{background:var(--muted)}
+    @keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .topbar-user{font-size:10px;color:var(--muted);margin-left:8px}
 
-    .maintenance-bar{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;margin-bottom:20px}
-    .maintenance-bar.hidden{display:none}
-    .maintenance-icon{font-size:16px}
-    .maintenance-text{font-size:12px;color:#f59e0b;font-weight:600;flex:1}
-    .maintenance-btn{padding:5px 12px;border-radius:6px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.1);color:#f59e0b;transition:all .12s}
-    .maintenance-btn:hover{background:rgba(245,158,11,.2)}
+    /* ═══ TABS ═══ */
+    .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;padding:0 20px}
+    .tab{padding:10px 16px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;font-family:'Inter',sans-serif;position:relative;transition:color .12s;letter-spacing:-.1px}
+    .tab:hover{color:var(--text2)}
+    .tab.active{color:var(--text)}
+    .tab.active::after{content:'';position:absolute;bottom:-1px;left:12px;right:12px;height:2px;background:var(--accent);border-radius:2px 2px 0 0}
+    .tab-count{font-size:8px;font-weight:700;padding:1px 5px;border-radius:100px;background:var(--surface3);color:var(--muted);margin-left:4px}
 
-    .stats-row{display:flex;gap:12px;margin-bottom:20px}
-    .stat-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+    /* ═══ CONTENT ═══ */
+    .content{flex:1;overflow-y:auto;padding:20px 24px}
+    .content::-webkit-scrollbar{width:4px}
+    .content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+
+    /* ═══ STAT CARDS ═══ */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
     .stat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
-    .stat-value{font-size:24px;font-weight:800;letter-spacing:-1px}
+    .stat-value{font-size:26px;font-weight:800;letter-spacing:-1px}
+    .stat-sub{font-size:9px;color:var(--text3);margin-top:3px}
 
+    /* ═══ CHART ═══ */
+    .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:20px}
+    .chart-title{font-size:11px;font-weight:700;margin-bottom:14px;letter-spacing:-.1px}
+    .bar-chart{display:flex;align-items:flex-end;gap:4px;height:100px;padding-top:10px}
+    .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+    .bar{width:100%;border-radius:3px 3px 0 0;background:var(--accent);opacity:.7;transition:opacity .12s;min-height:2px}
+    .bar:hover{opacity:1}
+    .bar-label{font-size:8px;color:var(--muted);font-weight:600}
+    .bar-val{font-size:7px;color:var(--text3);font-weight:600}
+
+    /* ═══ ACTIVITY FEED ═══ */
+    .feed{display:flex;flex-direction:column;gap:1px}
+    .feed-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+    .feed-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+    .feed-dot.signup{background:var(--green)}
+    .feed-dot.credit{background:var(--accent)}
+    .feed-dot.block{background:var(--danger)}
+    .feed-dot.connect{background:var(--blue)}
+    .feed-dot.system{background:var(--muted)}
+    .feed-body{flex:1;min-width:0}
+    .feed-text{font-size:11px;color:var(--text2);line-height:1.5}
+    .feed-text strong{color:var(--text);font-weight:600}
+    .feed-text code{font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--surface3);padding:1px 4px;border-radius:3px;color:var(--text3)}
+    .feed-time{font-size:9px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+
+    /* ═══ MODEL USAGE ═══ */
+    .model-bars{display:flex;flex-direction:column;gap:6px}
+    .model-bar-row{display:flex;align-items:center;gap:8px}
+    .model-bar-name{font-size:10px;font-weight:600;color:var(--text2);width:90px;flex-shrink:0;text-align:right}
+    .model-bar-track{flex:1;height:16px;background:var(--surface2);border-radius:3px;overflow:hidden}
+    .model-bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+    .model-bar-count{font-size:9px;color:var(--muted);width:40px;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+
+    /* ═══ SECTION ═══ */
     .section{margin-bottom:24px}
-    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
     .section-title{font-size:13px;font-weight:700;letter-spacing:-.2px}
-    .search-box{padding:6px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none;width:220px;transition:border-color .15s}
+    .section-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .search-box{padding:6px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:11px;font-family:'Inter',sans-serif;outline:none;width:200px;transition:border-color .15s}
     .search-box:focus{border-color:var(--accent)}
     .search-box::placeholder{color:var(--muted)}
 
-    .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    /* ═══ TABLE ═══ */
+    .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
     table{width:100%;border-collapse:collapse}
     thead{background:var(--surface2)}
-    th{padding:10px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;border-bottom:1px solid var(--border)}
-    td{padding:10px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+    th{padding:8px 10px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+    th:hover{color:var(--text2)}
+    th .sort-arrow{font-size:7px;margin-left:2px;opacity:.4}
+    th.sorted .sort-arrow{opacity:1;color:var(--accent)}
+    td{padding:8px 10px;font-size:11px;border-bottom:1px solid var(--border);vertical-align:middle}
     tr:last-child td{border-bottom:none}
-    tr:hover td{background:rgba(255,255,255,.02)}
-    .email-cell{font-weight:600;color:var(--text)}
-    .id-cell{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .credit-cell{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent)}
-    .max-cell{font-family:'JetBrains Mono',monospace;color:var(--text2)}
-    .date-cell{font-size:10px;color:var(--muted)}
-    .rbx-cell{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
-    .empty-row td{text-align:center;color:var(--muted);padding:40px;font-style:italic}
+    tr:hover td{background:rgba(255,255,255,.015)}
+    tr.selected td{background:rgba(230,190,70,.04)}
+    .id-cell{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .email-cell{font-weight:600;color:var(--text);cursor:pointer}
+    .email-cell:hover{color:var(--accent)}
+    .credit-cell{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent);font-size:11px}
+    .max-cell{font-family:'JetBrains Mono',monospace;color:var(--text3);font-size:10px}
+    .date-cell{font-size:9px;color:var(--muted)}
+    .rbx-cell{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .empty-row td{text-align:center;color:var(--muted);padding:40px;font-style:italic;font-size:11px}
 
-    .role-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    /* ═══ BADGES ═══ */
+    .role-badge{display:inline-flex;padding:2px 7px;border-radius:4px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
     .role-owner{color:var(--accent);background:var(--accent2)}
     .role-admin{color:var(--blue);background:var(--blue2)}
     .role-user{color:var(--muted);background:var(--surface3)}
-
-    .status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    .status-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
     .status-active{color:var(--green);background:var(--green2)}
     .status-blocked{color:var(--danger);background:var(--danger2)}
 
-    .actions-cell{display:flex;gap:4px;flex-wrap:wrap}
-    .btn-sm{padding:4px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .12s}
-    .btn-edit{background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
-    .btn-edit:hover{color:var(--text);border-color:var(--muted)}
-    .btn-block{background:var(--danger2);color:var(--danger);border:1px solid rgba(229,72,77,.15)}
-    .btn-block:hover{background:rgba(229,72,77,.2)}
-    .btn-unblock{background:var(--green2);color:var(--green);border:1px solid rgba(74,222,128,.15)}
-    .btn-unblock:hover{background:rgba(74,222,128,.18)}
-    .btn-promote{background:var(--blue2);color:var(--blue);border:1px solid rgba(96,165,250,.15)}
-    .btn-promote:hover{background:rgba(96,165,250,.18)}
-    .btn-demote{background:var(--accent2);color:var(--accent);border:1px solid rgba(230,190,70,.15)}
-    .btn-demote:hover{background:rgba(230,190,70,.18)}
-    .btn-delete{background:rgba(255,255,255,.03);color:#777;border:1px solid var(--border2)}
-    .btn-delete:hover{color:var(--danger);border-color:rgba(229,72,77,.3)}
-    .btn-disabled{opacity:.25;cursor:not-allowed;pointer-events:none}
-
-    /* Backup card */
-    .backup-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px}
-    .backup-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px}
-    .backup-actions{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-    .btn-accent{background:var(--accent);color:#000}
-    .btn-accent:hover{opacity:.85}
-    .btn-accent:disabled,.btn-outline:disabled,.btn-danger-sm:disabled{opacity:.4;cursor:not-allowed}
+    /* ═══ BUTTONS ═══ */
+    .btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:6px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .12s;letter-spacing:-.1px;white-space:nowrap}
+    .btn svg{width:10px;height:10px;fill:currentColor}
+    .btn-primary{background:var(--accent);color:#000}
+    .btn-primary:hover{opacity:.85}
     .btn-outline{background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
-    .btn-outline:hover{color:var(--text);border-color:var(--muted)}
-    .btn-danger-sm{background:var(--danger2);color:var(--danger);border:1px solid rgba(229,72,77,.2)}
-    .btn-danger-sm:hover{background:rgba(229,72,77,.18)}
-    .btn-warn{background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.2)}
-    .btn-warn:hover{background:rgba(245,158,11,.18)}
+    .btn-outline:hover{color:var(--text);border-color:var(--border3)}
+    .btn-danger{background:var(--danger2);color:var(--danger);border:1px solid rgba(229,72,77,.15)}
+    .btn-danger:hover{background:rgba(229,72,77,.18)}
     .btn-green{background:var(--green2);color:var(--green);border:1px solid rgba(74,222,128,.15)}
     .btn-green:hover{background:rgba(74,222,128,.18)}
-    .backup-textarea{width:100%;height:120px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;outline:none;resize:vertical;transition:border-color .15s;line-height:1.5}
-    .backup-textarea:focus{border-color:var(--accent)}
-    .backup-textarea::placeholder{color:var(--muted)}
-    .backup-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
-    .backup-hint{font-size:9px;color:var(--muted);line-height:1.5}
-    .backup-size{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .btn-blue{background:var(--blue2);color:var(--blue);border:1px solid rgba(96,165,250,.15)}
+    .btn-blue:hover{background:rgba(96,165,250,.18)}
+    .btn-warn{background:var(--orange2);color:var(--orange);border:1px solid rgba(245,158,11,.2)}
+    .btn-warn:hover{background:rgba(245,158,11,.18)}
+    .btn-sm{padding:3px 7px;font-size:9px;border-radius:4px}
+    .btn:disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
 
-    /* Overlay for import/maintenance */
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    /* ═══ BULK BAR ═══ */
+    .bulk-bar{display:none;align-items:center;gap:8px;padding:8px 14px;background:var(--accent2);border:1px solid rgba(230,190,70,.15);border-radius:8px;margin-bottom:12px}
+    .bulk-bar.show{display:flex}
+    .bulk-count{font-size:11px;font-weight:700;color:var(--accent)}
+    .bulk-spacer{flex:1}
+
+    /* ═══ PAGINATION ═══ */
+    .pagination{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:10px;color:var(--muted)}
+    .page-btn{padding:4px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-size:10px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:all .12s}
+    .page-btn:hover{border-color:var(--border3);color:var(--text)}
+    .page-btn:disabled{opacity:.3;cursor:not-allowed}
+    .page-info{font-size:10px;color:var(--text3)}
+
+    /* ═══ DRAWER ═══ */
+    .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+    .drawer-overlay.open{opacity:1;pointer-events:all}
+    .drawer{position:fixed;top:0;right:0;bottom:0;width:480px;max-width:100vw;background:var(--surface);border-left:1px solid var(--border2);z-index:201;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column}
+    .drawer-overlay.open .drawer{transform:translateX(0)}
+    .drawer-header{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .drawer-title{font-size:14px;font-weight:700;letter-spacing:-.3px;flex:1}
+    .drawer-close{width:28px;height:28px;border:1px solid var(--border2);border-radius:6px;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s}
+    .drawer-close:hover{color:var(--text);border-color:var(--border3)}
+    .drawer-body{flex:1;overflow-y:auto;padding:16px 20px}
+    .drawer-body::-webkit-scrollbar{width:3px}
+    .drawer-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+    .drawer-section{margin-bottom:20px}
+    .drawer-section-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+    .drawer-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11px}
+    .drawer-row-label{color:var(--text3)}
+    .drawer-row-value{color:var(--text);font-weight:600;text-align:right;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .drawer-actions{display:flex;gap:4px;flex-wrap:wrap;padding:16px 20px;border-top:1px solid var(--border);flex-shrink:0}
+    .drawer-sub-list{display:flex;flex-direction:column;gap:4px}
+    .drawer-sub-item{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:10px}
+    .drawer-sub-item-text{color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .drawer-sub-item-meta{font-size:9px;color:var(--muted);flex-shrink:0;margin-left:8px}
+    .drawer-note-area{width:100%;padding:8px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;font-family:'Inter',sans-serif;outline:none;resize:vertical;min-height:60px;transition:border-color .15s}
+    .drawer-note-area:focus{border-color:var(--border3)}
+
+    /* ═══ MODAL ═══ */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+    .modal-overlay.open{opacity:1;pointer-events:all}
+    .modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:24px 28px;width:100%;max-width:400px;transform:translateY(10px) scale(.98);transition:transform .2s}
+    .modal-overlay.open .modal{transform:translateY(0) scale(1)}
+    .modal-title{font-size:15px;font-weight:700;margin-bottom:4px;letter-spacing:-.2px}
+    .modal-sub{font-size:11px;color:var(--text3);margin-bottom:16px}
+    .modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer}
+    .modal-close:hover{color:var(--text)}
+    .field{margin-bottom:12px}
+    .field-label{font-size:9px;font-weight:700;color:var(--text3);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.5px}
+    .field-input{width:100%;padding:8px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+    .field-input:focus{border-color:var(--accent)}
+    .field-input::placeholder{color:var(--muted)}
+    .field-select{width:100%;padding:8px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none;appearance:none;cursor:pointer}
+    .field-hint{font-size:9px;color:var(--muted);margin-top:3px}
+    .presets{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+    .preset-btn{padding:4px 10px;background:var(--surface3);border:1px solid var(--border2);border-radius:100px;font-size:10px;font-weight:700;color:var(--text3);cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s}
+    .preset-btn:hover{color:var(--text);border-color:var(--border3)}
+    .modal-actions{display:flex;gap:6px;margin-top:16px}
+    .modal-actions .btn{flex:1;justify-content:center;padding:8px}
+
+    /* ═══ OVERLAY ═══ */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
     .overlay.open{opacity:1;pointer-events:all}
-    .overlay-icon{font-size:32px;margin-bottom:16px}
-    .overlay-title{font-size:16px;font-weight:700;margin-bottom:6px}
-    .overlay-sub{font-size:12px;color:var(--text2)}
-    .overlay-dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin:0 2px;animation:overlayBlink 1.2s infinite}
+    .overlay-icon{font-size:28px;margin-bottom:12px}
+    .overlay-title{font-size:15px;font-weight:700;margin-bottom:4px}
+    .overlay-sub{font-size:11px;color:var(--text2)}
+    .overlay-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin:0 2px;animation:overlayBlink 1.2s infinite}
     .overlay-dots span:nth-child(2){animation-delay:.2s}
     .overlay-dots span:nth-child(3){animation-delay:.4s}
     @keyframes overlayBlink{0%,100%{opacity:.2}50%{opacity:1}}
 
-    /* Modal */
-    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
-    .modal-overlay.open{opacity:1;pointer-events:all}
-    .modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:100%;max-width:360px;transform:translateY(12px);transition:transform .2s}
-    .modal-overlay.open .modal{transform:translateY(0)}
-    .modal-title{font-size:15px;font-weight:700;margin-bottom:4px}
-    .modal-sub{font-size:11px;color:var(--muted);margin-bottom:18px}
-    .modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer}
-    .modal-close:hover{color:var(--text)}
-    .field{margin-bottom:12px}
-    .field-label{font-size:10px;font-weight:700;color:var(--text2);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.5px}
-    .field-input{width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:13px;font-family:'JetBrains Mono',monospace;outline:none;transition:border-color .15s}
-    .field-input:focus{border-color:var(--accent)}
-    .btn-save{width:100%;padding:9px;background:var(--accent);color:#000;border:none;border-radius:7px;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:opacity .15s}
-    .btn-save:hover{opacity:.85}
-    .btn-save:disabled{opacity:.4;cursor:not-allowed}
-    .btn-confirm-delete{width:100%;padding:9px;background:var(--danger);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:opacity .15s}
-    .btn-confirm-delete:hover{opacity:.85}
+    /* ═══ TOAST ═══ */
+    .toast-container{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+    .toast{padding:8px 18px;background:var(--surface2);border:1px solid var(--border2);border-radius:100px;font-size:11px;font-weight:600;color:var(--text2);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:all;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateY(0)}
+    .toast.error{color:var(--danger);border-color:rgba(229,72,77,.2)}
+    .toast.success{color:var(--green);border-color:rgba(74,222,128,.2)}
 
-    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 20px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:600;color:var(--text);z-index:600;opacity:0;transition:opacity .3s;pointer-events:none}
-    .toast.show{opacity:1}
-
+    /* ═══ LOGIN ═══ */
     .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px}
     .login-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px;width:100%;max-width:340px}
     .login-sub{font-size:11px;color:var(--muted);margin-bottom:18px;text-align:center}
+
+    /* ═══ CONVERSATION VIEWER ═══ */
+    .conv-viewer{max-height:400px;overflow-y:auto;padding:8px 0;display:flex;flex-direction:column;gap:6px}
+    .conv-viewer::-webkit-scrollbar{width:3px}
+    .conv-viewer::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+    .conv-msg{padding:6px 10px;border-radius:6px;font-size:11px;line-height:1.6;max-width:90%;white-space:pre-wrap;word-break:break-word}
+    .conv-msg.user{background:var(--surface3);color:var(--text2);align-self:flex-end;text-align:right}
+    .conv-msg.assistant{background:var(--surface2);border:1px solid var(--border);color:var(--text2);align-self:flex-start}
+    .conv-msg-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:2px}
+
+    /* ═══ CHECKBOX ═══ */
+    input[type="checkbox"]{appearance:none;width:14px;height:14px;border:1px solid var(--border2);border-radius:3px;background:var(--surface2);cursor:pointer;transition:all .12s;flex-shrink:0}
+    input[type="checkbox"]:checked{background:var(--accent);border-color:var(--accent)}
+    input[type="checkbox"]:checked::after{content:'✓';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#000;line-height:1}
+
+    /* ═══ FILTER TABS ═══ */
+    .filter-tabs{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px;margin-bottom:12px;flex-wrap:wrap}
+    .filter-tab{padding:4px 10px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;border-radius:4px;transition:all .12s;letter-spacing:.2px}
+    .filter-tab:hover{color:var(--text3)}
+    .filter-tab.active{background:var(--surface3);color:var(--text)}
+
+    /* ═══ CONFIG GRID ═══ */
+    .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+    .config-field{display:flex;flex-direction:column;gap:3px}
+    .config-field.full{grid-column:1/-1}
+
+    /* ═══ RESPONSIVE ═══ */
+    @media(max-width:768px){
+      .drawer{width:100%}
+      .stats-grid{grid-template-columns:repeat(2,1fr)}
+      .config-grid{grid-template-columns:1fr}
+      .content{padding:12px}
+      table{font-size:10px}
+      th,td{padding:6px}
+    }
   </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div class="login-screen" id="login-screen">
   <div class="login-box">
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px">
-      <div class="header-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <div class="topbar-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
       <span style="font-size:14px;font-weight:700">Rux Admin</span>
     </div>
     <div class="login-sub">Authenticating...</div>
   </div>
 </div>
 
-<div class="container" id="admin-panel" style="display:none">
-  <div class="header">
-    <div class="header-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-    <div class="header-title">Admin Panel</div>
-    <div class="header-badge badge-owner" id="my-role-badge">Owner</div>
-    <div class="header-spacer"></div>
-    <div class="header-status"><div class="header-dot"></div> Live</div>
+<!-- APP -->
+<div class="app" id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+    <div class="topbar-title">Admin</div>
+    <div class="topbar-badge badge-owner" id="my-badge">Owner</div>
+    <div class="topbar-spacer"></div>
+    <button class="topbar-maint off" id="maint-btn" onclick="toggleMaintenance()">
+      <div class="topbar-dot"></div>
+      <span id="maint-label">Maintenance OFF</span>
+    </button>
+    <div class="topbar-user" id="topbar-email"></div>
   </div>
 
-  <div class="maintenance-bar hidden" id="maintenance-bar">
-    <span class="maintenance-icon">⚠️</span>
-    <span class="maintenance-text">Maintenance mode is ON — users cannot access the site</span>
-    <button class="maintenance-btn" onclick="toggleMaintenance(false)">Disable</button>
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab" data-tab="users" onclick="switchTab('users')">Users<span class="tab-count" id="tab-user-count">0</span></button>
+    <button class="tab" data-tab="activity" onclick="switchTab('activity')">Activity</button>
+    <button class="tab" data-tab="system" onclick="switchTab('system')">System</button>
+    <button class="tab" data-tab="tools" onclick="switchTab('tools')">Tools</button>
   </div>
 
-  <div class="stats-row" id="stats-row">
-    <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value" id="stat-users">—</div></div>
-    <div class="stat-card"><div class="stat-label">Total Credits</div><div class="stat-value" id="stat-credits">—</div></div>
-    <div class="stat-card"><div class="stat-label">Avg Credits</div><div class="stat-value" id="stat-avg">—</div></div>
-    <div class="stat-card"><div class="stat-label">Admins</div><div class="stat-value" id="stat-admins">—</div></div>
-    <div class="stat-card"><div class="stat-label">Blocked</div><div class="stat-value" id="stat-blocked">—</div></div>
-  </div>
+  <!-- CONTENT -->
+  <div class="content">
 
-  <!-- Backup -->
-  <div class="backup-card">
-    <div class="backup-label">Data Backup &amp; Migration</div>
-    <div class="backup-actions">
-      <button class="btn-sm btn-accent" id="export-btn" onclick="exportData()">Export All Data</button>
-      <button class="btn-sm btn-outline" id="copy-btn" onclick="copyExport()">Copy</button>
-      <button class="btn-sm btn-danger-sm" id="import-btn" onclick="importData()">Import Data</button>
-      <div style="flex:1"></div>
-      <button class="btn-sm btn-warn" id="maintenance-on-btn" onclick="toggleMaintenance(true)">Enable Maintenance</button>
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="tab-panel active" id="panel-dashboard">
+      <div class="stats-grid" id="dash-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div class="chart-card">
+          <div class="chart-title">Signups — Last 7 Days</div>
+          <div class="bar-chart" id="signup-chart"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Model Usage</div>
+          <div class="model-bars" id="model-chart"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Recent Activity</div>
+        <div class="feed" id="activity-feed"></div>
+      </div>
     </div>
-    <textarea class="backup-textarea" id="backup-textarea" placeholder="Click Export to generate data. Paste previously exported data here and click Import to restore."></textarea>
-    <div class="backup-footer">
-      <div class="backup-hint">Export before republishing. Import restores all accounts, credits, and conversations. Enable maintenance before importing to lock out users.</div>
-      <div class="backup-size" id="backup-size"></div>
-    </div>
-  </div>
 
-  <!-- Users -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title">Users</div>
-      <input class="search-box" id="search-box" placeholder="Search email or ID..." oninput="filterUsers()" />
+    <!-- ═══ USERS ═══ -->
+    <div class="tab-panel" id="panel-users">
+      <div class="section-header">
+        <div class="section-title">Users</div>
+        <div class="section-actions">
+          <input class="search-box" id="user-search" placeholder="Search email or ID..." oninput="filterUsers()" />
+          <select class="field-select" id="user-role-filter" style="width:100px;padding:5px 8px;font-size:10px" onchange="filterUsers()">
+            <option value="">All roles</option>
+            <option value="owner">Owner</option>
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+          </select>
+          <select class="field-select" id="user-status-filter" style="width:100px;padding:5px 8px;font-size:10px" onchange="filterUsers()">
+            <option value="">All status</option>
+            <option value="active">Active</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        </div>
+      </div>
+      <div class="bulk-bar" id="bulk-bar">
+        <span class="bulk-count" id="bulk-count">0 selected</span>
+        <div class="bulk-spacer"></div>
+        <button class="btn btn-warn btn-sm" onclick="bulkAction('block')">Block</button>
+        <button class="btn btn-green btn-sm" onclick="bulkAction('unblock')">Unblock</button>
+        <button class="btn btn-primary btn-sm" onclick="openBulkCreditModal()">Grant Credits</button>
+        <button class="btn btn-danger btn-sm" id="bulk-delete-btn" onclick="bulkAction('delete')">Delete</button>
+        <button class="btn btn-outline btn-sm" onclick="clearSelection()">Clear</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:30px;cursor:default"><input type="checkbox" id="select-all-cb" onchange="toggleSelectAll()" /></th>
+              <th onclick="sortBy('id')">ID <span class="sort-arrow">↕</span></th>
+              <th onclick="sortBy('email')">Email <span class="sort-arrow">↕</span></th>
+              <th onclick="sortBy('role')">Role <span class="sort-arrow">↕</span></th>
+              <th onclick="sortBy('status')">Status <span class="sort-arrow">↕</span></th>
+              <th>Rbx ID</th>
+              <th onclick="sortBy('balance')">Credits <span class="sort-arrow">↕</span></th>
+              <th>Max</th>
+              <th onclick="sortBy('created_at')">Created <span class="sort-arrow">↕</span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr class="empty-row"><td colspan="10">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="user-pagination"></div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Rbx ID</th>
-            <th>Credit</th>
-            <th>Max</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="users-tbody">
-          <tr class="empty-row"><td colspan="9">Loading...</td></tr>
-        </tbody>
-      </table>
+
+    <!-- ═══ ACTIVITY ═══ -->
+    <div class="tab-panel" id="panel-activity">
+      <div class="section-header">
+        <div class="section-title">Audit Log</div>
+        <div class="section-actions">
+          <select class="field-select" id="audit-filter" style="width:140px;padding:5px 8px;font-size:10px" onchange="loadAuditLog()">
+            <option value="">All actions</option>
+            <option value="set_credits">Set Credits</option>
+            <option value="grant_credits">Grant Credits</option>
+            <option value="block_user">Block User</option>
+            <option value="unblock_user">Unblock User</option>
+            <option value="promote_user">Promote</option>
+            <option value="demote_user">Demote</option>
+            <option value="delete_user">Delete User</option>
+            <option value="toggle_maintenance">Maintenance</option>
+            <option value="import_data">Import</option>
+            <option value="create_announcement">Announcement</option>
+            <option value="create_invite">Invite</option>
+            <option value="add_email_ban">Email Ban</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Admin</th>
+              <th>Action</th>
+              <th>Target</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody">
+            <tr class="empty-row"><td colspan="5">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="audit-pagination"></div>
     </div>
+
+    <!-- ═══ SYSTEM ═══ -->
+    <div class="tab-panel" id="panel-system">
+      <!-- Config -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">System Configuration</div>
+          <button class="btn btn-primary btn-sm" id="save-config-btn" onclick="saveConfig()">Save Config</button>
+        </div>
+        <div class="chart-card">
+          <div class="config-grid" id="config-grid"></div>
+        </div>
+      </div>
+
+      <!-- Announcements -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Announcements</div>
+          <button class="btn btn-primary btn-sm" onclick="openAnnouncementModal()">+ New</button>
+        </div>
+        <div id="announcements-list"></div>
+      </div>
+
+      <!-- Email Bans -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Email / Domain Bans</div>
+          <button class="btn btn-primary btn-sm" onclick="openEmailBanModal()">+ Add Ban</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Pattern</th><th>Reason</th><th>Created</th><th></th></tr></thead>
+            <tbody id="bans-tbody"><tr class="empty-row"><td colspan="4">No bans</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Invites -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Invite Codes</div>
+          <button class="btn btn-primary btn-sm" onclick="openInviteModal()">+ Generate</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Code</th><th>Uses</th><th>Max</th><th>Expires</th><th></th></tr></thead>
+            <tbody id="invites-tbody"><tr class="empty-row"><td colspan="5">No invites</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Webhooks -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Webhooks</div>
+          <button class="btn btn-outline btn-sm" onclick="testWebhook()">Test</button>
+        </div>
+        <div class="chart-card">
+          <div class="field">
+            <label class="field-label">Webhook URL</label>
+            <input class="field-input" id="webhook-url" placeholder="https://discord.com/api/webhooks/..." />
+          </div>
+          <button class="btn btn-primary btn-sm" id="save-webhook-btn" onclick="saveWebhooks()">Save</button>
+        </div>
+      </div>
+
+      <!-- Backup -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Data Backup & Migration</div>
+        </div>
+        <div class="chart-card">
+          <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" onclick="exportData()">Export All</button>
+            <button class="btn btn-outline btn-sm" onclick="copyExport()">Copy</button>
+            <button class="btn btn-danger btn-sm" id="import-btn" onclick="importData()">Import</button>
+          </div>
+          <textarea class="field-input" id="backup-textarea" rows="4" placeholder="Export output appears here. Paste data to import." style="resize:vertical;font-family:'JetBrains Mono',monospace;font-size:10px"></textarea>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <div class="field-hint">Enable maintenance before importing to lock out users.</div>
+            <div style="font-size:9px;color:var(--muted)" id="backup-size"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TOOLS ═══ -->
+    <div class="tab-panel" id="panel-tools">
+      <!-- Sessions -->
+      <div class="section">
+        <div class="section-header"><div class="section-title">Active Sessions</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Token</th><th>User ID</th><th>Created</th><th></th></tr></thead>
+            <tbody id="sessions-tbody"><tr class="empty-row"><td colspan="4">No sessions</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Plugin Status -->
+      <div class="section">
+        <div class="section-header"><div class="section-title">Connected Plugins</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Plugin ID</th><th>Session</th><th>User</th><th>Last Seen</th><th>Status</th></tr></thead>
+            <tbody id="plugins-tbody"><tr class="empty-row"><td colspan="5">No plugins connected</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Checkpoints -->
+      <div class="section">
+        <div class="section-header"><div class="section-title">All Checkpoints</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Label</th><th>User</th><th>Scripts</th><th>Created</th><th>Auto</th></tr></thead>
+            <tbody id="checkpoints-tbody"><tr class="empty-row"><td colspan="5">No checkpoints</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Conversations -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Conversations</div>
+          <input class="search-box" id="conv-search" placeholder="Search conversations..." oninput="filterConversations()" style="width:220px" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Title</th><th>User</th><th>Mode</th><th>Model</th><th>Updated</th><th></th></tr></thead>
+            <tbody id="convs-tbody"><tr class="empty-row"><td colspan="6">No conversations</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Credit History -->
+      <div class="section">
+        <div class="section-header"><div class="section-title">Global Credit History</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Time</th><th>User</th><th>Amount</th><th>Reason</th><th>Admin</th></tr></thead>
+            <tbody id="credit-hist-tbody"><tr class="empty-row"><td colspan="5">No history</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- Progress Overlay -->
-<div class="overlay" id="overlay">
-  <div class="overlay-icon">⚙️</div>
-  <div class="overlay-title" id="overlay-title">Importing data...</div>
-  <div class="overlay-sub" id="overlay-sub">Site is in maintenance mode. Please wait.</div>
-  <div class="overlay-dots" style="margin-top:12px"><span></span><span></span><span></span></div>
+<!-- DRAWER -->
+<div class="drawer-overlay" id="drawer-overlay">
+  <div class="drawer">
+    <div class="drawer-header">
+      <div class="drawer-title" id="drawer-title">User Detail</div>
+      <button class="drawer-close" onclick="closeDrawer()">&#10005;</button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+    <div class="drawer-actions" id="drawer-actions"></div>
+  </div>
 </div>
 
-<!-- Edit Modal -->
+<!-- EDIT CREDITS MODAL -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal" style="position:relative">
-    <button class="modal-close" onclick="closeModal()">&#10005;</button>
     <div class="modal-title">Edit Credits</div>
-    <div class="modal-sub" id="modal-email">user@email.com</div>
+    <div class="modal-sub" id="edit-email">user@email.com</div>
     <input type="hidden" id="edit-user-id" />
-    <div class="field">
-      <label class="field-label">Current Balance</label>
-      <input class="field-input" id="edit-balance" type="number" step="0.01" />
+    <div class="field"><label class="field-label">Balance</label><input class="field-input" id="edit-balance" type="number" step="0.01" /></div>
+    <div class="field"><label class="field-label">Max Credit</label><input class="field-input" id="edit-max" type="number" step="0.01" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCredits()">Save</button>
     </div>
-    <div class="field">
-      <label class="field-label">Max Credit</label>
-      <input class="field-input" id="edit-max" type="number" step="0.01" />
-    </div>
-    <button class="btn-save" id="save-btn" onclick="saveCredits()">Save Changes</button>
   </div>
 </div>
 
-<!-- Delete Confirm Modal -->
+<!-- GRANT CREDITS MODAL -->
+<div class="modal-overlay" id="grant-modal">
+  <div class="modal" style="position:relative">
+    <div class="modal-title">Grant Credits</div>
+    <div class="modal-sub" id="grant-target">user@email.com</div>
+    <input type="hidden" id="grant-user-id" />
+    <div class="field">
+      <label class="field-label">Amount</label>
+      <div class="presets">
+        <button class="preset-btn" onclick="document.getElementById('grant-amount').value=1">+1</button>
+        <button class="preset-btn" onclick="document.getElementById('grant-amount').value=5">+5</button>
+        <button class="preset-btn" onclick="document.getElementById('grant-amount').value=10">+10</button>
+        <button class="preset-btn" onclick="document.getElementById('grant-amount').value=50">+50</button>
+      </div>
+      <input class="field-input" id="grant-amount" type="number" step="0.01" placeholder="Amount to add" />
+    </div>
+    <div class="field"><label class="field-label">Reason (optional)</label><input class="field-input" id="grant-reason" placeholder="Admin grant" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('grant-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="grantCredits()">Grant</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK CREDITS MODAL -->
+<div class="modal-overlay" id="bulk-credit-modal">
+  <div class="modal" style="position:relative">
+    <div class="modal-title">Bulk Grant Credits</div>
+    <div class="modal-sub" id="bulk-credit-sub">0 users selected</div>
+    <div class="field">
+      <label class="field-label">Amount per user</label>
+      <div class="presets">
+        <button class="preset-btn" onclick="document.getElementById('bulk-credit-amount').value=1">+1</button>
+        <button class="preset-btn" onclick="document.getElementById('bulk-credit-amount').value=5">+5</button>
+        <button class="preset-btn" onclick="document.getElementById('bulk-credit-amount').value=10">+10</button>
+        <button class="preset-btn" onclick="document.getElementById('bulk-credit-amount').value=50">+50</button>
+      </div>
+      <input class="field-input" id="bulk-credit-amount" type="number" step="0.01" placeholder="Amount" />
+    </div>
+    <div class="field"><label class="field-label">Reason</label><input class="field-input" id="bulk-credit-reason" placeholder="Bulk grant" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('bulk-credit-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="bulkGrantCredits()">Grant to All</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
 <div class="modal-overlay" id="delete-modal">
   <div class="modal" style="position:relative">
-    <button class="modal-close" onclick="closeDeleteModal()">&#10005;</button>
     <div class="modal-title" style="color:var(--danger)">Delete User</div>
-    <div class="modal-sub" id="delete-email">This will permanently delete this user, their credits, conversations, and sessions.</div>
+    <div class="modal-sub" id="delete-sub">This cannot be undone.</div>
     <input type="hidden" id="delete-user-id" />
-    <button class="btn-confirm-delete" id="confirm-delete-btn" onclick="confirmDelete()">Delete permanently</button>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete Permanently</button>
+    </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ANNOUNCEMENT MODAL -->
+<div class="modal-overlay" id="ann-modal">
+  <div class="modal" style="position:relative">
+    <div class="modal-title" id="ann-modal-title">New Announcement</div>
+    <input type="hidden" id="ann-edit-id" />
+    <div class="field"><label class="field-label">Title</label><input class="field-input" id="ann-title" placeholder="Title" /></div>
+    <div class="field"><label class="field-label">Body</label><textarea class="field-input" id="ann-body" rows="3" placeholder="Message content" style="resize:vertical"></textarea></div>
+    <div class="field"><label class="field-label">Type</label>
+      <select class="field-select" id="ann-type"><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Critical</option></select>
+    </div>
+    <div class="field"><label class="field-label">Expires (hours, 0 = never)</label><input class="field-input" id="ann-expires" type="number" value="0" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('ann-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAnnouncement()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL BAN MODAL -->
+<div class="modal-overlay" id="ban-modal">
+  <div class="modal" style="position:relative">
+    <div class="modal-title">Add Email Ban</div>
+    <div class="field"><label class="field-label">Pattern</label><input class="field-input" id="ban-pattern" placeholder="*@tempmail.com or user@domain.com" /><div class="field-hint">Use * as wildcard for domain bans</div></div>
+    <div class="field"><label class="field-label">Reason (optional)</label><input class="field-input" id="ban-reason" placeholder="Spam" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('ban-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addEmailBan()">Add Ban</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVITE MODAL -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal" style="position:relative">
+    <div class="modal-title">Generate Invite Code</div>
+    <div class="field"><label class="field-label">Code (blank = auto)</label><input class="field-input" id="invite-code" placeholder="Auto-generated" /></div>
+    <div class="field"><label class="field-label">Max Uses</label><input class="field-input" id="invite-max" type="number" value="1" /></div>
+    <div class="field"><label class="field-label">Expires (hours, 0 = never)</label><input class="field-input" id="invite-expires" type="number" value="0" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('invite-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createInvite()">Generate</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONVERSATION VIEWER MODAL -->
+<div class="modal-overlay" id="conv-modal">
+  <div class="modal" style="position:relative;max-width:560px;max-height:80vh;display:flex;flex-direction:column">
+    <div class="modal-title" id="conv-modal-title">Conversation</div>
+    <div class="modal-sub" id="conv-modal-sub"></div>
+    <div class="conv-viewer" id="conv-viewer"></div>
+    <div class="modal-actions" style="flex-shrink:0">
+      <button class="btn btn-outline" onclick="closeModal('conv-modal')">Close</button>
+      <button class="btn btn-warn" onclick="flagConversation()">Flag</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="overlay-icon">⚙️</div>
+  <div class="overlay-title" id="overlay-title">Importing...</div>
+  <div class="overlay-sub" id="overlay-sub">Please wait</div>
+  <div class="overlay-dots" style="margin-top:10px"><span></span><span></span><span></span></div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
 
 <script>
-const OWNER_ID = 'c14987eb-319a-4ab1-a3f6-defaaae6d4b9';
-let token = localStorage.getItem('rux_token');
-let pollInterval = null;
-let allUsers = [];
-let isOwner = false;
+/* ═══ STATE ═══ */
+let token=localStorage.getItem('rux_token');
+let isOwner=false;
+let myUserId='';
+let allUsers=[];
+let selectedUserIds=new Set();
+let userSortKey='created_at';
+let userSortDir=-1;
+let userPage=1;
+const USER_PER_PAGE=25;
+let auditPage=1;
+const AUDIT_PER_PAGE=50;
+let allConvs=[];
+let convViewerId=null;
+let systemConfig={};
+let pollTimer=null;
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+/* ═══ HELPERS ═══ */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function fmtDate(ts){if(!ts)return '—';const d=new Date(typeof ts==='number'&&ts<1e12?ts*1000:ts);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+function fmtRel(ts){if(!ts)return '—';const now=Date.now();const t=typeof ts==='number'&&ts<1e12?ts*1000:ts;const diff=Math.floor((now-t)/1000);if(diff<60)return 'just now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';return fmtDate(ts)}
+function fmtBytes(b){if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(1)+' MB'}
+
+function showToast(msg,type='default'){
+  const c=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className='toast'+(type!=='default'?' '+type:'');
+  t.textContent=msg;c.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),200)},2500);
 }
 
-async function api(path, opts = {}) {
-  const headers = opts.headers || {};
-  if (token) headers['Authorization'] = 'Bearer ' + token;
-  const res = await fetch(path, { ...opts, headers });
-  const data = await res.json().catch(() => ({}));
-  return { ok: res.ok, status: res.status, data };
+async function api(path,opts={}){
+  const headers=opts.headers||{};
+  if(token)headers['Authorization']='Bearer '+token;
+  try{
+    const res=await fetch(path,{...opts,headers});
+    const data=await res.json().catch(()=>({}));
+    if(res.status===401){localStorage.removeItem('rux_token');window.location.href='/';return null}
+    return{ok:res.ok,status:res.status,data};
+  }catch(e){return{ok:false,status:0,data:{error:e.message}}}
 }
 
-async function checkAuth() {
-  if (!token) { showDenied(); return; }
-  const r = await api('/auth/me');
-  if (!r.ok || !r.data || !r.data.user) { showDenied(); return; }
-  // Check admin via the users API (any admin can access it)
-  const r2 = await api('/admin/api/users');
-  if (!r2.ok) { showDenied(); return; }
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')})});
 
-  isOwner = r.data.user.id === OWNER_ID;
-  document.getElementById('my-role-badge').className = 'header-badge ' + (isOwner ? 'badge-owner' : 'badge-admin');
-  document.getElementById('my-role-badge').textContent = isOwner ? 'Owner' : 'Admin';
+/* ═══ AUTH ═══ */
+async function checkAuth(){
+  if(!token){showDenied();return}
+  const r=await api('/auth/me');
+  if(!r||!r.ok||!r.data||!r.data.user){showDenied();return}
+  const r2=await api('/admin/api/users');
+  if(!r2||!r2.ok){showDenied();return}
 
-  // Hide owner-only buttons if not owner
-  if (!isOwner) {
-    document.querySelectorAll('.btn-promote,.btn-demote,.btn-delete').forEach(b => b.classList.add('btn-disabled'));
-    document.getElementById('import-btn').classList.add('btn-disabled');
-    document.getElementById('maintenance-on-btn').style.display = 'none';
+  myUserId=r.data.user.id;
+  isOwner=r.data.user.id===r.data.user.id&&r2.data.some(u=>u.is_owner&&u.id===myUserId);
+  document.getElementById('my-badge').className='topbar-badge '+(isOwner?'badge-owner':'badge-admin');
+  document.getElementById('my-badge').textContent=isOwner?'Owner':'Admin';
+  document.getElementById('topbar-email').textContent=r.data.user.email;
+
+  if(!isOwner){
+    document.getElementById('import-btn').classList.add('btn','btn-outline','btn-sm');
+    document.getElementById('import-btn').disabled=true;
   }
 
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('admin-panel').style.display = '';
-  loadUsers();
-  checkMaintenance();
-  pollInterval = setInterval(loadUsers, 5000);
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('show');
+  loadAll();
+  pollTimer=setInterval(loadAll,15000);
 }
 
-function showDenied() {
-  document.getElementById('login-screen').innerHTML = `
+function showDenied(){
+  document.getElementById('login-screen').innerHTML=`
     <div class="login-box">
       <div style="text-align:center;color:var(--danger);font-size:13px;font-weight:600">Access Denied</div>
       <div style="text-align:center;color:var(--muted);font-size:11px;margin-top:8px">You are not authorized to view this page.</div>
     </div>`;
 }
 
-function formatDate(ts) {
-  if (!ts) return '—';
-  const d = new Date(ts * 1000);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+function loadAll(){
+  loadDashboard();loadUsers();loadAuditLog();loadSystemTab();loadToolsTab();checkMaintenance();
 }
 
-function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escAttr(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
-
-function renderUsers(users) {
-  allUsers = users;
-  const tbody = document.getElementById('users-tbody');
-  if (!users.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No users yet</td></tr>';
-    updateStats(users); return;
-  }
-
-  updateStats(users);
-  filterUsers();
-}
-
-function updateStats(users) {
-  document.getElementById('stat-users').textContent = users.length;
-  const totalCredits = users.reduce((s, u) => s + u.balance, 0);
-  document.getElementById('stat-credits').textContent = totalCredits.toFixed(2);
-  document.getElementById('stat-avg').textContent = users.length ? (totalCredits / users.length).toFixed(2) : '0';
-  document.getElementById('stat-admins').textContent = users.filter(u => u.is_admin).length;
-  document.getElementById('stat-blocked').textContent = users.filter(u => u.blocked).length;
-}
-
-function filterUsers() {
-  const q = document.getElementById('search-box').value.toLowerCase().trim();
-  const filtered = q ? allUsers.filter(u => u.email.toLowerCase().includes(q) || u.id.toLowerCase().includes(q)) : allUsers;
-  renderUserRows(filtered);
-}
-
-function renderUserRows(users) {
-  const tbody = document.getElementById('users-tbody');
-  if (!users.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No results</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = users.map(u => {
-    const isMe = u.id === OWNER_ID;
-    const roleBadge = u.is_owner ? '<span class="role-badge role-owner">Owner</span>' : u.is_admin ? '<span class="role-badge role-admin">Admin</span>' : '<span class="role-badge role-user">User</span>';
-    const statusBadge = u.blocked ? '<span class="status-badge status-blocked">Blocked</span>' : '<span class="status-badge status-active">Active</span>';
-    const canModify = !isMe && (isOwner || !u.is_admin);
-
-    let actions = `<button class="btn-sm btn-edit" onclick="openEdit('${u.id}','${escAttr(u.email)}',${u.balance},${u.max_credit})">Edit</button>`;
-
-    if (!isMe) {
-      if (u.blocked) {
-        actions += `<button class="btn-sm btn-unblock" onclick="unblockUser('${u.id}')">Unblock</button>`;
-      } else if (canModify) {
-        actions += `<button class="btn-sm btn-block" onclick="blockUser('${u.id}')">Block</button>`;
-      }
-      if (isOwner && !u.is_owner) {
-        if (u.is_admin) {
-          actions += `<button class="btn-sm btn-demote" onclick="demoteUser('${u.id}')">Demote</button>`;
-        } else {
-          actions += `<button class="btn-sm btn-promote" onclick="promoteUser('${u.id}')">Promote</button>`;
-        }
-        actions += `<button class="btn-sm btn-delete" onclick="openDeleteModal('${u.id}','${escAttr(u.email)}')">Delete</button>`;
-      }
-    }
-
-    return `<tr>
-      <td class="id-cell" title="${u.id}">${u.id.slice(0, 8)}…</td>
-      <td class="email-cell">${escHtml(u.email)}</td>
-      <td>${roleBadge}</td>
-      <td>${statusBadge}</td>
-      <td class="rbx-cell">${u.roblox_id || '—'}</td>
-      <td class="credit-cell">${u.balance.toFixed(2)}</td>
-      <td class="max-cell">${u.max_credit.toFixed(0)}</td>
-      <td class="date-cell">${formatDate(u.created_at)}</td>
-      <td class="actions-cell">${actions}</td>
-    </tr>`;
-  }).join('');
-}
-
-async function loadUsers() {
-  const r = await api('/admin/api/users');
-  if (r.ok && Array.isArray(r.data)) renderUsers(r.data);
+/* ═══ TABS ═══ */
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+tab));
 }
 
 /* ═══ MAINTENANCE ═══ */
-async function checkMaintenance() {
-  const r = await api('/admin/api/maintenance');
-  if (r.ok) document.getElementById('maintenance-bar').classList.toggle('hidden', !r.data.enabled);
+async function checkMaintenance(){
+  const r=await api('/admin/api/maintenance');
+  if(!r||!r.ok)return;
+  const on=r.data.enabled;
+  const btn=document.getElementById('maint-btn');
+  btn.className='topbar-maint '+(on?'on':'off');
+  document.getElementById('maint-label').textContent=on?'Maintenance ON':'Maintenance OFF';
 }
 
-async function toggleMaintenance(enabled) {
-  const r = await api('/admin/api/maintenance', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ enabled }),
-  });
-  if (r.ok) {
-    document.getElementById('maintenance-bar').classList.toggle('hidden', !enabled);
-    showToast(enabled ? 'Maintenance mode ON' : 'Maintenance mode OFF');
+async function toggleMaintenance(){
+  const r=await api('/admin/api/maintenance');
+  if(!r||!r.ok)return;
+  const newState=!r.data.enabled;
+  const r2=await api('/admin/api/maintenance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:newState})});
+  if(r2&&r2.ok){checkMaintenance();showToast(newState?'Maintenance enabled':'Maintenance disabled','success')}
+}
+
+/* ═══ DASHBOARD ═══ */
+async function loadDashboard(){
+  const r=await api('/admin/api/stats');
+  if(!r||!r.ok)return;
+  const s=r.data;
+
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Users</div><div class="stat-value">${s.total_users}</div><div class="stat-sub">${s.recent_signups_24h} new today</div></div>
+    <div class="stat-card"><div class="stat-label">Credits</div><div class="stat-value">${s.total_credits.toFixed(1)}</div><div class="stat-sub">Avg ${s.avg_credits}/user</div></div>
+    <div class="stat-card"><div class="stat-label">Conversations</div><div class="stat-value">${s.total_conversations}</div></div>
+    <div class="stat-card"><div class="stat-label">Checkpoints</div><div class="stat-value">${s.total_checkpoints}</div></div>
+    <div class="stat-card"><div class="stat-label">Sessions</div><div class="stat-value">${s.active_sessions}</div></div>
+    <div class="stat-card"><div class="stat-label">Blocked</div><div class="stat-value" style="color:var(--danger)">${s.total_blocked}</div></div>
+    <div class="stat-card"><div class="stat-label">Disk</div><div class="stat-value">${fmtBytes(s.disk_usage_bytes)}</div></div>
+    <div class="stat-card"><div class="stat-label">Signups 7d</div><div class="stat-value">${s.recent_signups_7d}</div></div>
+  `;
+
+  // Signup chart
+  const now=Date.now();const dayMs=86400000;
+  const dayBuckets=Array(7).fill(0);
+  if(allUsers.length){
+    allUsers.forEach(u=>{const d=(u.created_at||0)*1000;const daysAgo=Math.floor((now-d)/dayMs);if(daysAgo>=0&&daysAgo<7)dayBuckets[6-daysAgo]++});
   }
-}
+  const maxBar=Math.max(1,...dayBuckets);
+  document.getElementById('signup-chart').innerHTML=dayBuckets.map((v,i)=>{
+    const d=new Date(now-(6-i)*dayMs);const lbl=d.toLocaleDateString('en-US',{weekday:'short'});const h=Math.max(2,(v/maxBar)*90);
+    return`<div class="bar-col"><div class="bar" style="height:${h}px" title="${v} signups"></div><div class="bar-val">${v||''}</div><div class="bar-label">${lbl}</div></div>`;
+  }).join('');
 
-/* ═══ EXPORT ═══ */
-async function exportData() {
-  const btn = document.getElementById('export-btn');
-  const ta = document.getElementById('backup-textarea');
-  btn.disabled = true; btn.textContent = 'Exporting...';
-
-  try {
-    const r = await api('/admin/api/export');
-    if (!r.ok) { showToast('Export failed: ' + (r.data?.error || 'Unknown')); return; }
-    const json = JSON.stringify(r.data, null, 2);
-    ta.value = json;
-    const size = new Blob([json]).size;
-    document.getElementById('backup-size').textContent = formatBytes(size);
-    showToast('Data exported — copy and save before republishing');
-  } catch (e) {
-    showToast('Export error: ' + e.message);
-  } finally {
-    btn.disabled = false; btn.textContent = 'Export All Data';
-  }
-}
-
-/* ═══ IMPORT ═══ */
-async function importData() {
-  if (!isOwner) { showToast('Only the owner can import data'); return; }
-  const ta = document.getElementById('backup-textarea');
-  const raw = ta.value.trim();
-  if (!raw) { showToast('Paste exported data into the text area first'); return; }
-
-  let parsed;
-  try { parsed = JSON.parse(raw); }
-  catch (e) { showToast('Invalid JSON — paste the exact data from Export'); return; }
-  if (!parsed.users && !parsed.credits && !parsed.sessions) { showToast('Not a valid Rux backup'); return; }
-
-  const btn = document.getElementById('import-btn');
-  const overlay = document.getElementById('overlay');
-
-  // Enable maintenance first
-  await api('/admin/api/maintenance', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ enabled: true }),
-  });
-
-  overlay.classList.add('open');
-  btn.disabled = true;
-
-  try {
-    const r = await api('/admin/api/import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(parsed),
+  // Model usage (from credit history)
+  const hr=await api('/admin/api/credits/history?limit=200');
+  const modelCounts={};
+  if(hr&&hr.ok&&Array.isArray(hr.data)){
+    hr.data.forEach(e=>{
+      const r=e.reason||'';
+      const m=r.match(/\(([^)]+)\)/);
+      if(m)modelCounts[m[1]]=(modelCounts[m[1]]||0)+1;
     });
+  }
+  const modelEntries=Object.entries(modelCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxModel=modelEntries.length?modelEntries[0][1]:1;
+  const colors=['var(--accent)','var(--blue)','var(--green)','var(--purple)','var(--orange)','var(--danger)','#888','#666'];
+  document.getElementById('model-chart').innerHTML=modelEntries.length?modelEntries.map(([name,count],i)=>`
+    <div class="model-bar-row">
+      <div class="model-bar-name">${esc(name)}</div>
+      <div class="model-bar-track"><div class="model-bar-fill" style="width:${(count/maxModel)*100}%;background:${colors[i%colors.length]}"></div></div>
+      <div class="model-bar-count">${count}</div>
+    </div>`).join(''):'<div style="font-size:11px;color:var(--muted);text-align:center;padding:20px">No usage data yet</div>';
 
-    if (r.ok) {
-      document.getElementById('overlay-title').textContent = 'Import complete';
-      document.getElementById('overlay-sub').textContent = 'Disabling maintenance mode...';
-      await new Promise(r => setTimeout(r, 1000));
-
-      await api('/admin/api/maintenance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: false }),
-      });
-
-      showToast('Data imported successfully');
-      loadUsers();
-      checkMaintenance();
-    } else {
-      showToast('Import failed: ' + (r.data?.error || 'Unknown'));
-    }
-  } catch (e) {
-    showToast('Import error: ' + e.message);
-  } finally {
-    overlay.classList.remove('open');
-    document.getElementById('overlay-title').textContent = 'Importing data...';
-    document.getElementById('overlay-sub').textContent = 'Site is in maintenance mode. Please wait.';
-    btn.disabled = false;
+  // Activity feed
+  const ar=await api('/admin/api/audit-log?limit=20');
+  const feed=document.getElementById('activity-feed');
+  if(ar&&ar.ok&&Array.isArray(ar.data)){
+    feed.innerHTML=ar.data.map(e=>{
+      const dotClass=e.action.includes('block')?'block':e.action.includes('delete')?'block':e.action.includes('promote')||e.action.includes('credit')?'credit':e.action.includes('maintenance')?'system':'signup';
+      return`<div class="feed-item"><div class="feed-dot ${dotClass}"></div><div class="feed-body"><div class="feed-text"><strong>${esc(e.action)}</strong> ${e.target_user_id?'→ <code>'+e.target_user_id.slice(0,8)+'…</code>':''} ${e.details?'<span style="color:var(--muted)">'+esc(e.details.slice(0,80))+'</span>':''}</div></div><div class="feed-time">${fmtRel(e.timestamp)}</div></div>`;
+    }).join('')||'<div style="font-size:11px;color:var(--muted);text-align:center;padding:20px">No activity yet</div>';
   }
 }
 
-function copyExport() {
-  const ta = document.getElementById('backup-textarea');
-  if (!ta.value.trim()) { showToast('Nothing to copy — Export first'); return; }
-  navigator.clipboard.writeText(ta.value);
-  showToast('Copied to clipboard');
+/* ═══ USERS ═══ */
+async function loadUsers(){
+  const r=await api('/admin/api/users');
+  if(!r||!r.ok)return;
+  allUsers=r.data;
+  document.getElementById('tab-user-count').textContent=allUsers.length;
+  renderUsers();
 }
 
-function formatBytes(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1048576).toFixed(1) + ' MB';
-}
-
-/* ═══ BLOCK / UNBLOCK ═══ */
-async function blockUser(id) {
-  const r = await api('/admin/api/block', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: id }) });
-  if (r.ok) { showToast('User blocked'); loadUsers(); }
-  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
-}
-
-async function unblockUser(id) {
-  const r = await api('/admin/api/unblock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: id }) });
-  if (r.ok) { showToast('User unblocked'); loadUsers(); }
-  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
-}
-
-/* ═══ PROMOTE / DEMOTE ═══ */
-async function promoteUser(id) {
-  const r = await api('/admin/api/promote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: id }) });
-  if (r.ok) { showToast('User promoted to admin'); loadUsers(); }
-  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
-}
-
-async function demoteUser(id) {
-  const r = await api('/admin/api/demote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: id }) });
-  if (r.ok) { showToast('Admin demoted to user'); loadUsers(); }
-  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
-}
-
-/* ═══ DELETE ═══ */
-function openDeleteModal(id, email) {
-  document.getElementById('delete-user-id').value = id;
-  document.getElementById('delete-email').textContent = `Permanently delete ${email}? This cannot be undone.`;
-  document.getElementById('delete-modal').classList.add('open');
-}
-function closeDeleteModal() { document.getElementById('delete-modal').classList.remove('open'); }
-
-async function confirmDelete() {
-  const id = document.getElementById('delete-user-id').value;
-  const btn = document.getElementById('confirm-delete-btn');
-  btn.disabled = true; btn.textContent = 'Deleting...';
-
-  const r = await api('/admin/api/user/' + id, { method: 'DELETE' });
-  btn.disabled = false; btn.textContent = 'Delete permanently';
-
-  if (r.ok) { showToast('User deleted'); closeDeleteModal(); loadUsers(); }
-  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
-}
-
-/* ═══ EDIT MODAL ═══ */
-function openEdit(id, email, balance, max) {
-  document.getElementById('edit-user-id').value = id;
-  document.getElementById('modal-email').textContent = email;
-  document.getElementById('edit-balance').value = balance;
-  document.getElementById('edit-max').value = max;
-  document.getElementById('edit-modal').classList.add('open');
-}
-function closeModal() { document.getElementById('edit-modal').classList.remove('open'); }
-
-async function saveCredits() {
-  const userId = document.getElementById('edit-user-id').value;
-  const balance = parseFloat(document.getElementById('edit-balance').value);
-  const maxCredit = parseFloat(document.getElementById('edit-max').value);
-  if (isNaN(balance) || isNaN(maxCredit)) { showToast('Invalid values'); return; }
-
-  const btn = document.getElementById('save-btn');
-  btn.disabled = true; btn.textContent = 'Saving...';
-
-  const r = await api('/admin/api/credits', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, balance, max_credit: maxCredit }),
+function getFilteredUsers(){
+  const q=document.getElementById('user-search').value.toLowerCase().trim();
+  const roleF=document.getElementById('user-role-filter').value;
+  const statusF=document.getElementById('user-status-filter').value;
+  let list=allUsers;
+  if(q)list=list.filter(u=>u.email.toLowerCase().includes(q)||u.id.toLowerCase().includes(q));
+  if(roleF==='owner')list=list.filter(u=>u.is_owner);
+  else if(roleF==='admin')list=list.filter(u=>u.is_admin&&!u.is_owner);
+  else if(roleF==='user')list=list.filter(u=>!u.is_admin&&!u.is_owner);
+  if(statusF==='active')list=list.filter(u=>!u.blocked);
+  else if(statusF==='blocked')list=list.filter(u=>u.blocked);
+  // Sort
+  list.sort((a,b)=>{
+    let va=a[userSortKey],vb=b[userSortKey];
+    if(typeof va==='string')va=va.toLowerCase();
+    if(typeof vb==='string')vb=vb.toLowerCase();
+    if(userSortKey==='role'){va=a.is_owner?2:a.is_admin?1:0;vb=b.is_owner?2:b.is_admin?1:0}
+    if(userSortKey==='status'){va=a.blocked?0:1;vb=b.blocked?0:1}
+    if(va<vb)return -1*userSortDir;if(va>vb)return 1*userSortDir;return 0;
   });
-
-  btn.disabled = false; btn.textContent = 'Save Changes';
-  if (r.ok) { showToast('Credits updated'); closeModal(); loadUsers(); }
-  else showToast('Failed: ' + (r.data?.error || 'Unknown'));
+  return list;
 }
 
-document.getElementById('edit-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-document.getElementById('delete-modal').addEventListener('click', function(e) { if (e.target === this) closeDeleteModal(); });
+function renderUsers(){
+  const filtered=getFilteredUsers();
+  const totalPages=Math.max(1,Math.ceil(filtered.length/USER_PER_PAGE));
+  if(userPage>totalPages)userPage=totalPages;
+  const start=(userPage-1)*USER_PER_PAGE;
+  const page=filtered.slice(start,start+USER_PER_PAGE);
 
+  const tbody=document.getElementById('users-tbody');
+  if(!page.length){tbody.innerHTML='<tr class="empty-row"><td colspan="10">No users found</td></tr>';renderPagination(totalPages,filtered.length);return}
+
+  tbody.innerHTML=page.map(u=>{
+    const checked=selectedUserIds.has(u.id)?'checked':'';
+    const isMe=u.id===myUserId;
+    const canModify=!isMe&&(isOwner||!u.is_admin);
+    const roleBadge=u.is_owner?'<span class="role-badge role-owner">Owner</span>':u.is_admin?'<span class="role-badge role-admin">Admin</span>':'<span class="role-badge role-user">User</span>';
+    const statusBadge=u.blocked?'<span class="status-badge status-blocked">Blocked</span>':'<span class="status-badge status-active">Active</span>';
+    let actions=`<button class="btn btn-outline btn-sm" onclick="openEditModal('${u.id}','${esc(u.email)}',${u.balance},${u.max_credit})">Edit</button>`;
+    actions+=`<button class="btn btn-primary btn-sm" onclick="openGrantModal('${u.id}','${esc(u.email)}')">Grant</button>`;
+    if(!isMe){
+      if(u.blocked)actions+=`<button class="btn btn-green btn-sm" onclick="unblockUser('${u.id}')">Unblock</button>`;
+      else if(canModify)actions+=`<button class="btn btn-danger btn-sm" onclick="blockUser('${u.id}')">Block</button>`;
+      if(isOwner&&!u.is_owner){
+        if(u.is_admin)actions+=`<button class="btn btn-warn btn-sm" onclick="demoteUser('${u.id}')">Demote</button>`;
+        else actions+=`<button class="btn btn-blue btn-sm" onclick="promoteUser('${u.id}')">Promote</button>`;
+        actions+=`<button class="btn btn-danger btn-sm" onclick="openDeleteModal('${u.id}','${esc(u.email)}')">Delete</button>`;
+      }
+    }
+    return`<tr class="${selectedUserIds.has(u.id')?'selected':''}">
+      <td><input type="checkbox" ${checked} onchange="toggleSelect('${u.id}')" /></td>
+      <td class="id-cell" title="${u.id}">${u.id.slice(0,8)}…</td>
+      <td class="email-cell" onclick="openDrawer('${u.id}')">${esc(u.email)}</td>
+      <td>${roleBadge}</td>
+      <td>${statusBadge}</td>
+      <td class="rbx-cell">${u.roblox_id||'—'}</td>
+      <td class="credit-cell">${u.balance.toFixed(2)}</td>
+      <td class="max-cell">${u.max_credit.toFixed(0)}</td>
+      <td class="date-cell">${fmtDate(u.created_at)}</td>
+      <td style="display:flex;gap:3px;flex-wrap:wrap">${actions}</td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(totalPages,filtered.length);
+  updateBulkBar();
+}
+
+function renderPagination(totalPages,total){
+  const el=document.getElementById('user-pagination');
+  el.innerHTML=`
+    <div class="page-info">${total} user${total!==1?'s':''} · Page ${userPage}/${totalPages}</div>
+    <div style="display:flex;gap:4px">
+      <button class="page-btn" onclick="userPage=1;renderUsers()" ${userPage<=1?'disabled':''}>«</button>
+      <button class="page-btn" onclick="userPage--;renderUsers()" ${userPage<=1?'disabled':''}>‹</button>
+      <button class="page-btn" onclick="userPage++;renderUsers()" ${userPage>=totalPages?'disabled':''}>›</button>
+      <button class="page-btn" onclick="userPage=${totalPages};renderUsers()" ${userPage>=totalPages?'disabled':''}>»</button>
+    </div>`;
+}
+
+function sortBy(key){
+  if(userSortKey===key)userSortDir*=-1;
+  else{userSortKey=key;userSortDir=key==='email'?1:-1}
+  document.querySelectorAll('#panel-users th').forEach(th=>th.classList.remove('sorted'));
+  renderUsers();
+}
+
+function filterUsers(){userPage=1;renderUsers()}
+
+/* ═══ SELECTION ═══ */
+function toggleSelect(id){if(selectedUserIds.has(id))selectedUserIds.delete(id);else selectedUserIds.add(id);renderUsers()}
+function toggleSelectAll(){
+  const filtered=getFilteredUsers();const start=(userPage-1)*USER_PER_PAGE;const page=filtered.slice(start,start+USER_PER_PAGE);
+  const allSelected=page.every(u=>selectedUserIds.has(u.id));
+  page.forEach(u=>{if(allSelected)selectedUserIds.delete(u.id);else selectedUserIds.add(u.id)});
+  renderUsers();
+}
+function clearSelection(){selectedUserIds.clear();document.getElementById('select-all-cb').checked=false;renderUsers()}
+function updateBulkBar(){
+  const bar=document.getElementById('bulk-bar');
+  bar.classList.toggle('show',selectedUserIds.size>0);
+  document.getElementById('bulk-count').textContent=selectedUserIds.size+' selected';
+  document.getElementById('bulk-delete-btn').style.display=isOwner?'':'none';
+}
+
+async function bulkAction(action){
+  const ids=[...selectedUserIds];if(!ids.length)return;
+  if(action==='delete'&&!confirm(`Delete ${ids.length} user${ids.length>1?'s':''}? This cannot be undone.`))return;
+  if(action==='block'&&!confirm(`Block ${ids.length} user${ids.length>1?'s':''}?`))return;
+  const map={block:'bulk/block',unblock:'bulk/unblock',delete:'bulk/delete'};
+  const r=await api('/admin/api/'+map[action],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_ids:ids})});
+  if(r&&r.ok){showToast(`${action} executed on ${ids.length} user(s)`,'success');clearSelection();loadUsers();loadDashboard()}
+  else showToast('Failed: '+(r?.data?.error||'Unknown'),'error');
+}
+
+function openBulkCreditModal(){
+  document.getElementById('bulk-credit-sub').textContent=selectedUserIds.size+' users selected';
+  document.getElementById('bulk-credit-amount').value='';
+  document.getElementById('bulk-credit-reason').value='Bulk grant';
+  openModal('bulk-credit-modal');
+}
+
+async function bulkGrantCredits(){
+  const ids=[...selectedUserIds];const amount=parseFloat(document.getElementById('bulk-credit-amount').value);
+  const reason=document.getElementById('bulk-credit-reason').value||'Bulk grant';
+  if(!ids.length||isNaN(amount)){showToast('Invalid input','error');return}
+  const r=await api('/admin/api/bulk/credits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_ids:ids,amount,reason})});
+  if(r&&r.ok){showToast(`Granted +${amount} to ${ids.length} user(s)`,'success');closeModal('bulk-credit-modal');clearSelection();loadUsers();loadDashboard()}
+  else showToast('Failed: '+(r?.data?.error||'Unknown'),'error');
+}
+
+/* ═══ USER ACTIONS ═══ */
+async function blockUser(id){const r=await api('/admin/api/block',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:id})});if(r&&r.ok){showToast('Blocked','success');loadUsers();loadDashboard()}else showToast('Failed','error')}
+async function unblockUser(id){const r=await api('/admin/api/unblock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:id})});if(r&&r.ok){showToast('Unblocked','success');loadUsers()}else showToast('Failed','error')}
+async function promoteUser(id){const r=await api('/admin/api/promote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:id})});if(r&&r.ok){showToast('Promoted','success');loadUsers()}else showToast('Failed','error')}
+async function demoteUser(id){const r=await api('/admin/api/demote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:id})});if(r&&r.ok){showToast('Demoted','success');loadUsers()}else showToast('Failed','error')}
+
+function openEditModal(id,email,balance,max){
+  document.getElementById('edit-user-id').value=id;document.getElementById('edit-email').textContent=email;
+  document.getElementById('edit-balance').value=balance;document.getElementById('edit-max').value=max;openModal('edit-modal');
+}
+
+async function saveCredits(){
+  const id=document.getElementById('edit-user-id').value;const balance=parseFloat(document.getElementById('edit-balance').value);const max=parseFloat(document.getElementById('edit-max').value);
+  if(isNaN(balance)||isNaN(max)){showToast('Invalid values','error');return}
+  const r=await api('/admin/api/credits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:id,balance,max_credit:max,reason:'Admin credit edit'})});
+  if(r&&r.ok){showToast('Credits updated','success');closeModal('edit-modal');loadUsers();loadDashboard()}else showToast('Failed','error');
+}
+
+function openGrantModal(id,email){
+  document.getElementById('grant-user-id').value=id;document.getElementById('grant-target').textContent=email;
+  document.getElementById('grant-amount').value='';document.getElementById('grant-reason').value='';openModal('grant-modal');
+}
+
+async function grantCredits(){
+  const id=document.getElementById('grant-user-id').value;const amount=parseFloat(document.getElementById('grant-amount').value);
+  const reason=document.getElementById('grant-reason').value||'Admin grant';
+  if(isNaN(amount)){showToast('Invalid amount','error');return}
+  const r=await api('/admin/api/credits/grant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:id,amount,reason})});
+  if(r&&r.ok){showToast(`Granted +${amount}`,'success');closeModal('grant-modal');loadUsers();loadDashboard()}else showToast('Failed: '+(r?.data?.error||'Unknown'),'error');
+}
+
+function openDeleteModal(id,email){
+  document.getElementById('delete-user-id').value=id;document.getElementById('delete-sub').textContent=`Permanently delete ${email}? This cannot be undone.`;openModal('delete-modal');
+}
+
+async function confirmDelete(){
+  const id=document.getElementById('delete-user-id').value;
+  const r=await api('/admin/api/user/'+id,{method:'DELETE'});
+  if(r&&r.ok){showToast('Deleted','success');closeModal('delete-modal');loadUsers();loadDashboard()}else showToast('Failed','error');
+}
+
+/* ═══ USER DRAWER ═══ */
+async function openDrawer(userId){
+  const r=await api('/admin/api/user/'+userId+'/detail');
+  if(!r||!r.ok){showToast('Failed to load user detail','error');return}
+  const d=r.data;const u=d.user;
+  document.getElementById('drawer-title').textContent=u.email;
+
+  let html='';
+  // Profile
+  html+=`<div class="drawer-section"><div class="drawer-section-title">Profile</div>
+    <div class="drawer-row"><span class="drawer-row-label">ID</span><span class="drawer-row-value" style="font-family:'JetBrains Mono',monospace;font-size:9px">${esc(u.id)}</span></div>
+    <div class="drawer-row"><span class="drawer-row-label">Email</span><span class="drawer-row-value">${esc(u.email)}</span></div>
+    <div class="drawer-row"><span class="drawer-row-label">Roblox ID</span><span class="drawer-row-value">${u.roblox_id||'—'}</span></div>
+    <div class="drawer-row"><span class="drawer-row-label">Created</span><span class="drawer-row-value">${fmtDate(u.created_at)}</span></div>
+    <div class="drawer-row"><span class="drawer-row-label">Role</span><span class="drawer-row-value">${u.is_owner?'Owner':u.is_admin?'Admin':'User'}</span></div>
+    <div class="drawer-row"><span class="drawer-row-label">Status</span><span class="drawer-row-value" style="color:${u.blocked?'var(--danger)':'var(--green)'}">${u.blocked?'Blocked':'Active'}</span></div>
+  </div>`;
+
+  // Credits
+  html+=`<div class="drawer-section"><div class="drawer-section-title">Credits</div>
+    <div class="drawer-row"><span class="drawer-row-label">Balance</span><span class="drawer-row-value" style="color:var(--accent)">${d.credits.balance.toFixed(2)}</span></div>
+    <div class="drawer-row"><span class="drawer-row-label">Max</span><span class="drawer-row-value">${d.credits.max_credit.toFixed(0)}</span></div>
+  </div>`;
+
+  // Credit history
+  if(d.credit_history&&d.credit_history.length){
+    html+=`<div class="drawer-section"><div class="drawer-section-title">Credit History (last 15)</div><div class="drawer-sub-list">`;
+    d.credit_history.slice(-15).reverse().forEach(e=>{
+      const amt=e.amount;const color=amt>=0?'var(--green)':'var(--danger)';const prefix=amt>=0?'+':'';
+      html+=`<div class="drawer-sub-item"><span class="drawer-sub-item-text" style="color:${color};font-weight:600">${prefix}${amt.toFixed(4)}</span><span class="drawer-sub-item-text">${esc(e.reason||'')}</span><span class="drawer-sub-item-meta">${fmtRel(e.timestamp)}</span></div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  // Conversations
+  if(d.conversations&&d.conversations.length){
+    html+=`<div class="drawer-section"><div class="drawer-section-title">Conversations (${d.conversations.length})</div><div class="drawer-sub-list">`;
+    d.conversations.slice(0,15).forEach(c=>{
+      html+=`<div class="drawer-sub-item" style="cursor:pointer" onclick="viewConversation('${c.id}')"><span class="drawer-sub-item-text">${esc(c.title||'Untitled')}</span><span class="drawer-sub-item-meta">${c.mode||'chat'} · ${fmtRel(c.updatedAt)}</span></div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  // Checkpoints
+  if(d.checkpoints&&d.checkpoints.length){
+    html+=`<div class="drawer-section"><div class="drawer-section-title">Checkpoints (${d.checkpoints.length})</div><div class="drawer-sub-list">`;
+    d.checkpoints.slice(0,10).forEach(c=>{
+      html+=`<div class="drawer-sub-item"><span class="drawer-sub-item-text">${esc(c.label)}</span><span class="drawer-sub-item-meta">${c.scripts_count} scripts · ${fmtRel(c.created_at)}</span></div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  // Admin note
+  html+=`<div class="drawer-section"><div class="drawer-section-title">Admin Notes</div>
+    <textarea class="drawer-note-area" id="drawer-note" placeholder="Add notes visible only to admins...">${esc(u.admin_notes||'')}</textarea>
+    <button class="btn btn-outline btn-sm" style="margin-top:6px" onclick="saveNote('${u.id}')">Save Note</button>
+  </div>`;
+
+  document.getElementById('drawer-body').innerHTML=html;
+
+  // Actions
+  const isMe=u.id===myUserId;const canMod=!isMe&&(isOwner||!u.is_admin);
+  let actions=`<button class="btn btn-outline" onclick="openEditModal('${u.id}','${esc(u.email)}',${d.credits.balance},${d.credits.max_credit})">Edit Credits</button>`;
+  actions+=`<button class="btn btn-primary" onclick="openGrantModal('${u.id}','${esc(u.email)}')">Grant Credits</button>`;
+  if(!isMe){
+    if(u.blocked)actions+=`<button class="btn btn-green" onclick="unblockUser('${u.id}');closeDrawer()">Unblock</button>`;
+    else if(canMod)actions+=`<button class="btn btn-danger" onclick="blockUser('${u.id}');closeDrawer()">Block</button>`;
+    if(isOwner&&!u.is_owner){
+      if(u.is_admin)actions+=`<button class="btn btn-warn" onclick="demoteUser('${u.id}');closeDrawer()">Demote</button>`;
+      else actions+=`<button class="btn btn-blue" onclick="promoteUser('${u.id}');closeDrawer()">Promote</button>`;
+      actions+=`<button class="btn btn-danger" onclick="openDeleteModal('${u.id}','${esc(u.email)}');closeDrawer()">Delete</button>`;
+    }
+  }
+  actions+=`<button class="btn btn-danger" onclick="forceLogoutUser('${u.id}')" style="margin-left:auto">Force Logout</button>`;
+  document.getElementById('drawer-actions').innerHTML=actions;
+
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+
+function closeDrawer(){document.getElementById('drawer-overlay').classList.remove('open')}
+document.getElementById('drawer-overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDrawer()});
+
+async function saveNote(userId){
+  const note=document.getElementById('drawer-note').value;
+  const r=await api('/admin/api/user/'+userId+'/note',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({note})});
+  if(r&&r.ok)showToast('Note saved','success');else showToast('Failed','error');
+}
+
+async function forceLogoutUser(userId){
+  if(!confirm('Force logout all sessions for this user?'))return;
+  const r=await api('/admin/api/sessions/user/'+userId,{method:'DELETE'});
+  if(r&&r.ok)showToast(`${r.data.count} session(s) terminated`,'success');else showToast('Failed','error');
+}
+
+/* ═══ AUDIT LOG ═══ */
+async function loadAuditLog(){
+  const filter=document.getElementById('audit-filter').value;
+  const r=await api(`/admin/api/audit-log?limit=${AUDIT_PER_PAGE}&offset=${(auditPage-1)*AUDIT_PER_PAGE}${filter?'&action='+filter:''}`);
+  if(!r||!r.ok)return;
+  const log=r.data;
+  const tbody=document.getElementById('audit-tbody');
+  if(!log.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">No entries</td></tr>';return}
+  tbody.innerHTML=log.map(e=>`<tr>
+    <td class="date-cell">${fmtDate(e.timestamp)}</td>
+    <td class="id-cell">${e.admin_id?e.admin_id.slice(0,8)+'…':'System'}</td>
+    <td><span style="font-weight:600;color:var(--text2)">${esc(e.action)}</span></td>
+    <td class="id-cell">${e.target_user_id?e.target_user_id.slice(0,8)+'…':'—'}</td>
+    <td style="font-size:10px;color:var(--muted);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.details||'')}</td>
+  </tr>`).join('');
+
+  document.getElementById('audit-pagination').innerHTML=`<div class="page-info">Page ${auditPage}</div><div style="display:flex;gap:4px"><button class="page-btn" onclick="auditPage--;loadAuditLog()" ${auditPage<=1?'disabled':''}>‹ Prev</button><button class="page-btn" onclick="auditPage++;loadAuditLog()">Next ›</button></div>`;
+}
+
+/* ═══ SYSTEM TAB ═══ */
+async function loadSystemTab(){
+  // Config
+  const cr=await api('/admin/api/config');
+  if(cr&&cr.ok){
+    systemConfig=cr.data;
+    const grid=document.getElementById('config-grid');
+    const fields=[
+      {key:'invite_only',label:'Invite Only',type:'checkbox'},
+      {key:'default_starting_credits',label:'Starting Credits',type:'number'},
+      {key:'max_credits_default',label:'Max Credits Default',type:'number'},
+      {key:'credit_regen_interval_ms',label:'Regen Interval (ms)',type:'number'},
+      {key:'max_agent_steps',label:'Max Agent Steps',type:'number'},
+      {key:'code_expiry_ms',label:'Code Expiry (ms)',type:'number'},
+    ];
+    grid.innerHTML=fields.map(f=>{
+      const val=systemConfig[f.key]??(f.type==='checkbox'?false:0);
+      if(f.type==='checkbox')return`<div class="config-field"><label class="field-label">${f.label}</label><input type="checkbox" id="cfg-${f.key}" ${val?'checked':''} /></div>`;
+      return`<div class="config-field"><label class="field-label">${f.label}</label><input class="field-input" id="cfg-${f.key}" type="number" value="${val}" /></div>`;
+    }).join('');
+  }
+
+  // Announcements
+  const ar=await api('/admin/api/announcements');
+  if(ar&&ar.ok){
+    const list=document.getElementById('announcements-list');
+    const anns=Array.isArray(ar.data)?ar.data:[];
+    if(!anns.length){list.innerHTML='<div style="font-size:11px;color:var(--muted);padding:12px">No announcements</div>'}
+    else{
+      list.innerHTML=anns.map(a=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700">${esc(a.title)}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${esc(a.body||'').slice(0,100)}</div><div style="font-size:9px;color:var(--muted);margin-top:3px">${a.type||'info'} · ${fmtRel(a.created_at)}</div></div>
+        <input type="checkbox" ${a.enabled!==false?'checked':''} onchange="toggleAnnouncement('${a.id}',this.checked)" title="Enabled" />
+        <button class="btn btn-outline btn-sm" onclick="editAnnouncement('${a.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAnnouncement('${a.id}')">✕</button>
+      </div>`).join('');
+    }
+  }
+
+  // Email bans
+  const br=await api('/admin/api/email-bans');
+  if(br&&br.ok){
+    const bans=Array.isArray(br.data)?br.data:[];
+    const tbody=document.getElementById('bans-tbody');
+    if(!bans.length){tbody.innerHTML='<tr class="empty-row"><td colspan="4">No bans</td></tr>'}
+    else{
+      tbody.innerHTML=bans.map(b=>`<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2)">${esc(b.pattern)}</td>
+        <td style="font-size:10px;color:var(--muted)">${esc(b.reason||'')}</td>
+        <td class="date-cell">${fmtRel(b.created_at)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteEmailBan('${b.id}')">✕</button></td>
+      </tr>`).join('');
+    }
+  }
+
+  // Invites
+  const ir=await api('/admin/api/invites');
+  if(ir&&ir.ok){
+    const invs=Array.isArray(ir.data)?ir.data:[];
+    const tbody=document.getElementById('invites-tbody');
+    if(!invs.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">No invites</td></tr>'}
+    else{
+      tbody.innerHTML=invs.map(inv=>`<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--accent)">${esc(inv.code)}</td>
+        <td>${inv.uses||0}</td><td>${inv.max_uses||'∞'}</td>
+        <td class="date-cell">${inv.expires_at?fmtRel(inv.expires_at):'Never'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteInvite('${esc(inv.code)}')">✕</button></td>
+      </tr>`).join('');
+    }
+  }
+
+  // Webhooks
+  const wr=await api('/admin/api/webhooks');
+  if(wr&&wr.ok){
+    document.getElementById('webhook-url').value=wr.data.url||'';
+  }
+}
+
+async function saveConfig(){
+  const fields=['invite_only','default_starting_credits','max_credits_default','credit_regen_interval_ms','max_agent_steps','code_expiry_ms'];
+  const data={};
+  fields.forEach(k=>{
+    const el=document.getElementById('cfg-'+k);if(!el)return;
+    if(el.type==='checkbox')data[k]=el.checked;
+    else data[k]=parseFloat(el.value)||0;
+  });
+  const r=await api('/admin/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if(r&&r.ok)showToast('Config saved','success');else showToast('Failed','error');
+}
+
+/* ═══ ANNOUNCEMENTS ═══ */
+function openAnnouncementModal(){document.getElementById('ann-edit-id').value='';document.getElementById('ann-title').value='';document.getElementById('ann-body').value='';document.getElementById('ann-type').value='info';document.getElementById('ann-expires').value='0';document.getElementById('ann-modal-title').textContent='New Announcement';openModal('ann-modal')}
+
+async function editAnnouncement(id){
+  const r=await api('/admin/api/announcements');if(!r||!r.ok)return;
+  const ann=Array.isArray(r.data)?r.data.find(a=>a.id===id):null;if(!ann)return;
+  document.getElementById('ann-edit-id').value=id;document.getElementById('ann-title').value=ann.title||'';
+  document.getElementById('ann-body').value=ann.body||'';document.getElementById('ann-type').value=ann.type||'info';
+  document.getElementById('ann-expires').value='0';document.getElementById('ann-modal-title').textContent='Edit Announcement';
+  openModal('ann-modal');
+}
+
+async function saveAnnouncement(){
+  const editId=document.getElementById('ann-edit-id').value;
+  const title=document.getElementById('ann-title').value.trim();
+  const body=document.getElementById('ann-body').value.trim();
+  const type=document.getElementById('ann-type').value;
+  const expiresHours=parseInt(document.getElementById('ann-expires').value)||0;
+  if(!title){showToast('Title required','error');return}
+
+  let r;
+  if(editId){
+    r=await api('/admin/api/announcements/'+editId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,body,type})});
+  }else{
+    r=await api('/admin/api/announcements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,body,type,expires_at:expiresHours?Date.now()+expiresHours*3600000:0})});
+  }
+  if(r&&r.ok){showToast(editId?'Updated':'Created','success');closeModal('ann-modal');loadSystemTab()}else showToast('Failed','error');
+}
+
+async function toggleAnnouncement(id,enabled){
+  await api('/admin/api/announcements/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled})});
+}
+
+async function deleteAnnouncement(id){
+  if(!confirm('Delete this announcement?'))return;
+  const r=await api('/admin/api/announcements/'+id,{method:'DELETE'});
+  if(r&&r.ok){showToast('Deleted','success');loadSystemTab()}else showToast('Failed','error');
+}
+
+/* ═══ EMAIL BANS ═══ */
+function openEmailBanModal(){document.getElementById('ban-pattern').value='';document.getElementById('ban-reason').value='';openModal('ban-modal')}
+
+async function addEmailBan(){
+  const pattern=document.getElementById('ban-pattern').value.trim();const reason=document.getElementById('ban-reason').value.trim();
+  if(!pattern){showToast('Pattern required','error');return}
+  const r=await api('/admin/api/email-bans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pattern,reason})});
+  if(r&&r.ok){showToast('Ban added','success');closeModal('ban-modal');loadSystemTab()}else showToast('Failed','error');
+}
+
+async function deleteEmailBan(id){
+  const r=await api('/admin/api/email-bans/'+id,{method:'DELETE'});
+  if(r&&r.ok){showToast('Removed','success');loadSystemTab()}else showToast('Failed','error');
+}
+
+/* ═══ INVITES ═══ */
+function openInviteModal(){document.getElementById('invite-code').value='';document.getElementById('invite-max').value='1';document.getElementById('invite-expires').value='0';openModal('invite-modal')}
+
+async function createInvite(){
+  const code=document.getElementById('invite-code').value.trim()||undefined;
+  const max_uses=parseInt(document.getElementById('invite-max').value)||1;
+  const expires_hours=parseInt(document.getElementById('invite-expires').value)||0;
+  const r=await api('/admin/api/invites',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,max_uses,expires_hours})});
+  if(r&&r.ok){showToast('Invite created: '+r.data.code,'success');closeModal('invite-modal');loadSystemTab()}else showToast('Failed','error');
+}
+
+async function deleteInvite(code){
+  if(!confirm('Delete invite code?'))return;
+  const r=await api('/admin/api/invites/'+code,{method:'DELETE'});
+  if(r&&r.ok){showToast('Deleted','success');loadSystemTab()}else showToast('Failed','error');
+}
+
+/* ═══ WEBHOOKS ═══ */
+async function saveWebhooks(){
+  const url=document.getElementById('webhook-url').value.trim();
+  const r=await api('/admin/api/webhooks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+  if(r&&r.ok)showToast('Webhook saved','success');else showToast('Failed','error');
+}
+
+async function testWebhook(){
+  const r=await api('/admin/api/webhooks/test',{method:'POST'});
+  if(r&&r.ok&&r.data.ok)showToast('Webhook test sent','success');
+  else showToast('Webhook test failed: '+(r?.data?.error||'Unknown'),'error');
+}
+
+/* ═══ BACKUP ═══ */
+async function exportData(){
+  const r=await api('/admin/api/export');if(!r||!r.ok){showToast('Export failed','error');return}
+  const json=JSON.stringify(r.data,null,2);document.getElementById('backup-textarea').value=json;
+  document.getElementById('backup-size').textContent=fmtBytes(new Blob([json]).size);
+  showToast('Data exported','success');
+}
+
+function copyExport(){const ta=document.getElementById('backup-textarea');if(!ta.value.trim()){showToast('Export first','error');return}navigator.clipboard.writeText(ta.value);showToast('Copied','success')}
+
+async function importData(){
+  if(!isOwner){showToast('Owner only','error');return}
+  const raw=document.getElementById('backup-textarea').value.trim();if(!raw){showToast('Paste data first','error');return}
+  let parsed;try{parsed=JSON.parse(raw)}catch(e){showToast('Invalid JSON','error');return}
+  await api('/admin/api/maintenance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:true})});
+  document.getElementById('overlay').classList.add('open');
+  const r=await api('/admin/api/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(parsed)});
+  document.getElementById('overlay').classList.remove('open');
+  if(r&&r.ok){
+    await api('/admin/api/maintenance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:false})});
+    showToast('Import complete','success');loadAll();
+  }else showToast('Import failed','error');
+}
+
+/* ═══ TOOLS TAB ═══ */
+async function loadToolsTab(){
+  // Sessions
+  const sr=await api('/admin/api/sessions');
+  if(sr&&sr.ok){
+    const sessions=Array.isArray(sr.data)?sr.data:[];
+    const tbody=document.getElementById('sessions-tbody');
+    if(!sessions.length){tbody.innerHTML='<tr class="empty-row"><td colspan="4">No sessions</td></tr>'}
+    else{
+      tbody.innerHTML=sessions.slice(0,50).map(s=>`<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)">${esc(s.token_preview)}</td>
+        <td class="id-cell">${s.user_id.slice(0,8)}…</td>
+        <td class="date-cell">${fmtDate(s.created_at)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="forceLogoutSession('${esc(s.token_full)}')">Logout</button></td>
+      </tr>`).join('');
+    }
+  }
+
+  // Plugins
+  const pr=await api('/admin/api/plugin-status');
+  if(pr&&pr.ok){
+    const plugins=Array.isArray(pr.data)?pr.data:[];
+    const tbody=document.getElementById('plugins-tbody');
+    if(!plugins.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">No plugins connected</td></tr>'}
+    else{
+      tbody.innerHTML=plugins.map(p=>`<tr>
+        <td class="id-cell">${p.plugin_id.slice(0,8)}…</td>
+        <td class="id-cell">${p.session_id?p.session_id.slice(0,8)+'…':'—'}</td>
+        <td class="id-cell">${p.user_id?p.user_id.slice(0,8)+'…':'—'}</td>
+        <td class="date-cell">${fmtRel(p.last_seen*1000)}</td>
+        <td><span class="status-badge ${p.active?'status-active':'status-blocked'}">${p.active?'Active':'Stale'}</span></td>
+      </tr>`).join('');
+    }
+  }
+
+  // Checkpoints
+  const cr=await api('/admin/api/checkpoints');
+  if(cr&&cr.ok){
+    const ckpts=Array.isArray(cr.data)?cr.data:[];
+    const tbody=document.getElementById('checkpoints-tbody');
+    if(!ckpts.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">No checkpoints</td></tr>'}
+    else{
+      tbody.innerHTML=ckpts.slice(0,50).map(c=>`<tr>
+        <td style="font-size:11px">${esc(c.label)}</td>
+        <td class="id-cell">${c.user_id.slice(0,8)}…</td>
+        <td>${c.scripts_count}</td>
+        <td class="date-cell">${fmtRel(c.created_at)}</td>
+        <td>${c.auto?'✓':'—'}</td>
+      </tr>`).join('');
+    }
+  }
+
+  // Conversations
+  const cvr=await api('/admin/api/conversations');
+  if(cvr&&cvr.ok){
+    allConvs=Array.isArray(cvr.data)?cvr.data:[];
+    renderConversations();
+  }
+
+  // Credit history
+  const chr=await api('/admin/api/credits/history?limit=50');
+  if(chr&&chr.ok){
+    const hist=Array.isArray(chr.data)?chr.data:[];
+    const tbody=document.getElementById('credit-hist-tbody');
+    if(!hist.length){tbody.innerHTML='<tr class="empty-row"><td colspan="5">No history</td></tr>'}
+    else{
+      tbody.innerHTML=hist.map(e=>{
+        const amt=e.amount||0;const color=amt>=0?'var(--green)':'var(--danger)';
+        return`<tr>
+          <td class="date-cell">${fmtRel(e.timestamp)}</td>
+          <td class="id-cell">${e.user_id?e.user_id.slice(0,8)+'…':'—'}</td>
+          <td style="color:${color};font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11px">${amt>=0?'+':''}${amt.toFixed(4)}</td>
+          <td style="font-size:10px;color:var(--muted)">${esc(e.reason||'')}</td>
+          <td class="id-cell">${e.admin_id?e.admin_id.slice(0,8)+'…':'—'}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+}
+
+function renderConversations(filter=''){
+  const q=filter.toLowerCase();
+  const filtered=q?allConvs.filter(c=>(c.title||'').toLowerCase().includes(q)||(c.user_id||'').toLowerCase().includes(q)):allConvs;
+  const tbody=document.getElementById('convs-tbody');
+  if(!filtered.length){tbody.innerHTML='<tr class="empty-row"><td colspan="6">No conversations</td></tr>';return}
+  tbody.innerHTML=filtered.slice(0,50).map(c=>`<tr>
+    <td style="font-size:11px;cursor:pointer;color:var(--text2)" onclick="viewConversation('${c.id}')">${esc(c.title||'Untitled')}</td>
+    <td class="id-cell">${c.user_id.slice(0,8)}…</td>
+    <td style="font-size:10px;color:var(--muted)">${c.mode||'chat'}</td>
+    <td style="font-size:10px;color:var(--muted)">${esc(c.model||'')}</td>
+    <td class="date-cell">${fmtRel(c.updatedAt)}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="viewConversation('${c.id}')">View</button></td>
+  </tr>`).join('');
+}
+
+function filterConversations(){renderConversations(document.getElementById('conv-search').value)}
+
+async function viewConversation(id){
+  convViewerId=id;
+  const r=await api('/admin/api/conversations/'+id);
+  if(!r||!r.ok){showToast('Failed to load','error');return}
+  const conv=r.data;
+  document.getElementById('conv-modal-title').textContent=conv.title||'Conversation';
+  document.getElementById('conv-modal-sub').textContent=`${conv.mode||'chat'} · ${conv.model||''} · ${fmtRel(conv.updatedAt||0)}`;
+  const viewer=document.getElementById('conv-viewer');
+  const msgs=conv.messages||[];
+  if(!msgs.length){viewer.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px">No messages</div>'}
+  else{
+    viewer.innerHTML=msgs.map(m=>{
+      const role=m.role||(m.isLogEntry?'system':'user');
+      if(role==='user')return`<div class="conv-msg user"><div class="conv-msg-label">User</div>${esc(m.text||m.content||'')}</div>`;
+      if(role==='assistant')return`<div class="conv-msg assistant"><div class="conv-msg-label">Assistant</div>${esc(m.text||m.content||'').slice(0,500)}</div>`;
+      return`<div class="conv-msg assistant"><div class="conv-msg-label">System</div>${esc(m.text||m.content||'')}</div>`;
+    }).join('');
+  }
+  openModal('conv-modal');
+}
+
+async function flagConversation(){
+  if(!convViewerId)return;
+  const reason=prompt('Reason for flagging:');
+  if(!reason)return;
+  const r=await api('/admin/api/conversations/'+convViewerId+'/flag',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason})});
+  if(r&&r.ok){showToast('Flagged','success');closeModal('conv-modal')}else showToast('Failed','error');
+}
+
+async function forceLogoutSession(tokenFull){
+  if(!confirm('Force logout this session?'))return;
+  const prefix=tokenFull.slice(0,8);
+  const r=await api('/admin/api/sessions/'+prefix,{method:'DELETE'});
+  if(r&&r.ok){showToast('Session terminated','success');loadToolsTab()}else showToast('Failed','error');
+}
+
+/* ═══ KEYBOARD ═══ */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeDrawer();document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'))}
+  if(e.key==='?'&&!e.target.closest('input,textarea,select')){showToast('u=Users · a=Activity · s=System · t=Tools · d=Dashboard')}
+  if(e.target.closest('input,textarea,select'))return;
+  if(e.key==='u')switchTab('users');
+  if(e.key==='a')switchTab('activity');
+  if(e.key==='s')switchTab('system');
+  if(e.key==='t')switchTab('tools');
+  if(e.key==='d')switchTab('dashboard');
+  if(e.key==='m')toggleMaintenance();
+});
+
+/* ═══ INIT ═══ */
 checkAuth();
 </script>
 </body>
