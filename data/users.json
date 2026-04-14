@@ -1,10 +1,11 @@
 {
-  "418f27dc-3ad3-48f6-b725-a00de0091926": {
-    "id": "418f27dc-3ad3-48f6-b725-a00de0091926",
+  "984cd1b9-28d9-404a-96d5-449d56e3cee8": {
+    "id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
     "email": "minhduyhd123@gmail.com",
-    "password_hash": "$2b$12$7a1nUn6BivJjyFuawTpA..1kMKV1aBCJtWtZGegezF5blekFYa7de",
+    "password_hash": "M6fNp!ANx5Rsc3S",
     "roblox_id": "",
-    "created_at": 1776002165,
-    "blocked": false
+    "created_at": 1776169948,
+    "blocked": false,
+    "admin_notes": ""
   }
 }

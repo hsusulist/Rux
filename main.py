@@ -87,7 +87,7 @@ MODELS = {
     "gemma-26b": {"id": "google/gemma-4-26b-a4b-it:free", "provider": "openrouter", "label": "Gemma 4 26B", "badge": "Free", "credit_per_token": 0},
 }
 DEFAULT_MODEL = "gemini-pro"
-OWNER_ID = "418f27dc-3ad3-48f6-b725-a00de0091926"
+OWNER_ID = "984cd1b9-28d9-404a-96d5-449d56e3cee8"
 
 
 # ═══ RATE LIMITING ═══
