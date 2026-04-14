@@ -761,7 +761,7 @@ async function api(path,opts={}){
   try{
     const res=await fetch(path,{...opts,headers});
     const data=await res.json().catch(()=>({}));
-    if(res.status===401){localStorage.removeItem('rux_token');window.location.href='/';return null}
+    if(res.status===401){return{ok:false,status:401,data:{error:'Unauthorized'}}}
     return{ok:res.ok,status:res.status,data};
   }catch(e){return{ok:false,status:0,data:{error:e.message}}}
 }
@@ -950,7 +950,7 @@ function renderUsers(){
         actions+=`<button class="btn btn-danger btn-sm" onclick="openDeleteModal('${u.id}','${esc(u.email)}')">Delete</button>`;
       }
     }
-    return`<tr class="${selectedUserIds.has(u.id')?'selected':''}">
+    return`<tr class="${selectedUserIds.has(u.id)?'selected':''}">
       <td><input type="checkbox" ${checked} onchange="toggleSelect('${u.id}')" /></td>
       <td class="id-cell" title="${u.id}">${u.id.slice(0,8)}…</td>
       <td class="email-cell" onclick="openDrawer('${u.id}')">${esc(u.email)}</td>
