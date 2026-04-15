@@ -46,5 +46,77 @@
     "target_user_id": "b0f9c215-3025-4b72-997f-4cf3a3674ff2",
     "details": "amount=+1.0 reason=Admin grant",
     "timestamp": 1776248914493
+  },
+  {
+    "id": "1776249357422794302",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "set_credits",
+    "target_user_id": "b0f9c215-3025-4b72-997f-4cf3a3674ff2",
+    "details": "balance=67 max=10 reason=Admin credit edit",
+    "timestamp": 1776249357422
+  },
+  {
+    "id": "1776249389941985810",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "create_invite",
+    "target_user_id": "",
+    "details": "code=U02GNL8W max_uses=1",
+    "timestamp": 1776249389941
+  },
+  {
+    "id": "1776249395140476651",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "delete_invite",
+    "target_user_id": "",
+    "details": "code=U02GNL8W",
+    "timestamp": 1776249395140
+  },
+  {
+    "id": "1776249458852834784",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "toggle_maintenance",
+    "target_user_id": "",
+    "details": "enabled=True",
+    "timestamp": 1776249458852
+  },
+  {
+    "id": "1776249459028325011",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "toggle_maintenance",
+    "target_user_id": "",
+    "details": "enabled=True",
+    "timestamp": 1776249459028
+  },
+  {
+    "id": "1776249459259311692",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "toggle_maintenance",
+    "target_user_id": "",
+    "details": "enabled=False",
+    "timestamp": 1776249459259
+  },
+  {
+    "id": "1776249459441688408",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "toggle_maintenance",
+    "target_user_id": "",
+    "details": "enabled=False",
+    "timestamp": 1776249459441
+  },
+  {
+    "id": "1776249459718733197",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "toggle_maintenance",
+    "target_user_id": "",
+    "details": "enabled=True",
+    "timestamp": 1776249459718
+  },
+  {
+    "id": "1776249473739449725",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "toggle_maintenance",
+    "target_user_id": "",
+    "details": "enabled=False",
+    "timestamp": 1776249473739
   }
 ]
