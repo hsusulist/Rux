@@ -581,7 +581,10 @@ def _fire_webhook(event_type, payload):
             body = json.dumps(_build_discord_payload(event_type, payload)).encode()
         else:
             body = json.dumps({"event": event_type, "payload": payload, "timestamp": int(time.time() * 1000)}).encode()
-        req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+        req = urllib.request.Request(url, data=body, headers={
+            "Content-Type": "application/json",
+            "User-Agent": "RuxBot/1.0"
+        }, method="POST")
         urllib.request.urlopen(req, timeout=5)
     except Exception:
         pass  # Webhook failures should never break the request
@@ -1071,17 +1074,24 @@ def admin_test_webhook():
     if not url or not url.startswith("http"):
         return jsonify({"error": "No webhook URL configured"}), 400
     try:
-        import urllib.request
+        import urllib.request, urllib.error
         is_discord = "discord.com/api/webhooks" in url or "discordapp.com/api/webhooks" in url
         if is_discord:
             body = json.dumps(_build_discord_payload("test", {"message": "Test from Rux Admin"})).encode()
         else:
             body = json.dumps({"event": "test", "payload": {"message": "Test from Rux Admin"}, "timestamp": int(time.time() * 1000)}).encode()
-        req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
-        resp = urllib.request.urlopen(req, timeout=5)
-        return jsonify({"ok": True, "status": resp.status})
+        req = urllib.request.Request(url, data=body, headers={
+            "Content-Type": "application/json",
+            "User-Agent": "RuxBot/1.0"
+        }, method="POST")
+        try:
+            resp = urllib.request.urlopen(req, timeout=10)
+            return jsonify({"ok": True, "status": resp.status})
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", errors="replace")[:300]
+            return jsonify({"ok": False, "error": f"HTTP {e.code}: {detail}"})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)[:200]})
+        return jsonify({"ok": False, "error": str(e)[:300]})
 
 @app.route("/admin")
 def admin_page():
