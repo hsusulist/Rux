@@ -1,0 +1,20 @@
+[
+  {
+    "amount": 1.0,
+    "reason": "Bulk grant",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "timestamp": 1776247896519
+  },
+  {
+    "amount": 1.0,
+    "reason": "Bulk grant",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "timestamp": 1776247899191
+  },
+  {
+    "amount": 1.0,
+    "reason": "Bulk grant",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "timestamp": 1776247903244
+  }
+]
