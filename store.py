@@ -14,13 +14,13 @@ OWNER_ID = "984cd1b9-28d9-404a-96d5-449d56e3cee8"
 _lock = threading.Lock()
 
 
-def _load(filename):
+def _load(filename, default=None):
     path = DATA_DIR / filename
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {}
+        return {} if default is None else default
 
 
 def _save(filename, data):
@@ -647,7 +647,7 @@ def check_rate_limit(user_id, action="api", limit=30, window_ms=60000):
 
 def save_audit_entry(admin_id, action, target_user_id="", details=""):
     with _lock:
-        log = _load("audit_log.json")
+        log = _load("audit_log.json", default=[])
         entry = {
             "id": str(time.time_ns()),
             "admin_id": admin_id,
@@ -664,7 +664,7 @@ def save_audit_entry(admin_id, action, target_user_id="", details=""):
 
 def get_audit_log(limit=100, offset=0, action_filter=None):
     with _lock:
-        log = _load("audit_log.json")
+        log = _load("audit_log.json", default=[])
         if action_filter:
             log = [e for e in log if e.get("action") == action_filter]
         log.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
@@ -677,26 +677,26 @@ def get_audit_log(limit=100, offset=0, action_filter=None):
 
 def get_announcements():
     with _lock:
-        return _load("announcements.json")
+        return _load("announcements.json", default=[])
 
 
 def get_active_announcements():
     with _lock:
-        anns = _load("announcements.json")
+        anns = _load("announcements.json", default=[])
         now = int(time.time() * 1000)
         return [a for a in anns if a.get("enabled", True) and (not a.get("expires_at") or a["expires_at"] > now)]
 
 
 def save_announcement(ann_data):
     with _lock:
-        anns = _load("announcements.json")
+        anns = _load("announcements.json", default=[])
         anns.append(ann_data)
         _save("announcements.json", anns)
 
 
 def update_announcement(ann_id, updates):
     with _lock:
-        anns = _load("announcements.json")
+        anns = _load("announcements.json", default=[])
         for a in anns:
             if a.get("id") == ann_id:
                 a.update(updates)
@@ -706,7 +706,7 @@ def update_announcement(ann_id, updates):
 
 def delete_announcement(ann_id):
     with _lock:
-        anns = _load("announcements.json")
+        anns = _load("announcements.json", default=[])
         anns = [a for a in anns if a.get("id") != ann_id]
         _save("announcements.json", anns)
 
