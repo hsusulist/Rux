@@ -528,6 +528,33 @@ def _continue_agent_with_result(session, tc, result_data):
 
 
 # ═══ WEBHOOK HELPER ═══
+EVENT_COLORS = {
+    "user_registered": 0x57F287,
+    "user_blocked": 0xED4245,
+    "user_deleted": 0xFEE75C,
+    "credits_changed": 0x5865F2,
+    "maintenance_toggled": 0xEB459E,
+    "bulk_grant_credits": 0x5865F2,
+    "test": 0x95A5A6,
+}
+
+def _build_discord_payload(event_type, payload):
+    color = EVENT_COLORS.get(event_type, 0x95A5A6)
+    fields = [{"name": k, "value": str(v)[:1024], "inline": True} for k, v in payload.items() if v]
+    import datetime
+    ts = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    return {
+        "username": "Rux",
+        "avatar_url": "https://cdn.discordapp.com/embed/avatars/0.png",
+        "embeds": [{
+            "title": f"Event: `{event_type}`",
+            "color": color,
+            "fields": fields,
+            "timestamp": ts,
+            "footer": {"text": "Rux Admin"}
+        }]
+    }
+
 def _fire_webhook(event_type, payload):
     """Fire webhook if configured."""
     try:
@@ -536,8 +563,12 @@ def _fire_webhook(event_type, payload):
         if not url:
             return
         import urllib.request
-        data = json.dumps({"event": event_type, "payload": payload, "timestamp": int(time.time() * 1000)}).encode()
-        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
+        is_discord = "discord.com/api/webhooks" in url or "discordapp.com/api/webhooks" in url
+        if is_discord:
+            body = json.dumps(_build_discord_payload(event_type, payload)).encode()
+        else:
+            body = json.dumps({"event": event_type, "payload": payload, "timestamp": int(time.time() * 1000)}).encode()
+        req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
         urllib.request.urlopen(req, timeout=5)
     except Exception:
         pass  # Webhook failures should never break the request
@@ -1028,8 +1059,12 @@ def admin_test_webhook():
         return jsonify({"error": "No webhook URL configured"}), 400
     try:
         import urllib.request
-        payload = json.dumps({"event": "test", "payload": {"message": "Test from Rux Admin"}, "timestamp": int(time.time() * 1000)}).encode()
-        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+        is_discord = "discord.com/api/webhooks" in url or "discordapp.com/api/webhooks" in url
+        if is_discord:
+            body = json.dumps(_build_discord_payload("test", {"message": "Test from Rux Admin"})).encode()
+        else:
+            body = json.dumps({"event": "test", "payload": {"message": "Test from Rux Admin"}, "timestamp": int(time.time() * 1000)}).encode()
+        req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
         resp = urllib.request.urlopen(req, timeout=5)
         return jsonify({"ok": True, "status": resp.status})
     except Exception as e:
