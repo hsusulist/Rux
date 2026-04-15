@@ -555,12 +555,25 @@ def _build_discord_payload(event_type, payload):
         }]
     }
 
+def _resolve_webhook_url(url):
+    """Resolve env var references like $VAR_NAME or bare VAR_NAME (no http)."""
+    if not url:
+        return url
+    import os
+    if url.startswith("$"):
+        url = os.environ.get(url[1:], url)
+    elif not url.startswith("http"):
+        resolved = os.environ.get(url, "")
+        if resolved:
+            url = resolved
+    return url
+
 def _fire_webhook(event_type, payload):
     """Fire webhook if configured."""
     try:
         webhooks = store.get_webhooks()
-        url = webhooks.get("url", "")
-        if not url:
+        url = _resolve_webhook_url(webhooks.get("url", ""))
+        if not url or not url.startswith("http"):
             return
         import urllib.request
         is_discord = "discord.com/api/webhooks" in url or "discordapp.com/api/webhooks" in url
@@ -1054,8 +1067,8 @@ def admin_save_webhooks():
 @require_admin
 def admin_test_webhook():
     webhooks = store.get_webhooks()
-    url = webhooks.get("url", "")
-    if not url:
+    url = _resolve_webhook_url(webhooks.get("url", ""))
+    if not url or not url.startswith("http"):
         return jsonify({"error": "No webhook URL configured"}), 400
     try:
         import urllib.request
