@@ -118,5 +118,37 @@
     "target_user_id": "",
     "details": "enabled=False",
     "timestamp": 1776249473739
+  },
+  {
+    "id": "1776249552299466031",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "set_credits",
+    "target_user_id": "b0f9c215-3025-4b72-997f-4cf3a3674ff2",
+    "details": "balance=67 max=10 reason=Admin credit edit",
+    "timestamp": 1776249552299
+  },
+  {
+    "id": "1776249571169739685",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "bulk_grant_credits",
+    "target_user_id": "",
+    "details": "amount=+67.0 count=2",
+    "timestamp": 1776249571169
+  },
+  {
+    "id": "1776249632170881972",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "update_config",
+    "target_user_id": "",
+    "details": "keys=['invite_only', 'default_starting_credits', 'max_credits_default', 'credit_regen_interval_ms', 'max_agent_steps', 'code_expiry_ms']",
+    "timestamp": 1776249632170
+  },
+  {
+    "id": "1776249637274373429",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "update_config",
+    "target_user_id": "",
+    "details": "keys=['invite_only', 'default_starting_credits', 'max_credits_default', 'credit_regen_interval_ms', 'max_agent_steps', 'code_expiry_ms']",
+    "timestamp": 1776249637274
   }
 ]
