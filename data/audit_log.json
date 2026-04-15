@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "id": "1776248060652246887",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "set_credits",
+    "target_user_id": "b0f9c215-3025-4b72-997f-4cf3a3674ff2",
+    "details": "balance=101 max=10 reason=Admin credit edit",
+    "timestamp": 1776248060652
+  },
+  {
+    "id": "1776248068467753063",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "update_webhooks",
+    "target_user_id": "",
+    "details": "url=a",
+    "timestamp": 1776248068467
+  },
+  {
+    "id": "1776248084470010926",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "update_webhooks",
+    "target_user_id": "",
+    "details": "url=https://discord.com/api/webhoo",
+    "timestamp": 1776248084470
+  }
+]
