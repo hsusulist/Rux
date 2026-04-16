@@ -12,5 +12,12 @@
     "mode": "chat",
     "model": "gemma-26b",
     "updatedAt": 1776172584517
+  },
+  "new-1776333841477": {
+    "id": "new-1776333841477",
+    "title": "hi",
+    "mode": "chat",
+    "model": "gemma-26b",
+    "updatedAt": 1776333844262
   }
 }

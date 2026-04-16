@@ -150,5 +150,13 @@
     "target_user_id": "",
     "details": "keys=['invite_only', 'default_starting_credits', 'max_credits_default', 'credit_regen_interval_ms', 'max_agent_steps', 'code_expiry_ms']",
     "timestamp": 1776249637274
+  },
+  {
+    "id": "1776333875086493616",
+    "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "action": "create_announcement",
+    "target_user_id": "",
+    "details": "title=idk",
+    "timestamp": 1776333875086
   }
 ]
