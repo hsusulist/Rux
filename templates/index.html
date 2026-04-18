@@ -145,13 +145,18 @@
     .md-content li{margin:2px 0;font-size:12px;color:var(--text2)}
 
     /* ═══ ANNOUNCEMENTS ═══ */
-    #ann-bar{display:flex;flex-direction:column;gap:0}
-    .ann-item{display:flex;align-items:flex-start;gap:10px;padding:10px 20px;font-size:12px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,.06);animation:bannerIn .2s ease both}
-    .ann-item.info{background:rgba(88,101,242,.13);border-left:3px solid #5865F2}
-    .ann-item.warning{background:rgba(250,168,26,.13);border-left:3px solid #FAA81A}
-    .ann-item.success{background:rgba(87,242,135,.13);border-left:3px solid #57F287}
-    .ann-item.error{background:rgba(237,66,69,.13);border-left:3px solid #ED4245}
+    #ann-bar{position:fixed;top:0;left:54px;right:0;z-index:200;display:flex;flex-direction:column;gap:0;pointer-events:none}
+    #ann-bar:empty{display:none}
+    .ann-item{display:flex;align-items:flex-start;gap:10px;padding:10px 20px;font-size:12px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,.06);animation:bannerIn .2s ease both;pointer-events:all}
+    .ann-item.info{background:rgba(14,14,28,.96);border-left:3px solid #5865F2}
+    .ann-item.warning{background:rgba(14,14,28,.96);border-left:3px solid #FAA81A}
+    .ann-item.success{background:rgba(14,14,28,.96);border-left:3px solid #57F287}
+    .ann-item.error{background:rgba(14,14,28,.96);border-left:3px solid #ED4245}
     .ann-icon{width:14px;height:14px;flex-shrink:0;margin-top:1px;fill:currentColor;opacity:.8}
+    .ann-item.info .ann-icon{color:#5865F2}
+    .ann-item.warning .ann-icon{color:#FAA81A}
+    .ann-item.success .ann-icon{color:#57F287}
+    .ann-item.error .ann-icon{color:#ED4245}
     .ann-content{flex:1;min-width:0}
     .ann-title{font-weight:700;color:var(--text);margin-bottom:1px}
     .ann-body{color:var(--text3)}
@@ -404,19 +409,6 @@ You're right, I cut off the script. Here's the COMPLETE index.html with auto-con
     .md-content ul,.md-content ol{margin:4px 0;padding-left:20px}
     .md-content li{margin:2px 0;font-size:12px;color:var(--text2)}
 
-    #ann-bar{display:flex;flex-direction:column;gap:0}
-    .ann-item{display:flex;align-items:flex-start;gap:10px;padding:10px 20px;font-size:12px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,.06);animation:bannerIn .2s ease both}
-    .ann-item.info{background:rgba(88,101,242,.13);border-left:3px solid #5865F2}
-    .ann-item.warning{background:rgba(250,168,26,.13);border-left:3px solid #FAA81A}
-    .ann-item.success{background:rgba(87,242,135,.13);border-left:3px solid #57F287}
-    .ann-item.error{background:rgba(237,66,69,.13);border-left:3px solid #ED4245}
-    .ann-icon{width:14px;height:14px;flex-shrink:0;margin-top:1px;fill:currentColor;opacity:.8}
-    .ann-content{flex:1;min-width:0}
-    .ann-title{font-weight:700;color:var(--text);margin-bottom:1px}
-    .ann-body{color:var(--text3)}
-    .ann-dismiss{flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;padding:0 2px;margin-top:-1px;opacity:.6}
-    .ann-dismiss:hover{opacity:1}
-
     .plan-banner{display:none;position:absolute;top:0;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;z-index:15;animation:bannerIn .2s ease both}
     .plan-banner.show{display:block}
     @keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
@@ -622,12 +614,12 @@ You're right, I cut off the script. Here's the COMPLETE index.html with auto-con
   </div>
 </div>
 
+<div id="ann-bar"></div>
 <div class="main">
   <div class="chat-screen visible" id="screen-chat">
     <div class="dashboard" id="dashboard"><div class="dash-title">Start a conversation</div><div class="dash-sub">Ask about your Roblox game, scripts, or instances.</div></div>
     <div class="agent-progress" id="agent-progress"><div class="agent-progress-bar" id="agent-progress-bar"></div></div>
     <div class="agent-status" id="agent-status"><div class="agent-status-dot"></div><span class="agent-status-text" id="agent-status-text">Running</span><span class="agent-status-step" id="agent-status-step"></span><span class="agent-status-tokens" id="agent-status-tokens"></span></div>
-    <div id="ann-bar"></div>
     <div class="messages" id="messages"></div>
     <div class="plan-banner" id="plan-banner"><div class="plan-top"><div class="plan-label">Execution Plan</div><span style="font-size:8px;color:var(--muted)">Review before running</span></div><div class="plan-body" id="plan-text"></div><div class="plan-actions"><button class="btn btn-primary" id="approve-btn"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Approve</button><button class="btn btn-ghost" id="reject-plan-btn">Discard</button></div></div>
     <div class="input-area" id="input-area">
