@@ -176,6 +176,9 @@ plugin_registry = {}
 plugin_registry_lock = Lock()
 pending_connections = {}
 pending_connections_lock = Lock()
+pending_auto_sessions = {}
+pending_auto_sessions_lock = Lock()
+AUTO_CONNECT_EXPIRY_MS = 2 * 60 * 60 * 1000  # 2 hours
 web_heartbeats = {}
 web_heartbeats_lock = Lock()
 
@@ -216,6 +219,10 @@ def clean_expired_codes():
     expired = [k for k, v in pending_connections.items() if now - v["created_at"] > CODE_EXPIRY_MS]
     for k in expired:
         del pending_connections[k]
+    with pending_auto_sessions_lock:
+        expired_auto = [k for k, v in pending_auto_sessions.items() if now - v["created_at"] > AUTO_CONNECT_EXPIRY_MS]
+        for k in expired_auto:
+            del pending_auto_sessions[k]
 
 # ═══ SESSION HELPERS ═══
 def get_session(session_id):
@@ -637,7 +644,6 @@ def admin_grant_credits():
     amount = float(amount)
     balance, last_updated = store.get_credits(user_id)
     max_credit = float(store.get_all_users_with_credits()[0].get("max_credit", store.MAX_CREDITS)) if store.get_user_by_id(user_id) else store.MAX_CREDITS
-    # Get actual max_credit for this user
     users_list = store.get_all_users_with_credits()
     for u in users_list:
         if u["id"] == user_id:
@@ -793,7 +799,6 @@ def admin_get_sessions():
 @app.route("/admin/api/sessions/<path:token_prefix>", methods=["DELETE"])
 @require_admin
 def admin_force_logout(token_prefix):
-    # Find matching session token
     all_sessions = store.get_all_sessions()
     for s in all_sessions:
         if s["token_full"].startswith(token_prefix[:8]):
@@ -1115,11 +1120,9 @@ def auth_register():
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
-    # Email ban check
     if store.check_email_banned(email):
         return jsonify({"error": "Registration not allowed for this email"}), 403
 
-    # Invite code check
     config = store.get_config()
     if config.get("invite_only", False):
         if not invite_code:
@@ -1135,7 +1138,6 @@ def auth_register():
     user_id = str(uuid.uuid4())
     store.save_user(user_id, email, hash_password(password), roblox_id)
 
-    # Use config for starting credits
     starting = config.get("default_starting_credits", store.MAX_CREDITS)
     store.init_credits(user_id)
     if starting != store.MAX_CREDITS:
@@ -1188,8 +1190,6 @@ def auth_me():
     update_web_heartbeat(user["id"])
 
     prefs = store.get_preferences(user["id"])
-
-    # Active announcements
     announcements = store.get_active_announcements()
 
     return jsonify({
@@ -1293,7 +1293,6 @@ def web_heartbeat():
                 session_id = active_session.get("session_id")
 
     balance, _ = store.get_credits(user["id"])
-
     announcements = store.get_active_announcements()
 
     return jsonify({
@@ -1334,6 +1333,22 @@ def connect_code():
         }
     return jsonify({"code": code, "session_id": session_id})
 
+@app.route("/connect/register", methods=["POST"])
+@require_auth
+def connect_register_session():
+    """Register a session for auto-connect via Roblox ID matching."""
+    data = request.get_json(force=True)
+    session_id = data.get("session_id")
+    if not session_id:
+        return jsonify({"error": "Missing session_id"}), 400
+    user_id = request.user["id"]
+    with pending_auto_sessions_lock:
+        pending_auto_sessions[user_id] = {
+            "session_id": session_id,
+            "created_at": int(time.time() * 1000),
+        }
+    return jsonify({"ok": True})
+
 @app.route("/plugin/connect", methods=["POST"])
 def plugin_connect():
     data = request.get_json(force=True)
@@ -1364,15 +1379,24 @@ def plugin_connect():
         u = store.get_user_by_roblox_id(creator_id)
         if u:
             user_id = u["id"]
-            existing = store.get_user_plugin(user_id)
-            if existing and existing.get("session_id"):
-                session_id = existing["session_id"]
-                method = "auto_reuse"
-                store.save_user_plugin(user_id, plugin_id, session_id)
-            else:
-                session_id = str(uuid.uuid4())
-                method = "auto"
-                store.save_user_plugin(user_id, plugin_id, session_id)
+            # Check for pending auto-connect session registered from /code/ URL
+            with pending_auto_sessions_lock:
+                pending = pending_auto_sessions.get(user_id)
+                if pending and (int(time.time() * 1000) - pending["created_at"]) < AUTO_CONNECT_EXPIRY_MS:
+                    session_id = pending["session_id"]
+                    method = "auto"
+                    del pending_auto_sessions[user_id]
+
+            if not session_id:
+                existing = store.get_user_plugin(user_id)
+                if existing and existing.get("session_id"):
+                    session_id = existing["session_id"]
+                    method = "auto_reuse"
+                else:
+                    session_id = str(uuid.uuid4())
+                    method = "auto_new"
+
+            store.save_user_plugin(user_id, plugin_id, session_id)
 
     if not session_id:
         return jsonify({"ok": False, "error": "Invalid or expired code"}), 400
@@ -1950,6 +1974,10 @@ def app_page():
 @app.route("/")
 def index():
     return render_template("landing.html")
+
+@app.route("/code/<token>")
+def code_page(token):
+    return render_template("index.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

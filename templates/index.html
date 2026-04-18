@@ -260,6 +260,261 @@
     .settings-overlay.open .settings-modal{transform:translateY(0) scale(1)}
     .settings-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#444;font-size:18px;cursor:pointer;line-height:1;transition:color .15s}
     .settings-close:hover{color:#fff}
+    .settings-title{font-size:16px;font-weight
+You're right, I cut off the script. Here's the COMPLETE index.html with auto-connect working properly. The "Connect Studio" button stays as a fallback for users without a Roblox ID linked, but auto-connect via `/code/` URL + Roblox ID matching is the primary flow — no modal pops up automatically anymore.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#000;--sidebar:#050505;--surface:#0a0a0a;--surface2:#111;--surface3:#1a1a1a;--border:#151515;--border2:#222;--border3:#2a2a2a;--text:#fff;--text2:#999;--text3:#666;--muted:#444;--accent:#e6be46;--accent2:rgba(230,190,70,.08);--accent3:rgba(230,190,70,.04);--danger:#e5484d;--danger2:rgba(229,72,77,.1);--lp-blue:#60a5fa;--lp-purple:#a78bfa;--lp-green:#4ade80;--lp-yellow:#fbbf24;--lp-red:#f87171}
+    html,body{height:100%}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased}
+    .chat-screen{display:none!important}
+    body.ready .chat-screen.visible{display:flex!important}
+
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:54px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50;transition:width .2s ease;overflow:hidden}
+    .sidebar:hover{width:240px}
+    .sb-top{display:flex;align-items:center;gap:9px;padding:12px 12px;border-bottom:1px solid var(--border);height:50px;flex-shrink:0}
+    .sb-logo-icon{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--text)}
+    .sb-logo-icon svg{width:14px;height:14px;fill:#000}
+    .sb-logo-text{font-size:14px;font-weight:800;letter-spacing:-.5px;white-space:nowrap;opacity:0;transition:opacity .15s .05s}
+    .sidebar:hover .sb-logo-text{opacity:1}
+    .sb-new{margin:8px 10px 4px;height:32px;border:none;border-radius:100px;background:var(--text);color:#000;font-size:11px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+    .sb-new:hover{background:#e0e0e0}
+    .sb-new svg{width:12px;height:12px;fill:#000;flex-shrink:0}
+    .sb-new-label{margin-left:6px;white-space:nowrap;opacity:0;transition:opacity .15s .05s}
+    .sidebar:hover .sb-new-label{opacity:1}
+    .sb-search{margin:4px 10px;height:28px;border:1px solid var(--border2);border-radius:100px;background:transparent;color:var(--text);font-size:11px;font-family:'Inter',sans-serif;padding:0 12px;outline:none;flex-shrink:0;opacity:0;transition:opacity .15s .05s;width:calc(100% - 20px)}
+    .sidebar:hover .sb-search{opacity:1}
+    .sb-search::placeholder{color:var(--muted)}
+    .sb-section{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);padding:8px 14px 4px;white-space:nowrap;opacity:0;transition:opacity .15s .05s}
+    .sidebar:hover .sb-section{opacity:1}
+    .sb-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:2px 6px}
+    .sb-list::-webkit-scrollbar{width:2px}
+    .sb-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+    .sb-item{display:flex;align-items:center;gap:8px;padding:6px 8px;height:34px;border-radius:6px;cursor:pointer;transition:background .1s;position:relative;flex-shrink:0}
+    .sb-item:hover{background:var(--surface)}
+    .sb-item.active{background:var(--surface2)}
+    .sb-item-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sb-item-icon svg{width:12px;height:12px;fill:var(--muted)}
+    .sb-item.active .sb-item-icon svg{fill:var(--accent)}
+    .sb-item-text{font-size:11px;font-weight:500;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .15s .05s;flex:1;min-width:0}
+    .sidebar:hover .sb-item-text{opacity:1}
+    .sb-item.active .sb-item-text{color:var(--text2)}
+    .sb-item-del{display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);width:18px;height:18px;border:none;background:transparent;border-radius:4px;cursor:pointer;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
+    .sidebar:hover .sb-item:hover .sb-item-del{display:flex}
+    .sb-item-del:hover{color:var(--text);background:rgba(255,255,255,.06)}
+    .sb-empty{padding:14px 12px;font-size:10px;color:var(--muted);font-style:italic;text-align:center;opacity:0;transition:opacity .15s .05s;white-space:nowrap}
+    .sidebar:hover .sb-empty{opacity:1}
+    .sb-bottom{padding:8px 10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+    .sb-bottom-row{display:flex;align-items:center;gap:7px;height:26px;padding:0 4px}
+    .sb-bottom-icon{width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sb-bottom-icon svg{width:10px;height:10px;fill:var(--muted)}
+    .sb-bottom-dot{width:5px;height:5px;border-radius:100px;background:var(--muted);flex-shrink:0;transition:background .3s}
+    .sb-bottom-dot.on{background:var(--accent);box-shadow:0 0 6px rgba(230,190,70,.3)}
+    .sb-bottom-text{font-size:9px;font-weight:600;color:var(--muted);white-space:nowrap;opacity:0;transition:opacity .15s .05s}
+    .sidebar:hover .sb-bottom-text{opacity:1}
+    .sb-bottom-text.on{color:var(--text3)}
+    .sb-connect-btn{display:flex;align-items:center;gap:0;height:26px;padding:0 4px;border:none;background:transparent;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .1s;width:100%}
+    .sb-connect-btn:hover{background:var(--surface)}
+    .sb-bottom-spacer{flex:1}
+    .sb-disconnect-btn{display:flex;align-items:center;gap:5px;height:26px;padding:0 4px;border:none;background:transparent;border-radius:4px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .1s;width:100%}
+    .sb-disconnect-btn:hover{background:var(--danger2)}
+    .sb-disconnect-btn svg{width:10px;height:10px;fill:var(--danger);flex-shrink:0}
+    .sb-disconnect-label{font-size:9px;font-weight:600;color:var(--danger);white-space:nowrap;opacity:0;transition:opacity .15s .05s}
+    .sidebar:hover .sb-disconnect-label{opacity:1}
+
+    .main{margin-left:54px;height:100vh;display:flex;flex-direction:column;min-width:0;position:relative}
+    .dashboard{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:22vh;z-index:10;transition:opacity .25s ease}
+    .dashboard.hidden{opacity:0;pointer-events:none}
+    .dash-title{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px;color:var(--text2)}
+    .dash-sub{font-size:12px;color:var(--text3)}
+
+    .agent-progress{position:absolute;top:0;left:0;right:0;height:2px;background:var(--border);z-index:16;opacity:0;transition:opacity .3s}
+    .agent-progress.active{opacity:1}
+    .agent-progress-bar{height:100%;background:linear-gradient(90deg,var(--lp-blue),var(--lp-purple));transition:width .5s ease;width:0%}
+    .agent-status{position:absolute;top:2px;left:0;right:0;z-index:15;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 24px;background:linear-gradient(180deg,var(--bg) 60%,transparent);opacity:0;pointer-events:none;transition:opacity .25s}
+    .agent-status.active{opacity:1}
+    .agent-status-dot{width:5px;height:5px;border-radius:100px;background:var(--lp-green);animation:agentPulse 1.2s infinite}
+    @keyframes agentPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+    .agent-status-text{font-size:9px;font-weight:700;color:var(--lp-green);letter-spacing:.5px;text-transform:uppercase}
+    .agent-status-step{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .agent-status-tokens{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+    .messages{display:none;flex-direction:column;min-height:0;overflow-y:auto;position:absolute;left:0;right:0;bottom:160px;top:0;padding:20px 0}
+    .messages.show{display:flex}
+    .messages::-webkit-scrollbar{width:3px}
+    .messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+    .log-row{display:flex;align-items:flex-start;gap:8px;padding:4px 24px;max-width:720px;width:100%;margin:0 auto;animation:logSlide .15s ease both}
+    @keyframes logSlide{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:translateX(0)}}
+    .log-row:hover{background:rgba(255,255,255,.01)}
+    .log-time{font-family:'JetBrains Mono',monospace;font-size:8px;color:#222;min-width:48px;padding-top:3px;flex-shrink:0}
+    .log-icon{font-size:11px;min-width:18px;text-align:center;flex-shrink:0;padding-top:2px}
+    .log-content{flex:1;min-width:0}
+    .log-title{font-size:12px;font-weight:500;line-height:1.65;word-break:break-word;white-space:pre-wrap}
+    .log-detail{font-family:'JetBrains Mono',monospace;font-size:10px;color:#333;margin-top:2px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+    .log-row.log-system .log-title{color:var(--muted)}
+    .log-row.log-user .log-title{color:var(--text)}
+    .log-row.log-thinking .log-title{color:var(--lp-purple)}
+    .log-row.log-tool .log-title{color:var(--lp-blue)}
+    .log-row.log-result .log-title{color:var(--lp-green)}
+    .log-row.log-warn .log-title{color:var(--lp-yellow)}
+    .log-row.log-error .log-title{color:var(--lp-red)}
+    .log-row.log-output .log-title{color:var(--text2)}
+    .log-row.log-credit .log-title{color:var(--lp-yellow)}
+    .log-title strong{color:var(--text);font-weight:700}
+    .log-title code{font-family:'JetBrains Mono',monospace;font-size:11px;background:#1a1a2a;color:var(--lp-purple);padding:1px 4px;border-radius:3px}
+    .lc{background:#1a1a2a;color:var(--lp-purple);padding:1px 4px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:9px}
+    .lb{color:var(--lp-blue)}
+    .lg{color:var(--lp-green)}
+    .ly{color:var(--lp-yellow)}
+    .log-divider{height:1px;background:#111;margin:4px 24px;max-width:720px}
+    .system-row{display:flex;justify-content:center;padding:3px 24px;max-width:100%;width:100%;margin:0 auto}
+    .system-msg{font-size:9px;color:var(--muted);font-style:italic;padding:3px 10px;border-radius:100px;background:var(--surface)}
+    .log-dots{display:inline-flex;gap:2px;vertical-align:middle;margin-left:4px}
+    .log-dots span{display:inline-block;width:3px;height:3px;border-radius:100px;background:var(--lp-purple);animation:logBlink 1.2s infinite}
+    .log-dots span:nth-child(2){animation-delay:.2s}
+    .log-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes logBlink{0%,100%{opacity:.2}50%{opacity:1}}
+
+    .md-content{font-size:12px;line-height:1.7;word-break:break-word}
+    .md-content p{margin:0 0 8px}
+    .md-content p:last-child{margin-bottom:0}
+    .md-content strong{color:var(--text);font-weight:700}
+    .md-content em{color:var(--text2);font-style:italic}
+    .md-content code{font-family:'JetBrains Mono',monospace;font-size:11px;background:#1a1a2a;color:var(--lp-purple);padding:1px 5px;border-radius:3px}
+    .md-code-block{position:relative;margin:8px 0;border-radius:6px;border:1px solid var(--border2);overflow:hidden;background:#0a0a0a}
+    .md-code-header{display:flex;align-items:center;justify-content:space-between;padding:4px 10px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .md-code-copy{padding:2px 8px;border:1px solid var(--border2);border-radius:100px;background:transparent;color:var(--text3);font-size:8px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:all .12s}
+    .md-code-copy:hover{color:var(--text);border-color:var(--border3)}
+    .md-code-copy.copied{color:var(--lp-green);border-color:rgba(74,222,128,.2)}
+    .md-code-pre{padding:10px 12px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;color:var(--text2)}
+    .md-code-pre::-webkit-scrollbar{height:3px}
+    .md-code-pre::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+    .md-content ul,.md-content ol{margin:4px 0;padding-left:20px}
+    .md-content li{margin:2px 0;font-size:12px;color:var(--text2)}
+
+    #ann-bar{display:flex;flex-direction:column;gap:0}
+    .ann-item{display:flex;align-items:flex-start;gap:10px;padding:10px 20px;font-size:12px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,.06);animation:bannerIn .2s ease both}
+    .ann-item.info{background:rgba(88,101,242,.13);border-left:3px solid #5865F2}
+    .ann-item.warning{background:rgba(250,168,26,.13);border-left:3px solid #FAA81A}
+    .ann-item.success{background:rgba(87,242,135,.13);border-left:3px solid #57F287}
+    .ann-item.error{background:rgba(237,66,69,.13);border-left:3px solid #ED4245}
+    .ann-icon{width:14px;height:14px;flex-shrink:0;margin-top:1px;fill:currentColor;opacity:.8}
+    .ann-content{flex:1;min-width:0}
+    .ann-title{font-weight:700;color:var(--text);margin-bottom:1px}
+    .ann-body{color:var(--text3)}
+    .ann-dismiss{flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;padding:0 2px;margin-top:-1px;opacity:.6}
+    .ann-dismiss:hover{opacity:1}
+
+    .plan-banner{display:none;position:absolute;top:0;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;z-index:15;animation:bannerIn .2s ease both}
+    .plan-banner.show{display:block}
+    @keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    .plan-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .plan-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent)}
+    .plan-body{font-size:12px;color:var(--text3);line-height:1.7;white-space:pre-wrap;max-height:140px;overflow-y:auto;border-left:2px solid var(--accent3);padding-left:10px;margin-bottom:10px;max-width:600px}
+    .plan-actions{display:flex;gap:6px}
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 16px;border-radius:100px;font-size:11px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .12s;letter-spacing:-.1px}
+    .btn svg{width:11px;height:11px;fill:currentColor}
+    .btn-primary{background:var(--text);color:#000}
+    .btn-primary:hover{background:#e0e0e0}
+    .btn-ghost{background:var(--surface2);color:var(--text3);border:1px solid var(--border2)}
+    .btn-ghost:hover{color:var(--text2);border-color:var(--border3)}
+
+    .input-area{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);width:min(680px,calc(100% - 80px));z-index:20}
+    .no-credits{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);width:min(680px,calc(100% - 80px));padding:14px 24px;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:12px;z-index:20}
+    .no-credits-text{font-size:12px;color:var(--text3)}
+    .no-credits-time{font-size:10px;color:var(--muted);margin-top:2px}
+    .picker-dropdown{position:absolute;bottom:calc(100% + 6px);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:4px;display:none;flex-direction:column;gap:1px;box-shadow:0 -6px 30px rgba(0,0,0,.5);z-index:50;min-width:220px}
+    .picker-dropdown.open{display:flex;animation:pickerIn .15s ease both}
+    .picker-dropdown.left{left:0}
+    .picker-dropdown.right{right:0}
+    @keyframes pickerIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .picker-tabs{display:flex;gap:2px;padding:3px;border-bottom:1px solid var(--border);margin:-4px -4px 3px;flex-shrink:0}
+    .picker-tab{flex:1;padding:4px 3px;border:none;background:transparent;color:var(--muted);font-size:8px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;border-radius:4px;transition:all .12s;white-space:nowrap;letter-spacing:.1px}
+    .picker-tab:hover{color:var(--text3);background:rgba(255,255,255,.03)}
+    .picker-tab.active{color:var(--text);background:var(--surface3)}
+    .picker-options-list{display:flex;flex-direction:column;gap:1px;overflow-y:auto;max-height:260px}
+    .picker-options-list::-webkit-scrollbar{width:2px}
+    .picker-options-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+    .picker-option{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:6px;cursor:pointer;transition:background .1s;border:1px solid transparent}
+    .picker-option:hover{background:var(--surface3)}
+    .picker-option.selected{background:var(--surface3);border-color:var(--border2)}
+    .picker-option.hidden{display:none}
+    .picker-option-icon{width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surface)}
+    .picker-option-icon svg{width:12px;height:12px}
+    .picker-option-body{flex:1;min-width:0}
+    .picker-option-name{font-size:11px;font-weight:700;letter-spacing:-.2px}
+    .picker-option-desc{font-size:9px;color:var(--muted);margin-top:1px}
+    .picker-option-badge{font-size:7.5px;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--text3);border:1px solid var(--border);flex-shrink:0}
+    .picker-option-badge.free{color:#4ade80;border-color:rgba(74,222,128,.15);background:rgba(74,222,128,.04)}
+    .input-shell{display:flex;align-items:flex-start;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:7px;transition:border-color .2s}
+    .input-shell:focus-within{border-color:var(--border2)}
+    #chat-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;resize:none;min-height:26px;max-height:200px;line-height:1.55;padding-top:2px}
+    #chat-input::placeholder{color:var(--muted)}
+    .shell-left{display:flex;flex-direction:column;gap:3px;flex-shrink:0;padding-top:1px}
+    .shell-right{display:flex;flex-direction:column;gap:3px;flex-shrink:0;padding-top:1px}
+    .picker-trigger{display:flex;align-items:center;gap:3px;padding:4px 8px;background:var(--surface3);border:1px solid var(--border);border-radius:100px;font-size:10px;font-weight:700;font-family:'Inter',sans-serif;color:var(--text3);cursor:pointer;transition:all .12s;white-space:nowrap;letter-spacing:-.1px}
+    .picker-trigger:hover{color:var(--text2);border-color:var(--border2)}
+    .picker-trigger svg{width:9px;height:9px;fill:currentColor}
+    .picker-trigger .chevron{width:6px;height:6px;opacity:.3}
+    .credit-pill{display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:100px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:default;white-space:nowrap;transition:all .2s}
+    .credit-pill.low{color:var(--muted)}
+    .credit-pill.ok{color:var(--text3)}
+    .credit-pill svg{width:9px;height:9px}
+    .credit-pill.low svg{fill:var(--muted)}
+    .credit-pill.ok svg{fill:var(--text3)}
+    .send-btn{width:32px;height:32px;border-radius:100px;background:var(--text);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
+    .send-btn:hover{background:#e0e0e0;transform:scale(1.05)}
+    .send-btn:disabled{opacity:.2;cursor:not-allowed;transform:none}
+    .send-btn svg{width:13px;height:13px;fill:#000}
+    .stop-btn{width:32px;height:32px;border-radius:100px;background:var(--danger);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s;display:none}
+    .stop-btn:hover{background:#d63b3f;transform:scale(1.05)}
+    .stop-btn svg{width:12px;height:12px;fill:#fff}
+    .input-hint{font-size:8px;color:var(--muted);margin-top:4px;text-align:center}
+    kbd{background:var(--surface3);border:1px solid var(--border2);border-radius:2px;padding:0 3px;font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--text3)}
+
+    .connect-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
+    .connect-modal-overlay.open{opacity:1;pointer-events:all}
+    .connect-modal{background:#0a0a0a;border:1px solid #1e1e1e;border-radius:14px;padding:24px 28px;width:100%;max-width:310px;position:relative;transform:translateY(10px);transition:transform .2s ease}
+    .connect-modal-overlay.open .connect-modal{transform:translateY(0)}
+    .connect-modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#444;font-size:16px;cursor:pointer;line-height:1;transition:color .15s}
+    .connect-modal-close:hover{color:#fff}
+    .connect-modal-icon{width:32px;height:32px;border-radius:8px;background:var(--accent2);border:1px solid rgba(230,190,70,.12);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+    .connect-modal-icon svg{width:14px;height:14px;fill:var(--accent)}
+    .connect-modal-title{font-size:14px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px}
+    .connect-modal-sub{font-size:11px;color:#444;line-height:1.5;margin-bottom:14px}
+    .connect-modal-code-box{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0c0c0c;border:1px solid #1a1a1a;border-radius:8px;margin-bottom:10px}
+    .connect-modal-code{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;letter-spacing:5px;flex:1;color:var(--accent)}
+    .connect-modal-copy{padding:3px 9px;background:#141414;border:1px solid #1e1e1e;border-radius:100px;font-size:9px;font-weight:700;color:#555;cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s}
+    .connect-modal-copy:hover{color:#fff;border-color:#444}
+    .connect-modal-status{font-size:10px;color:#333;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .connect-modal-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+    .connect-modal-tip{font-size:9px;color:#222;max-width:170px;line-height:1.4}
+    .connect-modal-refresh{font-size:10px;color:#444;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;text-decoration:underline;transition:color .12s}
+    .connect-modal-refresh:hover{color:#888}
+    .logout-float{position:fixed;top:12px;right:16px;z-index:40}
+    .icon-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;cursor:pointer;color:var(--text3);transition:all .12s}
+    .icon-btn:hover{color:var(--text2);border-color:var(--border3)}
+    .icon-btn svg{width:12px;height:12px;fill:currentColor}
+
+    .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
+    .settings-overlay.open{opacity:1;pointer-events:all}
+    .settings-modal{background:#0a0a0a;border:1px solid #1e1e1e;border-radius:14px;padding:28px 32px;width:100%;max-width:380px;position:relative;transform:translateY(10px) scale(.98);transition:transform .2s ease}
+    .settings-overlay.open .settings-modal{transform:translateY(0) scale(1)}
+    .settings-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#444;font-size:18px;cursor:pointer;line-height:1;transition:color .15s}
+    .settings-close:hover{color:#fff}
     .settings-title{font-size:16px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px}
     .settings-sub{font-size:11px;color:var(--text3);margin-bottom:20px}
     .settings-field{margin-bottom:12px}
@@ -276,7 +531,6 @@
     .settings-err{font-size:11px;color:var(--danger);margin-top:6px;display:none}
     .settings-err.show{display:block}
 
-    /* ═══ CHECKPOINT PANEL ═══ */
     .checkpoint-panel{position:absolute;bottom:calc(100% + 8px);left:0;right:0;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:8px;box-shadow:0 -8px 32px rgba(0,0,0,.6);z-index:51;display:none;animation:pickerIn .15s ease both}
     .checkpoint-panel.open{display:block}
     .cp-header{display:flex;align-items:center;justify-content:space-between;padding:3px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:5px}
@@ -305,14 +559,12 @@
     .cp-btn.del:hover{color:var(--lp-red);border-color:rgba(229,72,77,.2);background:rgba(229,72,77,.04)}
     .cp-trigger-badge{width:13px;height:13px;border-radius:100px;background:var(--accent);color:#000;font-size:7px;font-weight:800;display:flex;align-items:center;justify-content:center;position:absolute;top:-4px;right:-4px}
 
-    /* ═══ TOASTS ═══ */
     .toast-container{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
     .toast{padding:8px 18px;background:var(--surface2);border:1px solid var(--border2);border-radius:100px;font-size:11px;font-weight:600;color:var(--text2);opacity:0;transform:translateY(8px);transition:all .2s ease;pointer-events:all;white-space:nowrap}
     .toast.show{opacity:1;transform:translateY(0)}
     .toast.error{color:var(--danger);border-color:rgba(229,72,77,.2)}
     .toast.success{color:var(--lp-green);border-color:rgba(74,222,128,.2)}
 
-    /* ═══ MOBILE ═══ */
     @media(max-width:768px){
       .sidebar{width:0;border:none}
       .sidebar:hover{width:240px}
@@ -438,7 +690,6 @@
   </div>
 </div>
 
-<!-- SETTINGS MODAL -->
 <div class="settings-overlay" id="settings-overlay">
   <div class="settings-modal">
     <button class="settings-close" onclick="closeSettingsModal()">&#10005;</button>
@@ -473,43 +724,29 @@ let agentStepCount=0,agentTotalTokens=0,agentTotalSteps=0,lastToolNameForResult=
 let hadToolActivity=false;
 let currentAbortController=null;
 
-/* ═══ TOAST ═══ */
 function showToast(msg,type='default'){const c=document.getElementById('toast-container');const t=document.createElement('div');t.className='toast'+(type!=='default'?' '+type:'');t.textContent=msg;c.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),200)},2500)}
 
-/* ═══ MARKDOWN RENDERER ═══ */
 function renderMarkdown(text){
   if(!text)return '';
   let s=text;
-  /* Code blocks */
   s=s.replace(/```(\w*)\n([\s\S]*?)```/g,(m,lang,code)=>{
-    const langLabel=lang||'code';
-    const eid='cb-'+Math.random().toString(36).substr(2,8);
+    const langLabel=lang||'code';const eid='cb-'+Math.random().toString(36).substr(2,8);
     return `<div class="md-code-block"><div class="md-code-header"><span>${escHtml(langLabel)}</span><button class="md-code-copy" data-eid="${eid}" onclick="copyCodeBlock('${eid}')">Copy</button></div><pre class="md-code-pre" id="${eid}">${escHtml(code.trim())}</pre></div>`;
   });
-  /* Inline code */
   s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
-  /* Bold */
   s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
-  /* Italic */
   s=s.replace(/\*([^*]+)\*/g,'<em>$1</em>');
-  /* Unordered list */
   s=s.replace(/^[•\-\*]\s+(.+)$/gm,'<li>$1</li>');
   s=s.replace(/(<li>.*<\/li>\n?)+/g,m=>'<ul>'+m+'</ul>');
-  /* Ordered list */
   s=s.replace(/^\d+\.\s+(.+)$/gm,'<li>$1</li>');
-  /* Paragraphs */
-  s=s.replace(/\n\n+/g,'</p><p>');
-  s=s.replace(/\n/g,'<br/>');
-  s='<p>'+s+'</p>';
+  s=s.replace(/\n\n+/g,'</p><p>');s=s.replace(/\n/g,'<br/>');s='<p>'+s+'</p>';
   s=s.replace(/<p><div/g,'<div').replace(/<\/div><\/p>/g,'</div>').replace(/<p><ul/g,'<ul').replace(/<\/ul><\/p>/g,'</ul>');
   return s;
 }
 function copyCodeBlock(eid){const el=document.getElementById(eid);if(!el)return;navigator.clipboard.writeText(el.textContent);const btn=document.querySelector(`[data-eid="${eid}"]`);if(btn){btn.textContent='Copied';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},1500)}}
 
-/* ═══ STOP GENERATION ═══ */
 function stopGeneration(){if(currentAbortController){currentAbortController.abort();currentAbortController=null}isLoading=false;document.getElementById('send-btn').style.display='';document.getElementById('stop-btn').style.display='none';document.getElementById('send-btn').disabled=false;removeThinking();setAgentStatus('Stopped',false);showToast('Generation stopped','error')}
 
-/* ═══ SETTINGS MODAL ═══ */
 function openSettingsModal(){if(!userData)return;document.getElementById('settings-email').textContent=userData.email||'';document.getElementById('settings-current-pw').value='';document.getElementById('settings-new-pw').value='';document.getElementById('settings-rbx-id').value=userData.roblox_id||'';document.getElementById('settings-pw-err').classList.remove('show');document.getElementById('settings-del-err').classList.remove('show');document.getElementById('settings-overlay').classList.add('open')}
 function closeSettingsModal(){document.getElementById('settings-overlay').classList.remove('open')}
 document.getElementById('settings-overlay').addEventListener('click',function(e){if(e.target===this)closeSettingsModal()});
@@ -520,7 +757,6 @@ async function saveRobloxId(){const rbx=document.getElementById('settings-rbx-id
 
 async function deleteAccount(){if(!confirm('Are you sure you want to delete your account? This cannot be undone.'))return;if(!confirm('Really delete? All your data will be permanently removed.'))return;const errEl=document.getElementById('settings-del-err');const pw=prompt('Enter your password to confirm:');if(!pw){errEl.textContent='Password required';errEl.classList.add('show');return}try{const r=await api('/auth/delete-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});if(r&&r.ok){localStorage.removeItem(TOKEN_KEY);window.location.href='/'}else{errEl.textContent=r?.data?.error||'Failed';errEl.classList.add('show')}}catch(e){errEl.textContent='Network error';errEl.classList.add('show')}}
 
-/* ═══ CORE ═══ */
 function getToken(){return localStorage.getItem(TOKEN_KEY)}
 function setToken(t){token=t;localStorage.setItem(TOKEN_KEY,t)}
 
@@ -558,16 +794,30 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 async function disconnectPlugin(){try{await api('/web/disconnect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})}catch(e){}pluginConnected=false;sessionId=null;updatePluginUI();updateInputState()}
 
-function updateCreditUI(){const pill=document.getElementById('credit-pill'),text=document.getElementById('credit-pill-text');const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;text.textContent=bal.toFixed(2);pill.classList.toggle('low',bal<=2);pill.classList.toggle('ok',bal>2);document.getElementById('token-cost-hint')}
+function updateCreditUI(){const pill=document.getElementById('credit-pill'),text=document.getElementById('credit-pill-text');const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;text.textContent=bal.toFixed(2);pill.classList.toggle('low',bal<=2);pill.classList.toggle('ok',bal>2)}
+
+async function registerSessionForAutoConnect(sid){
+  try{await api('/connect/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sid})})}catch(e){}
+}
 
 async function openConnectModal(){document.getElementById('connect-modal-overlay').classList.add('open');await generateCode();startConnectPoll()}
 function closeConnectModal(){document.getElementById('connect-modal-overlay').classList.remove('open');if(connectPoll){clearInterval(connectPoll);connectPoll=null}}
-async function generateCode(){const r=await api('/connect/code');if(!r)return;sessionId=r.data.session_id;document.getElementById('cm-code').textContent=r.data.code;try{const u=await api('/auth/me');if(u&&u.data&&u.data.user&&u.data.user.roblox_id)document.getElementById('cm-tip').textContent='Roblox ID detected — may auto-connect.';else document.getElementById('cm-tip').textContent='Add your Roblox ID for auto-connect.'}catch(e){document.getElementById('cm-tip').textContent=''}}
+async function generateCode(){const r=await api('/connect/code');if(!r)return;sessionId=r.data.session_id;document.getElementById('cm-code').textContent=r.data.code;registerSessionForAutoConnect(sessionId);try{const u=await api('/auth/me');if(u&&u.data&&u.data.user&&u.data.user.roblox_id)document.getElementById('cm-tip').textContent='Roblox ID detected — may auto-connect.';else document.getElementById('cm-tip').textContent='Add your Roblox ID for auto-connect.'}catch(e){document.getElementById('cm-tip').textContent=''}}
 document.getElementById('cm-copy-btn').addEventListener('click',()=>{navigator.clipboard.writeText(document.getElementById('cm-code').textContent);const b=document.getElementById('cm-copy-btn');b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1200)});
-document
+document.getElementById('cm-refresh-btn').addEventListener('click',()=>generateCode());
+
 function startConnectPoll(){if(connectPoll)clearInterval(connectPoll);connectPoll=setInterval(async()=>{try{const r=await api('/status');if(!r||!r.ok)return;if(r.data.plugin_connected){clearInterval(connectPoll);connectPoll=null;pluginConnected=true;updatePluginUI();closeConnectModal();updateInputState();sendHeartbeat()}}catch(e){}},2000)}
 
-function updatePluginUI(){const dot=document.getElementById('plugin-dot'),txt=document.getElementById('plugin-text'),lbl=document.getElementById('sb-connect-label'),discBtn=document.getElementById('sb-disconnect-btn');dot.classList.toggle('on',pluginConnected);txt.classList.toggle('on',pluginConnected);txt.textContent=pluginConnected?'Studio connected':'Disconnected';if(lbl)lbl.textContent=pluginConnected?'Connected':'Connect Studio';discBtn.style.display=pluginConnected?'flex':'none'}
+function updatePluginUI(){
+  const dot=document.getElementById('plugin-dot'),txt=document.getElementById('plugin-text'),lbl=document.getElementById('sb-connect-label'),discBtn=document.getElementById('sb-disconnect-btn');
+  dot.classList.toggle('on',pluginConnected);txt.classList.toggle('on',pluginConnected);
+  txt.textContent=pluginConnected?'Studio connected':'Disconnected';
+  if(lbl)lbl.textContent=pluginConnected?'Connected':'Connect Studio';
+  discBtn.style.display=pluginConnected?'flex':'none';
+  if(pluginConnected&&window.location.pathname.startsWith('/code/')){
+    window.history.replaceState({},'','/app');
+  }
+}
 function enterChat(){document.body.classList.add('ready');document.getElementById('sb-new-btn').disabled=false;updateInputState();startStatusPoll()}
 function startStatusPoll(){if(statusPoll)clearInterval(statusPoll);statusPoll=setInterval(async()=>{try{const r=await api('/status');if(!r||!r.ok)return;const wasConnected=pluginConnected;pluginConnected=r.data.plugin_connected;updatePluginUI();if(wasConnected&&!pluginConnected)updateInputState()}catch(e){}},5000)}
 
@@ -586,30 +836,40 @@ async function loadConversations(){try{const r=await api('/api/conversations');i
 async function saveConv(){if(!currentMessages.length)return;const first=currentMessages.find(m=>m.role==='user');const title=first?first.text.slice(0,48):'Conversation';const cid=activeConvId||'conv-'+Date.now();activeConvId=cid;const convData={id:cid,title,messages:currentMessages,history:conversationHistory,mode,model:selectedModel,sessionId,updatedAt:Date.now()};try{await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});convCache[cid]=convData;renderSidebar()}catch(e){}}
 async function deleteConv(id){try{await api('/api/conversations/'+id,{method:'DELETE'})}catch(e){}delete convCache[id];if(activeConvId===id){activeConvId=null;showDashboard()}renderSidebar()}
 function getConvList(){return Object.values(convCache).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
-function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
-/* ═══ SIDEBAR SEARCH ═══ */
 function filterSidebarConversations(){const q=document.getElementById('sb-search').value.toLowerCase().trim();document.querySelectorAll('#sb-conv-list .sb-item').forEach(item=>{const text=item.querySelector('.sb-item-text');if(text){const match=!q||text.textContent.toLowerCase().includes(q);item.style.display=match?'':'none'}})}
 
 function renderSidebar(){const list=document.getElementById('sb-conv-list'),empty=document.getElementById('sb-empty');list.querySelectorAll('.sb-item').forEach(e=>e.remove());const convs=getConvList();if(!convs.length){empty.style.display='';return}empty.style.display='none';convs.forEach(c=>{const item=document.createElement('div');item.classList.add('sb-item');if(c.id===activeConvId)item.classList.add('active');item.innerHTML=`<div class="sb-item-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div><div class="sb-item-text">${escHtml(c.title)}</div><button class="sb-item-del" title="Delete">&times;</button>`;item.querySelector('.sb-item-del').addEventListener('click',e=>{e.stopPropagation();deleteConv(c.id)});item.addEventListener('click',e=>{if(e.target.closest('.sb-item-del'))return;openConv(c.id)});list.appendChild(item)})}
 
 async function openConv(id){let c=convCache[id];if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));msgs.scrollTop=msgs.scrollHeight;setViewMode(true);renderSidebar()}
 function showDashboard(){activeConvId=null;document.getElementById('messages').innerHTML='';setViewMode(false);renderSidebar()}
-function startNewConv(){activeConvId='new-'+Date.now();sessionId=sessionId||crypto.randomUUID();conversationHistory=[];currentMessages=[];pendingSessionId=null;mode='chat';updateModeUI();document.getElementById('messages').innerHTML='';document.getElementById('plan-banner').classList.remove('show');setViewMode(true);renderSidebar();document.getElementById('chat-input').focus()}
+
+function startNewConv(){
+  activeConvId='new-'+Date.now();
+  sessionId=sessionId||crypto.randomUUID();
+  conversationHistory=[];currentMessages=[];pendingSessionId=null;mode='chat';updateModeUI();
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('plan-banner').classList.remove('show');
+  setViewMode(true);renderSidebar();
+  document.getElementById('chat-input').focus();
+  registerSessionForAutoConnect(sessionId);
+  if(!pluginConnected){
+    window.history.pushState({},'','/code/'+sessionId);
+  }
+}
 document.getElementById('sb-new-btn').addEventListener('click',startNewConv);
 
 const chatInput=document.getElementById('chat-input');
 chatInput.addEventListener('input',()=>{chatInput.style.height='auto';chatInput.style.height=Math.min(chatInput.scrollHeight,200)+'px'});
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}});
 
-/* ═══ AGENT UI HELPERS ═══ */
 function _pad(n){return String(n).padStart(2,'0')}
 function _now(){const d=new Date();return`${_pad(d.getHours())}:${_pad(d.getMinutes())}:${_pad(d.getSeconds())}`}
 function setAgentProgress(pct){document.getElementById('agent-progress-bar').style.width=Math.min(pct,100)+'%'}
 function setAgentStatus(text,active){const bar=document.getElementById('agent-progress');const status=document.getElementById('agent-status');const statusText=document.getElementById('agent-status-text');bar.classList.toggle('active',active);status.classList.toggle('active',active);statusText.textContent=text}
 function updateAgentStepUI(){document.getElementById('agent-status-step').textContent=agentTotalSteps>0?`Step ${agentStepCount}/${agentTotalSteps}`:`Step ${agentStepCount}`;document.getElementById('agent-status-tokens').textContent=agentTotalTokens>0?`${agentTotalTokens.toLocaleString()} tokens`:''}
 
-/* ═══ RENDER MESSAGE ═══ */
 function renderMessage(m){
   const msgs=document.getElementById('messages');
   if(m.role==='system'){const r=document.createElement('div');r.classList.add('system-row');const s=document.createElement('div');s.classList.add('system-msg');s.textContent=m.text;r.appendChild(s);msgs.appendChild(r);return}
@@ -634,7 +894,6 @@ function pushAssistantReply(text){
   saveConv();
 }
 
-/* ═══ PLAN ═══ */
 function showPlan(p){document.getElementById('plan-text').textContent=p;document.getElementById('plan-banner').classList.add('show')}
 function hidePlan(){document.getElementById('plan-banner').classList.remove('show')}
 document.getElementById('reject-plan-btn').addEventListener('click',()=>{hidePlan();pendingSessionId=null;pushMsg({role:'system',text:'Plan discarded.'});pushLog('warn','⛔','Plan discarded by user');pushLogDivider();setAgentStatus('Idle',false)});
@@ -651,7 +910,6 @@ function logToolCall(tc){
   setAgentProgress(progress);
 }
 
-/* ═══ HANDLE RESPONSE ═══ */
 function handleResponse(d){
   if(d.session_id)pendingSessionId=d.session_id;
   if(d.credits!=null){credits.balance=d.credits;updateCreditUI();updateInputState()}
@@ -673,7 +931,6 @@ function handleResponse(d){
   if(d.tokens_used){agentTotalTokens+=d.tokens_used;updateAgentStepUI();if(mode==='agent'){pushLog('credit','💰',d.tokens_used+' tokens used','Balance: '+credits.balance.toFixed(2))}}
 }
 
-/* ═══ POLL FOR RESULT ═══ */
 async function pollForResult(sid){
   addThinking();setAgentStatus('Running',true);
   for(let i=0;i<90;i++){
@@ -701,7 +958,6 @@ async function pollForResult(sid){
   removeThinking();lastShownToolId=null;pushLog('error','❌','Timed out','Studio did not respond within the timeout period');setAgentStatus('Error',true);pushMsg({role:'system',text:'Timed out waiting for Studio.'});saveConv()
 }
 
-/* ═══ SEND MESSAGE ═══ */
 async function sendMessage(){
   const text=chatInput.value.trim();if(!text||isLoading)return;
   const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
@@ -728,7 +984,6 @@ async function sendMessage(){
   finally{isLoading=false;currentAbortController=null;document.getElementById('send-btn').style.display='';document.getElementById('stop-btn').style.display='none';document.getElementById('send-btn').disabled=false}
 }
 
-/* ═══ CHECKPOINT SYSTEM ═══ */
 let checkpoints=[];let cpPanelOpen=false;
 function _cpFmt(ts){const d=new Date(ts);const now=new Date();const diff=Math.floor((now-d)/1000);if(diff<60)return 'just now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';return d.toLocaleDateString()}
 async function loadCheckpoints(){if(!token)return;const qs=sessionId?'?session_id='+encodeURIComponent(sessionId):'';const r=await api('/api/checkpoints'+qs);if(r&&r.ok){checkpoints=r.data||[];renderCheckpoints()}}
@@ -739,11 +994,46 @@ function closeCheckpointPanel(){document.getElementById('checkpoint-panel').clas
 async function deleteCheckpoint(id,btn){btn.disabled=true;const r=await api('/api/checkpoints/'+id,{method:'DELETE'});if(r&&r.data&&r.data.ok){checkpoints=checkpoints.filter(c=>c.id!==id);const item=document.getElementById('cp-item-'+id);if(item)item.remove();const count=document.getElementById('cp-count');const badge=document.getElementById('cp-trigger-badge');count.textContent=checkpoints.length;if(checkpoints.length===0){badge.style.display='none';document.getElementById('cp-list').innerHTML='<div class="cp-empty">No checkpoints yet.</div>'}else{badge.textContent=checkpoints.length>9?'9+':checkpoints.length}}else{btn.disabled=false}}
 async function restoreCheckpoint(id,label,btn){if(!pluginConnected){pushLog('error','❌','Cannot restore: Studio not connected');closeCheckpointPanel();return}if(!confirm(`Restore checkpoint "${label}"?\n\nThis will write the saved scripts back to Studio.`))return;btn.disabled=true;btn.textContent='Restoring…';closeCheckpointPanel();pushLogDivider();pushLog('warn','🔄',`Restoring checkpoint: <span class="lc">${escHtml(label)}</span>`,'Writing scripts back to Studio…');setAgentStatus('Restoring',true);setAgentProgress(5);try{const r=await api('/api/checkpoints/'+id+'/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId})});if(!r||!r.data||!r.data.ok){pushLog('error','❌','Restore failed: '+(r&&r.data&&r.data.error?r.data.error:'Unknown error'));setAgentStatus('Error',true);if(btn){btn.disabled=false;btn.textContent='Restore'}return}const scriptCount=r.data.scripts_count||0;lastToolNameForResult='write_script';await pollForResult(sessionId);pushLog('result','✅',`Checkpoint restored: ${scriptCount} script${scriptCount!==1?'s':''} rolled back`,'Changes sent to Studio');pushLogDivider()}catch(e){pushLog('error','❌','Restore error: '+escHtml(e.message));setAgentStatus('Error',true);if(btn){btn.disabled=false;btn.textContent='Restore'}}}
 
-/* ═══ KEYBOARD SHORTCUTS ═══ */
 document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefault();startNewConv()}if(e.key==='Escape'){closeConnectModal();closeSettingsModal();if(cpPanelOpen)closeCheckpointPanel()}});
 
-/* ═══ INIT ═══ */
-(async function(){const t=getToken();if(t){token=t;const r=await api('/auth/me');if(r&&r.ok){userData=r.data.user;credits=r.data.credits;sessionId=r.data.session_id;if(r.data.preferences){if(r.data.preferences.default_model)selectedModel=r.data.preferences.default_model;if(r.data.preferences.default_mode)mode=r.data.preferences.default_mode;updateModelUI();updateModeUI()}updateCreditUI();if(sessionId)pluginConnected=true;updatePluginUI();renderAnnouncements(r.data.announcements);enterChat();loadCheckpoints();return}}window.location.href='/'})();
+(async function(){
+  const t=getToken();
+  if(!t){window.location.href='/';return}
+  token=t;
+  const r=await api('/auth/me');
+  if(!r||!r.ok){window.location.href='/';return}
+  userData=r.data.user;
+  credits=r.data.credits;
+  sessionId=r.data.session_id;
+  if(r.data.preferences){
+    if(r.data.preferences.default_model)selectedModel=r.data.preferences.default_model;
+    if(r.data.preferences.default_mode)mode=r.data.preferences.default_mode;
+    updateModelUI();updateModeUI();
+  }
+  updateCreditUI();
+  if(sessionId)pluginConnected=true;
+  updatePluginUI();
+  enterChat();
+  loadCheckpoints();
+
+  const path=window.location.pathname;
+  if(path.startsWith('/code/')){
+    const urlSessionId=path.replace('/code/','');
+    if(urlSessionId.length>4){
+      sessionId=urlSessionId;
+      registerSessionForAutoConnect(sessionId);
+      window.history.replaceState({},'',"/app");
+      if(userData&&userData.roblox_id){
+        showToast('Waiting for Studio to auto-connect...','default');
+      }else{
+        showToast('Link your Roblox ID for auto-connect, or use Connect Studio','default');
+      }
+    }
+  }else if(!pluginConnected&&sessionId){
+    registerSessionForAutoConnect(sessionId);
+  }
+})();
+
 document.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();window.open('/admin','_blank')}});
 </script>
 </body>
