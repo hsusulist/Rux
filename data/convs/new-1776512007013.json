@@ -1,0 +1,30 @@
+{
+  "history": [
+    {
+      "content": "hi",
+      "role": "user"
+    },
+    {
+      "content": "Hello! I'm Rux, your Roblox Studio and Luau expert. I can help you write code, build structures, debug scripts, or manage your game hierarchy directly within Studio.\n\nHow can I help you with your project today?",
+      "role": "assistant"
+    }
+  ],
+  "id": "new-1776512007013",
+  "messages": [
+    {
+      "logTime": "18:33:32",
+      "role": "user",
+      "text": "hi"
+    },
+    {
+      "logTime": "18:33:38",
+      "role": "assistant",
+      "text": "Hello! I'm Rux, your Roblox Studio and Luau expert. I can help you write code, build structures, debug scripts, or manage your game hierarchy directly within Studio.\n\nHow can I help you with your project today?"
+    }
+  ],
+  "mode": "chat",
+  "model": "gemma-26b",
+  "sessionId": "55c146ea-78ad-47ee-82e6-d345cb6fdd2a",
+  "title": "hi",
+  "updatedAt": 1776512018105
+}

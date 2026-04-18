@@ -1,8 +1,8 @@
 {
-  "invite_only": false,
-  "default_starting_credits": 10,
+  "code_expiry_ms": 300000,
   "credit_regen_interval_ms": 21600000,
-  "max_credits_default": 10,
+  "default_starting_credits": 10,
+  "invite_only": false,
   "max_agent_steps": 20,
-  "code_expiry_ms": 300000
+  "max_credits_default": 10
 }

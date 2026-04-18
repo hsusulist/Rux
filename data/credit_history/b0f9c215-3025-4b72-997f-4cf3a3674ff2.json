@@ -1,50 +1,50 @@
 [
   {
-    "amount": 1.0,
-    "reason": "Bulk grant",
     "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "amount": 1,
+    "reason": "Bulk grant",
     "timestamp": 1776247896519
   },
   {
-    "amount": 1.0,
-    "reason": "Bulk grant",
     "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "amount": 1,
+    "reason": "Bulk grant",
     "timestamp": 1776247899191
   },
   {
-    "amount": 1.0,
-    "reason": "Bulk grant",
     "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "amount": 1,
+    "reason": "Bulk grant",
     "timestamp": 1776247903244
   },
   {
-    "amount": 0.0,
-    "reason": "Admin credit edit",
     "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "amount": 0,
+    "reason": "Admin credit edit",
     "timestamp": 1776248060651
   },
   {
-    "amount": 1.0,
-    "reason": "Admin grant",
     "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "amount": 1,
+    "reason": "Admin grant",
     "timestamp": 1776248914493
   },
   {
-    "amount": 0.0,
-    "reason": "Admin credit edit",
     "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "amount": 0,
+    "reason": "Admin credit edit",
     "timestamp": 1776249357422
   },
   {
-    "amount": 0.0,
-    "reason": "Admin credit edit",
     "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "amount": 0,
+    "reason": "Admin credit edit",
     "timestamp": 1776249552299
   },
   {
-    "amount": 67.0,
-    "reason": "67676767",
     "admin_id": "984cd1b9-28d9-404a-96d5-449d56e3cee8",
+    "amount": 67,
+    "reason": "67676767",
     "timestamp": 1776249571169
   }
 ]

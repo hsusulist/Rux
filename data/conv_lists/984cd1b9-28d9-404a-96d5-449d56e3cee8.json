@@ -8,37 +8,44 @@
   },
   "new-1776172576684": {
     "id": "new-1776172576684",
-    "title": "hi",
     "mode": "chat",
     "model": "gemma-26b",
+    "title": "hi",
     "updatedAt": 1776172584517
   },
   "new-1776333841477": {
     "id": "new-1776333841477",
-    "title": "hi",
     "mode": "chat",
     "model": "gemma-26b",
+    "title": "hi",
     "updatedAt": 1776333844262
   },
   "new-1776469940333": {
     "id": "new-1776469940333",
-    "title": "hi",
     "mode": "chat",
     "model": "gemma-26b",
+    "title": "hi",
     "updatedAt": 1776469942636
   },
   "new-1776469970280": {
     "id": "new-1776469970280",
-    "title": "hi",
     "mode": "chat",
     "model": "gemma-26b",
+    "title": "hi",
     "updatedAt": 1776469975073
   },
   "new-1776502575174": {
     "id": "new-1776502575174",
-    "title": "Read all my scripts",
     "mode": "chat",
     "model": "gemma-26b",
+    "title": "Read all my scripts",
     "updatedAt": 1776502582829
+  },
+  "new-1776512007013": {
+    "id": "new-1776512007013",
+    "mode": "chat",
+    "model": "gemma-26b",
+    "title": "hi",
+    "updatedAt": 1776512018105
   }
 }
