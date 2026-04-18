@@ -1,0 +1,30 @@
+{
+  "id": "new-1776502575174",
+  "title": "Read all my scripts",
+  "messages": [
+    {
+      "role": "user",
+      "text": "Read all my scripts",
+      "logTime": "15:56:15"
+    },
+    {
+      "role": "assistant",
+      "text": "<|tool_call>call:list_scripts{}<tool_call|>",
+      "logTime": "15:56:22"
+    }
+  ],
+  "history": [
+    {
+      "role": "user",
+      "content": "Read all my scripts"
+    },
+    {
+      "role": "assistant",
+      "content": "<|tool_call>call:list_scripts{}<tool_call|>"
+    }
+  ],
+  "mode": "chat",
+  "model": "gemma-26b",
+  "sessionId": "d1236d4b-0d9b-4e08-a587-e71e5d4976c4",
+  "updatedAt": 1776502582829
+}

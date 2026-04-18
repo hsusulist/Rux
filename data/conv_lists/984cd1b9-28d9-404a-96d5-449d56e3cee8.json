@@ -33,5 +33,12 @@
     "mode": "chat",
     "model": "gemma-26b",
     "updatedAt": 1776469975073
+  },
+  "new-1776502575174": {
+    "id": "new-1776502575174",
+    "title": "Read all my scripts",
+    "mode": "chat",
+    "model": "gemma-26b",
+    "updatedAt": 1776502582829
   }
 }
