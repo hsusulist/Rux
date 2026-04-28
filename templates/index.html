@@ -82,6 +82,13 @@
     .sidebar:hover .sb-empty{opacity:1}
 
     .sb-bottom{padding:6px 8px 8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:1px;flex-shrink:0}
+    .sb-rbx{display:none;align-items:center;gap:8px;padding:6px 5px;margin-bottom:4px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);overflow:hidden}
+    .sb-rbx.show{display:flex}
+    .sb-rbx-avatar{width:22px;height:22px;border-radius:100px;background:#111 center/cover no-repeat;flex-shrink:0;border:1px solid rgba(255,255,255,.06)}
+    .sb-rbx-meta{min-width:0;flex:1;opacity:0;transition:opacity .12s .06s}
+    .sidebar:hover .sb-rbx-meta{opacity:1}
+    .sb-rbx-name{font-size:10px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+    .sb-rbx-handle{font-size:8.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
     .sb-bottom-row{display:flex;align-items:center;gap:6px;height:22px;padding:0 3px}
     .sb-bottom-dot{width:4px;height:4px;border-radius:100px;background:var(--muted);flex-shrink:0;transition:background .3s}
     .sb-bottom-dot.on{background:#45c47a}
@@ -459,6 +466,13 @@
   </div>
 
   <div class="sb-bottom">
+    <div class="sb-rbx" id="sb-rbx" title="Linked Roblox account">
+      <div class="sb-rbx-avatar" id="sb-rbx-avatar"></div>
+      <div class="sb-rbx-meta">
+        <div class="sb-rbx-name" id="sb-rbx-name"></div>
+        <div class="sb-rbx-handle" id="sb-rbx-handle"></div>
+      </div>
+    </div>
     <button class="sb-bottom-btn" onclick="openSettingsModal()">
       <div class="sb-bottom-btn-icon"><svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg></div>
       <span class="sb-bottom-btn-label">Settings</span>
@@ -712,7 +726,7 @@ document.getElementById('settings-overlay').addEventListener('click',function(e)
 
 async function changePassword(){const cur=document.getElementById('settings-current-pw').value;const nw=document.getElementById('settings-new-pw').value;const errEl=document.getElementById('settings-pw-err');if(!cur||!nw){errEl.textContent='Fill in both fields';errEl.classList.add('show');return}if(nw.length<6){errEl.textContent='New password must be at least 6 characters';errEl.classList.add('show');return}const btn=document.getElementById('settings-change-pw-btn');btn.disabled=true;btn.textContent='Changing...';try{const r=await api('/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:cur,new_password:nw})});if(r&&r.ok){showToast('Password changed','success');closeSettingsModal()}else{errEl.textContent=r?.data?.error||'Failed';errEl.classList.add('show')}}catch(e){errEl.textContent='Network error';errEl.classList.add('show')}btn.disabled=false;btn.textContent='Change Password'}
 
-async function saveRobloxId(){const rbx=document.getElementById('settings-rbx-id').value.trim();const btn=document.getElementById('settings-save-rbx-btn');btn.disabled=true;btn.textContent='Saving...';try{const r=await api('/auth/update-roblox-id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(r&&r.ok){if(userData)userData.roblox_id=rbx;showToast('Roblox ID saved','success')}}catch(e){showToast('Failed to save','error')}btn.disabled=false;btn.textContent='Save Roblox ID'}
+async function saveRobloxId(){const rbx=document.getElementById('settings-rbx-id').value.trim();const btn=document.getElementById('settings-save-rbx-btn');btn.disabled=true;btn.textContent='Saving...';try{const r=await api('/auth/update-roblox-id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(r&&r.ok){if(userData)userData.roblox_id=rbx;showToast('Roblox ID saved','success');updateRobloxChip()}}catch(e){showToast('Failed to save','error')}btn.disabled=false;btn.textContent='Save Roblox ID'}
 
 async function deleteAccount(){if(!confirm('Are you sure you want to delete your account? This cannot be undone.'))return;if(!confirm('Really delete? All your data will be permanently removed.'))return;const errEl=document.getElementById('settings-del-err');const pw=prompt('Enter your password to confirm:');if(!pw){errEl.textContent='Password required';errEl.classList.add('show');return}try{const r=await api('/auth/delete-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});if(r&&r.ok){localStorage.removeItem(TOKEN_KEY);window.location.href='/'}else{errEl.textContent=r?.data?.error||'Failed';errEl.classList.add('show')}}catch(e){errEl.textContent='Network error';errEl.classList.add('show')}}
 
@@ -738,7 +752,8 @@ const ANN_ICONS={info:'<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 1
 function renderAnnouncements(anns){const bar=document.getElementById('ann-bar');if(!bar)return;const dismissed=JSON.parse(localStorage.getItem('rux_dismissed_anns')||'[]');const active=(anns||[]).filter(a=>!dismissed.includes(a.id));bar.innerHTML=active.map(a=>{const t=a.type||'info';const icon=ANN_ICONS[t]||ANN_ICONS.info;return`<div class="ann-item ${t}" id="ann-${a.id}"><svg class="ann-icon" viewBox="0 0 24 24">${icon}</svg><div class="ann-content"><div class="ann-title">${escHtml(a.title)}</div>${a.body?`<div class="ann-body">${escHtml(a.body)}</div>`:''}</div><button class="ann-dismiss" onclick="dismissAnn('${a.id}')" title="Dismiss">✕</button></div>`}).join('')}
 function dismissAnn(id){const el=document.getElementById('ann-'+id);if(el){el.style.opacity='0';el.style.transition='opacity .2s';setTimeout(()=>el.remove(),200)}const dismissed=JSON.parse(localStorage.getItem('rux_dismissed_anns')||'[]');if(!dismissed.includes(id)){dismissed.push(id);localStorage.setItem('rux_dismissed_anns',JSON.stringify(dismissed))}}
 
-async function enterApp(){const r=await api('/auth/me');if(!r)return;credits=r.data.credits;sessionId=r.data.session_id;if(r.data.preferences){if(r.data.preferences.default_model)selectedModel=r.data.preferences.default_model;if(r.data.preferences.default_mode)mode=r.data.preferences.default_mode;updateModelUI();updateModeUI()}if(r.data.user)userData=r.data.user;updateCreditUI();if(sessionId)pluginConnected=true;updatePluginUI();renderAnnouncements(r.data.announcements);enterChat();loadConversations();startWebHeartbeat();}
+async function enterApp(){const r=await api('/auth/me');if(!r)return;credits=r.data.credits;sessionId=r.data.session_id;if(r.data.preferences){if(r.data.preferences.default_model)selectedModel=r.data.preferences.default_model;if(r.data.preferences.default_mode)mode=r.data.preferences.default_mode;updateModelUI();updateModeUI()}if(r.data.user)userData=r.data.user;updateCreditUI();updateRobloxChip();if(sessionId)pluginConnected=true;updatePluginUI();renderAnnouncements(r.data.announcements);enterChat();loadConversations();startWebHeartbeat();}
+async function updateRobloxChip(){const chip=document.getElementById('sb-rbx');if(!chip)return;const rbx=userData&&userData.roblox_id;if(!rbx){chip.classList.remove('show');return}try{const res=await fetch('/auth/roblox-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(!res.ok){chip.classList.remove('show');return}const d=await res.json();document.getElementById('sb-rbx-avatar').style.backgroundImage=d.avatar_url?`url("${d.avatar_url}")`:'none';document.getElementById('sb-rbx-name').textContent=d.display_name||d.username||'Roblox User';document.getElementById('sb-rbx-handle').textContent=`@${d.username||'unknown'}`;chip.classList.add('show');chip.title=`Linked Roblox account: @${d.username||'unknown'} (ID ${d.roblox_id})`}catch(e){chip.classList.remove('show')}}
 
 function sendHeartbeat(){
   return api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>{
