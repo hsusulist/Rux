@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "QbiQOPataToevdU0nL9Lq"
+uri = "file://MASTER_PROMPT.md"
+type = "text"
+title = "Rux — Master Prompt"
