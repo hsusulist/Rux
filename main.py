@@ -5,6 +5,7 @@ import time
 import re
 import secrets
 import traceback
+from urllib.request import urlopen
 from flask import Flask, request, jsonify, render_template
 from threading import Lock
 from functools import wraps
@@ -187,6 +188,36 @@ def hash_password(password):
     if not HAS_BCRYPT:
         return password
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def fetch_roblox_profile(roblox_id):
+    rid = str(roblox_id).strip()
+    if not rid:
+        return None
+    try:
+        with urlopen(f"https://users.roblox.com/v1/users/{rid}", timeout=6) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        username = data.get("name") or data.get("displayName") or ""
+        display_name = data.get("displayName") or username
+        try:
+            with urlopen(
+                f"https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds={rid}&size=150x150&format=Png&isCircular=true",
+                timeout=6,
+            ) as resp:
+                thumb = json.loads(resp.read().decode("utf-8"))
+            image = ""
+            thumb_data = thumb.get("data") or []
+            if thumb_data:
+                image = thumb_data[0].get("imageUrl") or ""
+        except Exception:
+            image = ""
+        return {
+            "roblox_id": rid,
+            "username": username,
+            "display_name": display_name,
+            "avatar_url": image,
+        }
+    except Exception:
+        return None
 
 def verify_password(password, hashed):
     if not HAS_BCRYPT:
@@ -1148,7 +1179,16 @@ def auth_register():
 
     _fire_webhook("user_registered", {"user_id": user_id, "email": email})
 
-    return jsonify({"token": token, "user": {"id": user_id, "email": email}})
+    return jsonify({"token": token, "user": {"id": user_id, "email": email, "roblox_id": roblox_id}})
+
+@app.route("/auth/roblox-profile", methods=["POST"])
+def auth_roblox_profile():
+    data = request.get_json(force=True)
+    roblox_id = (data.get("roblox_id") or "").strip()
+    profile = fetch_roblox_profile(roblox_id)
+    if not profile:
+        return jsonify({"error": "Roblox profile not found"}), 404
+    return jsonify(profile)
 
 @app.route("/auth/login", methods=["POST"])
 def auth_login():

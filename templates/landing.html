@@ -97,6 +97,15 @@
     .auth-submit:disabled{opacity:.4;cursor:not-allowed}
     .auth-err{font-size:12px;color:#e5484d;margin-top:10px;display:none}
     .auth-err.show{display:block}
+    .profile-preview{display:none;align-items:center;gap:12px;padding:14px;border:1px solid rgba(245,200,66,.14);border-radius:14px;background:rgba(245,200,66,.04);margin-bottom:14px}
+    .profile-preview.show{display:flex}
+    .profile-avatar{width:54px;height:54px;border-radius:100px;background:#111;background-size:cover;background-position:center;flex-shrink:0;border:1px solid rgba(255,255,255,.08)}
+    .profile-meta{min-width:0;flex:1}
+    .profile-name{font-size:15px;font-weight:800;letter-spacing:-.3px;color:var(--text);line-height:1.2}
+    .profile-handle{font-size:12px;color:var(--text2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .profile-confirm{width:100%;padding:11px 14px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid rgba(255,255,255,.08);border-radius:100px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:all .15s;margin-bottom:14px;display:none}
+    .profile-confirm.show{display:block}
+    .profile-confirm:hover{background:rgba(255,255,255,.07);border-color:rgba(245,200,66,.25)}
     .pw-strength{display:flex;gap:2px;margin-top:6px;height:2px}
     .pw-strength-bar{flex:1;border-radius:1px;background:#1a1a1a;transition:background .2s}
     .pw-strength-bar.weak{background:#e5484d}
@@ -399,6 +408,8 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click'
         <div class="pw-strength-text" id="pw-strength-text"></div>
       </div>
       <div class="auth-field"><label class="auth-label-sm">Roblox User ID <span style="color:#e5484d">*</span></label><input class="auth-input-sm" id="m-reg-rbx" type="text" placeholder="Required for Studio connection"><div class="auth-hint-sm">Find at roblox.com → profile → number in URL</div></div>
+      <div class="profile-preview" id="profile-preview"><div class="profile-avatar" id="profile-avatar"></div><div class="profile-meta"><div class="profile-name" id="profile-name"></div><div class="profile-handle" id="profile-handle"></div></div></div>
+      <button class="profile-confirm" id="profile-confirm" type="button">Is this you?</button>
       <button class="auth-submit" id="m-reg-btn">Create account</button>
       <div class="auth-err" id="m-reg-err"></div>
     </div>
@@ -416,6 +427,11 @@ document.getElementById('m-reg-pw').addEventListener('input',function(){const pw
 
 async function authApi(path,body){const res=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return{ok:res.ok,data:await res.json()}}
 function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),4000)}
+let pendingProfile=null
+let profileTimer=null
+async function loadRobloxProfile(){const rbx=document.getElementById('m-reg-rbx').value.trim();const preview=document.getElementById('profile-preview');const confirm=document.getElementById('profile-confirm');if(profileTimer)clearTimeout(profileTimer);if(!rbx){pendingProfile=null;preview.classList.remove('show');confirm.classList.remove('show');return}profileTimer=setTimeout(async()=>{const res=await authApi('/auth/roblox-profile',{roblox_id:rbx});if(!res.ok){pendingProfile=null;preview.classList.remove('show');confirm.classList.remove('show');return}pendingProfile=res.data;document.getElementById('profile-avatar').style.backgroundImage=res.data.avatar_url?`url("${res.data.avatar_url}")`:'none';document.getElementById('profile-name').textContent=res.data.display_name||res.data.username||'Roblox User';document.getElementById('profile-handle').textContent=`@${res.data.username||'unknown'} • ID ${res.data.roblox_id}`;preview.classList.add('show');confirm.classList.add('show')},350)}
+document.getElementById('m-reg-rbx').addEventListener('input',loadRobloxProfile)
+document.getElementById('profile-confirm').addEventListener('click',()=>{if(pendingProfile){document.getElementById('m-reg-err').textContent='';document.getElementById('m-reg-err').classList.remove('show')}})
 
 document.getElementById('m-login-btn').addEventListener('click',async()=>{const email=document.getElementById('m-login-email').value.trim();const pw=document.getElementById('m-login-pw').value;if(!email||!pw)return showErr('m-login-err','Fill in all fields');const btn=document.getElementById('m-login-btn');btn.disabled=true;btn.textContent='Signing in...';const r=await authApi('/auth/login',{email,password:pw});btn.disabled=false;btn.textContent='Sign in';if(!r.ok)return showErr('m-login-err',r.data.error||'Login failed');localStorage.setItem('rux_token',r.data.token);window.location.href='/app'});
 
