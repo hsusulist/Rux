@@ -17,7 +17,7 @@ Tagline: *"Build smarter in Roblox Studio."*
 ## Special features
 - **Multi-model AI** — switch per conversation between 11 models: Gemini Flash / Pro, Claude Sonnet / Opus, GPT-5.3 Chat / Codex, Qwen3 Coder, Grok 4, GLM-5.1, and free Gemma 4 (31B & 26B).
 - **Two modes** — *Chat* for quick questions, *Agent* for multi-step tasks where the AI proposes a plan you approve before it runs.
-- **Studio plugin bridge** — link the web app to Studio with a 4-character code (e.g. `A7K3`); set your Roblox User ID once and future sessions auto-connect.
+- **Studio plugin bridge** — auto-connects through your **Roblox User ID**: set it once on your Rux account and the plugin links to your account every time you open Studio (no code, no login inside Studio). A 4-character code (e.g. `A7K3`) is only used as a fallback for first-time linking or accounts without a Roblox ID set.
 - **Full Studio toolbox** — the AI can read/write/create/delete scripts, search code, find usages, check syntax errors, browse the Instance tree, get/set any property, add new Instances (Parts, Tools, Folders, Lights, Sounds…), and read output / error logs.
 - **Auto-checkpoints + restore** — every agent run snapshots affected scripts; restore any past checkpoint with one click.
 - **Saved conversations** — auto-saved, searchable, resumable from the sidebar.
@@ -29,9 +29,9 @@ Tagline: *"Build smarter in Roblox Studio."*
 ---
 
 ## How it works
-1. **Sign up** on the website (email + password).
+1. **Sign up** on the website (email + password) and **enter your Roblox User ID** in Settings.
 2. **Install the Rux plugin** from the Roblox Creator Store.
-3. **Click "Connect Studio"** in the sidebar — copy the 4-character code shown.
-4. **Paste the code** into the plugin inside Studio. (Or set your Roblox ID once for auto-connect from then on.)
-5. **Pick a model and a mode**, type a request, hit send.
-6. The AI calls Studio tools through the plugin to read your scripts/Instances and apply changes — every modification is preceded by an automatic checkpoint you can restore at any time.
+3. **Open Studio** — the plugin reads the place's creator ID, matches it to your account, and **auto-connects** instantly. No code, no login inside Studio.
+   - *(First-time / no Roblox ID set?)* Click "Connect Studio" in the sidebar to get a 4-character code, paste it into the plugin once — after that it auto-connects from then on.
+4. **Pick a model and a mode**, type a request, hit send.
+5. The AI calls Studio tools through the plugin to read your scripts / Instances and apply changes — every modification is preceded by an automatic checkpoint you can restore at any time.
