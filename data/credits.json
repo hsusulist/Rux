@@ -8,5 +8,10 @@
     "balance": 10,
     "last_updated": 0,
     "max_credit": 10
+  },
+  "8e97cd25-0b78-412c-ac29-0b10c79eab99": {
+    "balance": 10.0,
+    "last_updated": 0,
+    "max_credit": 10.0
   }
 }

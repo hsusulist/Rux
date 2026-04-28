@@ -16,5 +16,14 @@
     "id": "b0f9c215-3025-4b72-997f-4cf3a3674ff2",
     "password_hash": "9sQprP8dnWN9Tvm",
     "roblox_id": ""
+  },
+  "8e97cd25-0b78-412c-ac29-0b10c79eab99": {
+    "id": "8e97cd25-0b78-412c-ac29-0b10c79eab99",
+    "email": "a@gmail.com",
+    "password_hash": "QmV:22:V8TSpZk2",
+    "roblox_id": "1",
+    "created_at": 1777370204,
+    "blocked": false,
+    "admin_notes": ""
   }
 }
