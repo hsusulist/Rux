@@ -1299,6 +1299,118 @@ def auth_update_roblox_id():
     store.update_user_roblox_id(user["id"], roblox_id)
     return jsonify({"ok": True})
 
+# ═══ ROBLOX GAME ANALYSIS ═══
+def _extract_place_id(value):
+    """Accept a raw place id, a roblox.com/games/<id> url, or a games/<id> path."""
+    s = str(value or "").strip()
+    if not s:
+        return None
+    if s.isdigit():
+        return s
+    import re
+    m = re.search(r"/games/(\d+)", s)
+    if m:
+        return m.group(1)
+    m = re.search(r"placeId=(\d+)", s)
+    if m:
+        return m.group(1)
+    digits = re.search(r"(\d{6,})", s)
+    if digits:
+        return digits.group(1)
+    return None
+
+
+def _http_json(url, timeout=8):
+    import urllib.request
+    req = urllib.request.Request(url, headers={"User-Agent": "Rux/1.0"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+@app.route("/api/roblox/analyze-game", methods=["POST"])
+@require_auth
+def analyze_roblox_game():
+    user = request.user
+    data = request.get_json(force=True) or {}
+    raw = data.get("place_id") or data.get("url") or ""
+    place_id = _extract_place_id(raw)
+    if not place_id:
+        return jsonify({"error": "Couldn't read a place ID or game URL from that input."}), 400
+
+    balance, _ = store.get_credits(user["id"])
+    cost = 1.0
+    if balance < cost:
+        return jsonify({"error": "Not enough credits — analysis costs 1 credit."}), 402
+
+    try:
+        u = _http_json(f"https://apis.roblox.com/universes/v1/places/{place_id}/universe")
+        universe_id = u.get("universeId")
+        if not universe_id:
+            return jsonify({"error": "Couldn't resolve that place into a game."}), 404
+
+        games = _http_json(f"https://games.roblox.com/v1/games?universeIds={universe_id}")
+        items = games.get("data") or []
+        if not items:
+            return jsonify({"error": "No game info found for that place."}), 404
+        g = items[0]
+
+        icon_url = ""
+        try:
+            ic = _http_json(
+                f"https://thumbnails.roblox.com/v1/games/icons?universeIds={universe_id}"
+                f"&size=512x512&format=Png&isCircular=false"
+            )
+            icd = ic.get("data") or []
+            if icd:
+                icon_url = icd[0].get("imageUrl") or ""
+        except Exception:
+            pass
+
+        thumb_url = ""
+        try:
+            th = _http_json(
+                f"https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds={universe_id}"
+                f"&countPerUniverse=1&defaults=true&size=768x432&format=Png&isCircular=false"
+            )
+            thd = th.get("data") or []
+            if thd:
+                arr = thd[0].get("thumbnails") or []
+                if arr:
+                    thumb_url = arr[0].get("imageUrl") or ""
+        except Exception:
+            pass
+
+        creator = g.get("creator") or {}
+        result = {
+            "place_id": place_id,
+            "universe_id": universe_id,
+            "name": g.get("name", "Untitled game"),
+            "description": (g.get("description") or "").strip(),
+            "creator_name": creator.get("name", ""),
+            "creator_type": creator.get("type", ""),
+            "playing": g.get("playing", 0),
+            "visits": g.get("visits", 0),
+            "favorites": g.get("favoritedCount", 0),
+            "max_players": g.get("maxPlayers", 0),
+            "genre": g.get("genre", ""),
+            "created": g.get("created", ""),
+            "updated": g.get("updated", ""),
+            "icon_url": icon_url,
+            "thumbnail_url": thumb_url,
+            "play_url": f"https://www.roblox.com/games/{place_id}",
+        }
+    except Exception as e:
+        logging.exception("analyze game failed")
+        return jsonify({"error": f"Couldn't reach Roblox: {e}"}), 502
+
+    new_balance, last_updated = store.deduct_credits(user["id"], cost)
+    next_at = last_updated + store.CREDIT_INTERVAL_MS if last_updated > 0 else 0
+    return jsonify({
+        "ok": True,
+        "game": result,
+        "credits": {"balance": round(new_balance, 2), "max": store.MAX_CREDITS, "next_credit_at": next_at},
+    })
+
 # ═══ PREFERENCES ROUTES ═══
 @app.route("/api/preferences", methods=["GET"])
 @require_auth

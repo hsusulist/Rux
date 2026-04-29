@@ -142,12 +142,11 @@
     /* ═══ MAIN ═══ */
     .main{margin-left:48px;height:100vh;display:flex;flex-direction:column;min-width:0;position:relative}
     .chat-screen{flex-direction:column;height:100%;overflow:hidden;position:relative;background:#0a0a0a}
-    /* warm yellow ambient glow — subtle, like the landing page */
-    .chat-screen::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;background:
-      radial-gradient(1100px 680px at 8% 12%, rgba(244,196,77,.20), transparent 62%),
-      radial-gradient(900px 600px at 92% 95%, rgba(244,196,77,.14), transparent 60%),
-      radial-gradient(800px 460px at 50% 50%, rgba(244,196,77,.07), transparent 65%),
-      radial-gradient(420px 320px at 50% 0%, rgba(244,196,77,.10), transparent 70%)}
+    /* warm yellow ambient glow — clean blobs, blended like the landing page */
+    .chat-screen::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;mix-blend-mode:screen;opacity:.85;background:
+      radial-gradient(1200px 760px at -4% -8%, rgba(255,205,99,.22), transparent 58%),
+      radial-gradient(900px 620px at 108% 110%, rgba(255,180,68,.16), transparent 60%),
+      radial-gradient(520px 360px at 50% -10%, rgba(255,225,140,.10), transparent 65%)}
 
     /* subtle dot grid */
     .chat-screen::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.012) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
@@ -220,10 +219,29 @@
     .suggestion-label{font-size:10.5px;font-weight:600;color:var(--text2);letter-spacing:-.15px}
     .suggestion-desc{font-size:9px;color:var(--muted);margin-top:1px}
 
-    .empty-status{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:7px;background:var(--surface);border:1px solid var(--border)}
-    .empty-conn-dot{width:4px;height:4px;border-radius:100px;background:var(--muted);transition:all .3s}
-    .empty-conn-dot.on{background:var(--lp-green)}
-    .empty-conn-text{font-size:10px;font-weight:500;color:var(--text3)}
+    .empty-status{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:100px;background:rgba(255,255,255,.03);border:1px solid var(--border);margin-top:6px}
+    .empty-conn-dot{width:5px;height:5px;border-radius:100px;background:#8a6a1c;box-shadow:0 0 0 3px rgba(212,176,90,.10);transition:all .3s}
+    .empty-conn-dot.on{background:#45c47a;box-shadow:0 0 0 3px rgba(69,196,122,.18)}
+    .empty-conn-text{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1px}
+
+    /* ═══ DASHBOARD HERO ═══ */
+    .dash-stack{display:flex;flex-direction:column;align-items:center;width:100%;max-width:880px}
+    .dash-cta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:780px;margin:8px 0 22px}
+    .dash-card{appearance:none;-webkit-appearance:none;text-align:left;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:16px 18px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.07);cursor:pointer;font-family:'Inter',sans-serif;color:var(--text);transition:transform .15s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);position:relative;overflow:hidden}
+    .dash-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(420px 200px at 0% 0%,rgba(244,196,77,.10),transparent 60%);opacity:0;transition:opacity .2s}
+    .dash-card:hover{transform:translateY(-2px);border-color:rgba(244,196,77,.35);box-shadow:0 14px 40px rgba(0,0,0,.45),0 0 0 1px rgba(244,196,77,.15) inset}
+    .dash-card:hover::before{opacity:1}
+    .dash-card-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#f1d77a,#d4b05a);color:#1a1100;flex-shrink:0;box-shadow:0 6px 18px rgba(212,176,90,.28),inset 0 1px 0 rgba(255,255,255,.35)}
+    .dash-card-icon svg{width:20px;height:20px;fill:currentColor}
+    .dash-card-icon.analyze-icon{background:linear-gradient(180deg,#1d1d22,#0e0e12);color:#f1d77a;border:1px solid rgba(244,196,77,.32);box-shadow:0 6px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05)}
+    .dash-card-body{min-width:0}
+    .dash-card-title{font-size:14px;font-weight:700;letter-spacing:-.2px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .dash-card-desc{font-size:11.5px;color:var(--text3);margin-top:3px;line-height:1.45}
+    .dash-card-cta{font-size:11px;font-weight:700;color:var(--text2);display:inline-flex;align-items:center;gap:3px;padding:6px 10px;border-radius:100px;background:rgba(255,255,255,.04);border:1px solid var(--border2);white-space:nowrap;transition:all .15s}
+    .dash-card-cta svg{width:11px;height:11px;fill:currentColor}
+    .dash-card:hover .dash-card-cta{background:rgba(244,196,77,.12);border-color:rgba(244,196,77,.4);color:#ffd454}
+    .dash-credit-chip{font-size:9.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:2px 8px;border-radius:100px;background:rgba(244,196,77,.10);border:1px solid rgba(244,196,77,.32);color:#ffd454}
+    @media (max-width:720px){.dash-cta-grid{grid-template-columns:1fr}}
 
     /* ═══ CHAT HERO (project open, no messages) ═══ */
     .chat-hero{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px 80px;z-index:6;overflow-y:auto}
@@ -413,6 +431,9 @@
 
     .cp-pill{position:relative}
     .cp-pill-badge{position:absolute;top:-5px;right:-5px;width:13px;height:13px;border-radius:100px;background:var(--text);color:#000;font-size:7.5px;font-weight:800;display:none;align-items:center;justify-content:center}
+    .analyze-pill{background:linear-gradient(180deg,rgba(244,196,77,.10),rgba(244,196,77,.04));border-color:rgba(244,196,77,.32);color:#ffd454}
+    .analyze-pill:hover{color:#ffe07a;background:linear-gradient(180deg,rgba(244,196,77,.18),rgba(244,196,77,.08));border-color:rgba(244,196,77,.55)}
+    .analyze-pill svg{fill:currentColor}
 
     .send-btn{width:32px;height:32px;border-radius:9px;background:var(--text);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s;box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 4px 12px rgba(0,0,0,.3)}
     .send-btn:hover:not(:disabled){background:#fff;transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 6px 16px rgba(0,0,0,.4)}
@@ -518,6 +539,33 @@
     .proj-btn-create{padding:9px 22px;background:var(--accent);color:#1a1100;border:none;border-radius:8px;font-size:12.5px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:all .12s;letter-spacing:-.1px}
     .proj-btn-create:hover{background:#ffd454}
     .proj-btn-create:disabled{opacity:.5;cursor:not-allowed}
+
+    /* ═══ ANALYZE GAME MODAL ═══ */
+    .analyze-modal{max-width:520px}
+    .analyze-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+    .analyze-head-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(180deg,rgba(244,196,77,.18),rgba(244,196,77,.06));border:1px solid rgba(244,196,77,.32);display:flex;align-items:center;justify-content:center;color:#ffd454;flex-shrink:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+    .analyze-head-icon svg{width:20px;height:20px;fill:currentColor}
+    .analyze-sub{font-size:11.5px;color:var(--text3);line-height:1.5}
+    .analyze-cost{color:#ffd454;font-weight:700}
+    .analyze-result{display:none;margin-bottom:18px}
+    .analyze-result.show{display:block;animation:agameIn .25s ease both}
+    @keyframes agameIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .agame-card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.012));border:1px solid var(--border2);border-radius:14px;overflow:hidden}
+    .agame-cover{height:120px;background:#0c0c10 center/cover no-repeat;position:relative}
+    .agame-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.7) 100%)}
+    .agame-head{display:flex;gap:12px;padding:14px 14px 4px;align-items:center;margin-top:-30px;position:relative;z-index:1}
+    .agame-icon{width:54px;height:54px;border-radius:12px;background:#0c0c10 center/cover no-repeat;border:1px solid var(--border2);box-shadow:0 6px 18px rgba(0,0,0,.5);flex-shrink:0}
+    .agame-name{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:15px;font-weight:800;letter-spacing:-.3px;color:var(--text);line-height:1.2}
+    .agame-creator{font-size:10.5px;color:var(--text3);margin-top:2px}
+    .agame-creator a{color:var(--text2);text-decoration:none}
+    .agame-creator a:hover{color:#ffd454}
+    .agame-desc{font-size:11.5px;color:var(--text2);line-height:1.55;padding:10px 14px 0;max-height:96px;overflow-y:auto;white-space:pre-wrap}
+    .agame-desc::-webkit-scrollbar{width:3px}
+    .agame-desc::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+    .agame-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);margin:12px 0 0;border-top:1px solid var(--border)}
+    .agame-stat{padding:10px 8px;background:#0a0a0d;text-align:center}
+    .agame-stat-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--text);letter-spacing:-.2px}
+    .agame-stat-lbl{font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;font-weight:700}
 
     .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(14px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
     .settings-overlay.open{opacity:1;pointer-events:all}
@@ -661,17 +709,39 @@
     <div class="chat-body" id="chat-body">
 
       <div class="empty-state" id="dashboard">
-        <div class="empty-eyebrow"><svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg> Welcome</div>
-        <div class="empty-title">Start by <span class="accent">creating a project</span></div>
-        <div class="empty-sub">Each project keeps its own conversation, history and Studio session.</div>
-        <button class="empty-create-btn" onclick="openCreateProjectModal()">
-          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          Create your first project
-        </button>
+        <div class="dash-stack">
+          <div class="empty-eyebrow"><svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg> Welcome to Rux</div>
+          <div class="empty-title">Build smarter in <span class="accent">Roblox&nbsp;Studio</span></div>
+          <div class="empty-sub">Start a fresh project to design from scratch — or paste a Roblox game and let Rux reverse-engineer the concept into a new build.</div>
 
-        <div class="empty-status">
-          <div class="empty-conn-dot" id="empty-conn-dot"></div>
-          <span class="empty-conn-text" id="empty-conn-text">Studio disconnected</span>
+          <div class="dash-cta-grid">
+            <button class="dash-card dash-card-primary" onclick="openCreateProjectModal()">
+              <div class="dash-card-icon">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              </div>
+              <div class="dash-card-body">
+                <div class="dash-card-title">Create a new project</div>
+                <div class="dash-card-desc">Blank canvas. Chat with the AI to scaffold scripts and Instances.</div>
+              </div>
+              <div class="dash-card-cta">Start <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></div>
+            </button>
+
+            <button class="dash-card dash-card-analyze" onclick="openAnalyzeGameModal()">
+              <div class="dash-card-icon analyze-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+              </div>
+              <div class="dash-card-body">
+                <div class="dash-card-title">Analyze any Roblox game <span class="dash-credit-chip">1 credit</span></div>
+                <div class="dash-card-desc">Paste a place ID or game URL — Rux pulls the icon, stats &amp; description, then clones the concept.</div>
+              </div>
+              <div class="dash-card-cta">Analyze <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></div>
+            </button>
+          </div>
+
+          <div class="empty-status">
+            <div class="empty-conn-dot" id="empty-conn-dot"></div>
+            <span class="empty-conn-text" id="empty-conn-text">Studio disconnected</span>
+          </div>
         </div>
       </div>
 
@@ -754,6 +824,10 @@
               <span>History</span>
               <div class="cp-pill-badge" id="cp-trigger-badge">0</div>
             </button>
+            <button class="pill-trigger analyze-pill" id="analyze-trigger" onclick="openAnalyzeGameModal()" title="Analyze a Roblox game (1 credit)">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+              <span>Analyze game</span>
+            </button>
             <div class="top-spacer"></div>
             <div class="credit-pill" id="credit-pill" title="Credits remaining">
               <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
@@ -823,6 +897,40 @@
     <div class="proj-actions">
       <button class="proj-btn-cancel" onclick="closeCreateProjectModal()">Cancel</button>
       <button class="proj-btn-create" id="proj-create-btn" onclick="confirmCreateProject()">Create</button>
+    </div>
+  </div>
+</div>
+
+<div class="proj-overlay analyze-overlay" id="analyze-overlay">
+  <div class="proj-modal analyze-modal">
+    <button class="proj-close" onclick="closeAnalyzeGameModal()" aria-label="Close">&#10005;</button>
+
+    <div class="analyze-head">
+      <div class="analyze-head-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      </div>
+      <div>
+        <div class="proj-title" style="margin-bottom:2px">Analyze a Roblox game</div>
+        <div class="analyze-sub">Paste a place ID or game URL — Rux fetches the icon, description and stats. <span class="analyze-cost">Costs 1 credit per analysis.</span></div>
+      </div>
+    </div>
+
+    <div class="proj-field" id="analyze-input-field">
+      <label class="proj-label">Place ID or game URL</label>
+      <input class="proj-input" id="analyze-input" type="text" placeholder="https://www.roblox.com/games/1234567890/Adopt-Me  or  1234567890" autocomplete="off" spellcheck="false">
+      <div class="proj-err" id="analyze-err"></div>
+    </div>
+
+    <div class="analyze-result" id="analyze-result"></div>
+
+    <div class="proj-actions" id="analyze-actions">
+      <button class="proj-btn-cancel" onclick="closeAnalyzeGameModal()">Cancel</button>
+      <button class="proj-btn-create" id="analyze-run-btn" onclick="runAnalyzeGame()">Analyze (1 credit)</button>
+    </div>
+
+    <div class="proj-actions" id="analyze-actions-result" style="display:none">
+      <button class="proj-btn-cancel" onclick="resetAnalyzeGameModal()">Analyze another</button>
+      <button class="proj-btn-create" id="analyze-clone-btn" onclick="cloneAnalyzedGame()">Clone into new project</button>
     </div>
   </div>
 </div>
@@ -1103,6 +1211,99 @@ async function confirmCreateProject(){const inp=document.getElementById('proj-na
 document.getElementById('proj-overlay').addEventListener('click',function(e){if(e.target===this)closeCreateProjectModal()});
 document.getElementById('proj-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();confirmCreateProject()}});
 
+/* ═══ ANALYZE ROBLOX GAME ═══ */
+let _lastAnalyzedGame=null;
+function _fmtNum(n){n=Number(n||0);if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n)}
+function openAnalyzeGameModal(){const ov=document.getElementById('analyze-overlay');resetAnalyzeGameModal();ov.classList.add('open');setTimeout(()=>document.getElementById('analyze-input').focus(),60)}
+function closeAnalyzeGameModal(){document.getElementById('analyze-overlay').classList.remove('open')}
+function resetAnalyzeGameModal(){
+  _lastAnalyzedGame=null;
+  document.getElementById('analyze-input').value='';
+  document.getElementById('analyze-err').classList.remove('show');
+  document.getElementById('analyze-result').classList.remove('show');
+  document.getElementById('analyze-result').innerHTML='';
+  document.getElementById('analyze-input-field').style.display='';
+  document.getElementById('analyze-actions').style.display='';
+  document.getElementById('analyze-actions-result').style.display='none';
+  const btn=document.getElementById('analyze-run-btn');btn.disabled=false;btn.textContent='Analyze (1 credit)';
+}
+async function runAnalyzeGame(){
+  const inp=document.getElementById('analyze-input');
+  const err=document.getElementById('analyze-err');
+  const btn=document.getElementById('analyze-run-btn');
+  const raw=inp.value.trim();
+  err.classList.remove('show');
+  if(!raw){err.textContent='Paste a Roblox game URL or place ID first.';err.classList.add('show');inp.focus();return}
+  btn.disabled=true;btn.textContent='Analyzing...';
+  try{
+    const r=await api('/api/roblox/analyze-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:raw})});
+    if(!r){err.textContent='Network error.';err.classList.add('show');btn.disabled=false;btn.textContent='Analyze (1 credit)';return}
+    if(!r.ok){err.textContent=(r.data&&r.data.error)||'Analysis failed.';err.classList.add('show');btn.disabled=false;btn.textContent='Analyze (1 credit)';return}
+    const g=r.data.game;_lastAnalyzedGame=g;
+    if(r.data.credits){credits=r.data.credits;updateCreditUI()}
+    const desc=(g.description||'No description provided.').slice(0,1200);
+    const cover=g.thumbnail_url?`<div class="agame-cover" style="background-image:url('${g.thumbnail_url}')"></div>`:`<div class="agame-cover"></div>`;
+    const icon=g.icon_url?`<div class="agame-icon" style="background-image:url('${g.icon_url}')"></div>`:`<div class="agame-icon"></div>`;
+    const creator=g.creator_name?`by <a href="https://www.roblox.com/users/profile" target="_blank" rel="noopener noreferrer">${escHtml(g.creator_name)}</a>`:'Unknown creator';
+    document.getElementById('analyze-result').innerHTML=`
+      <div class="agame-card">
+        ${cover}
+        <div class="agame-head">
+          ${icon}
+          <div style="min-width:0">
+            <div class="agame-name">${escHtml(g.name||'Untitled')}</div>
+            <div class="agame-creator">${creator}${g.genre?` · ${escHtml(g.genre)}`:''}</div>
+          </div>
+        </div>
+        <div class="agame-desc">${escHtml(desc)}</div>
+        <div class="agame-stats">
+          <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.playing)}</div><div class="agame-stat-lbl">Playing</div></div>
+          <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.visits)}</div><div class="agame-stat-lbl">Visits</div></div>
+          <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.favorites)}</div><div class="agame-stat-lbl">Favorites</div></div>
+          <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.max_players)}</div><div class="agame-stat-lbl">Max</div></div>
+        </div>
+      </div>`;
+    document.getElementById('analyze-result').classList.add('show');
+    document.getElementById('analyze-input-field').style.display='none';
+    document.getElementById('analyze-actions').style.display='none';
+    document.getElementById('analyze-actions-result').style.display='flex';
+    showToast('Analyzed — 1 credit used','success');
+  }catch(e){err.textContent='Network error.';err.classList.add('show');btn.disabled=false;btn.textContent='Analyze (1 credit)'}
+}
+async function cloneAnalyzedGame(){
+  if(!_lastAnalyzedGame)return;
+  const g=_lastAnalyzedGame;
+  const cbtn=document.getElementById('analyze-clone-btn');cbtn.disabled=true;cbtn.textContent='Creating...';
+  const title=`Clone of ${g.name}`.slice(0,60);
+  const seed=
+`I want to recreate the core concept of the Roblox game **${g.name}** (place ID ${g.place_id}).
+
+Game info from Roblox:
+• Creator: ${g.creator_name||'Unknown'}
+• Genre: ${g.genre||'Unspecified'}
+• Visits: ${g.visits||0}
+• Currently playing: ${g.playing||0}
+• Favorites: ${g.favorites||0}
+• Max players: ${g.max_players||0}
+
+Description:
+${(g.description||'').slice(0,1500)||'(no description provided)'}
+
+Help me design a similar game in my own Roblox Studio place. Start by listing the core mechanics you can infer from the description and stats, then propose a script architecture (services, modules, scripts) that recreates them. Don't copy assets — design original systems with the same feel.`;
+  try{
+    await startNewConv(title);
+    const ti=document.getElementById('chat-input');
+    ti.value=seed;
+    ti.dispatchEvent(new Event('input',{bubbles:true}));
+    ti.focus();
+    closeAnalyzeGameModal();
+    showToast('Project ready — review the prompt and send','success');
+  }catch(e){showToast('Failed to create project','error')}
+  cbtn.disabled=false;cbtn.textContent='Clone into new project';
+}
+document.getElementById('analyze-overlay').addEventListener('click',function(e){if(e.target===this)closeAnalyzeGameModal()});
+document.getElementById('analyze-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runAnalyzeGame()}});
+
 const chatInput=document.getElementById('chat-input');
 chatInput.addEventListener('input',autoResizeInput);
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}});
@@ -1337,7 +1538,7 @@ function closeCheckpointPanel(){document.getElementById('checkpoint-panel').clas
 async function deleteCheckpoint(id,btn){btn.disabled=true;const r=await api('/api/checkpoints/'+id,{method:'DELETE'});if(r&&r.data&&r.data.ok){checkpoints=checkpoints.filter(c=>c.id!==id);const item=document.getElementById('cp-item-'+id);if(item)item.remove();const count=document.getElementById('cp-count');const badge=document.getElementById('cp-trigger-badge');count.textContent=checkpoints.length;if(checkpoints.length===0){badge.style.display='none';document.getElementById('cp-list').innerHTML='<div class="cp-empty">No checkpoints yet.</div>'}else{badge.textContent=checkpoints.length>9?'9+':checkpoints.length}}else{btn.disabled=false}}
 async function restoreCheckpoint(id,label,btn){if(!pluginConnected){pushLog('error','❌','Cannot restore: Studio not connected');closeCheckpointPanel();return}if(!confirm(`Restore checkpoint "${label}"?\n\nThis will write the saved scripts back to Studio.`))return;btn.disabled=true;btn.textContent='Restoring…';closeCheckpointPanel();pushLogDivider();pushLog('warn','🔄',`Restoring checkpoint: <span class="lc">${escHtml(label)}</span>`,'Writing scripts back to Studio…');setAgentStatus('Restoring',true);setAgentProgress(5);try{const r=await api('/api/checkpoints/'+id+'/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId})});if(!r||!r.data||!r.data.ok){pushLog('error','❌','Restore failed: '+(r&&r.data&&r.data.error?r.data.error:'Unknown error'));setAgentStatus('Error',true);if(btn){btn.disabled=false;btn.textContent='Restore'}return}const scriptCount=r.data.scripts_count||0;lastToolNameForResult='write_script';await pollForResult(sessionId);pushLog('result','✅',`Checkpoint restored: ${scriptCount} script${scriptCount!==1?'s':''} rolled back`,'Changes sent to Studio');pushLogDivider()}catch(e){pushLog('error','❌','Restore error: '+escHtml(e.message));setAgentStatus('Error',true);if(btn){btn.disabled=false;btn.textContent='Restore'}}}
 
-document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefault();openCreateProjectModal()}if(e.key==='Escape'){closeConnectModal();closeSettingsModal();closeCreateProjectModal();if(cpPanelOpen)closeCheckpointPanel()}});
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefault();openCreateProjectModal()}if(e.key==='Escape'){closeConnectModal();closeSettingsModal();closeCreateProjectModal();closeAnalyzeGameModal();if(cpPanelOpen)closeCheckpointPanel()}});
 
 (async function(){
   const t=getToken();
