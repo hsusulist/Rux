@@ -90,6 +90,12 @@
     .sidebar:hover .sb-rbx-meta{opacity:1}
     .sb-rbx-name{font-size:10px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
     .sb-rbx-handle{font-size:8.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+    .sb-rbx-refresh{width:18px;height:18px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;border-radius:6px;cursor:pointer;opacity:0;transition:opacity .12s .06s,background .12s;flex-shrink:0;padding:0;color:var(--muted)}
+    .sidebar:hover .sb-rbx-refresh{opacity:1}
+    .sb-rbx-refresh:hover{background:rgba(255,255,255,.06);color:var(--text2)}
+    .sb-rbx-refresh svg{width:10px;height:10px;fill:currentColor}
+    .sb-rbx-refresh.spinning svg{animation:rbxspin .7s linear infinite}
+    @keyframes rbxspin{to{transform:rotate(360deg)}}
     .sb-bottom-row{display:flex;align-items:center;gap:6px;height:22px;padding:0 3px}
     .sb-bottom-dot{width:4px;height:4px;border-radius:100px;background:var(--muted);flex-shrink:0;transition:background .3s}
     .sb-bottom-dot.on{background:#45c47a}
@@ -473,6 +479,9 @@
         <div class="sb-rbx-name" id="sb-rbx-name"></div>
         <div class="sb-rbx-handle" id="sb-rbx-handle"></div>
       </div>
+      <button class="sb-rbx-refresh" id="sb-rbx-refresh" type="button" title="Refresh profile" onclick="refreshRobloxChip(event)">
+        <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      </button>
     </a>
     <button class="sb-bottom-btn" onclick="openSettingsModal()">
       <div class="sb-bottom-btn-icon"><svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg></div>
@@ -754,7 +763,8 @@ function renderAnnouncements(anns){const bar=document.getElementById('ann-bar');
 function dismissAnn(id){const el=document.getElementById('ann-'+id);if(el){el.style.opacity='0';el.style.transition='opacity .2s';setTimeout(()=>el.remove(),200)}const dismissed=JSON.parse(localStorage.getItem('rux_dismissed_anns')||'[]');if(!dismissed.includes(id)){dismissed.push(id);localStorage.setItem('rux_dismissed_anns',JSON.stringify(dismissed))}}
 
 async function enterApp(){const r=await api('/auth/me');if(!r)return;credits=r.data.credits;sessionId=r.data.session_id;if(r.data.preferences){if(r.data.preferences.default_model)selectedModel=r.data.preferences.default_model;if(r.data.preferences.default_mode)mode=r.data.preferences.default_mode;updateModelUI();updateModeUI()}if(r.data.user)userData=r.data.user;updateCreditUI();updateRobloxChip();if(sessionId)pluginConnected=true;updatePluginUI();renderAnnouncements(r.data.announcements);enterChat();loadConversations();startWebHeartbeat();}
-async function updateRobloxChip(){const chip=document.getElementById('sb-rbx');if(!chip)return;const rbx=userData&&userData.roblox_id;if(!rbx){chip.classList.remove('show');chip.removeAttribute('href');return}try{const res=await fetch('/auth/roblox-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(!res.ok){chip.classList.remove('show');chip.removeAttribute('href');return}const d=await res.json();document.getElementById('sb-rbx-avatar').style.backgroundImage=d.avatar_url?`url("${d.avatar_url}")`:'none';document.getElementById('sb-rbx-name').textContent=d.display_name||d.username||'Roblox User';document.getElementById('sb-rbx-handle').textContent=`@${d.username||'unknown'}`;chip.href=`https://www.roblox.com/users/${encodeURIComponent(d.roblox_id)}/profile`;chip.classList.add('show');chip.title=`Open @${d.username||'unknown'} on Roblox (ID ${d.roblox_id})`}catch(e){chip.classList.remove('show');chip.removeAttribute('href')}}
+async function updateRobloxChip(bust){const chip=document.getElementById('sb-rbx');if(!chip)return;const rbx=userData&&userData.roblox_id;if(!rbx){chip.classList.remove('show');chip.removeAttribute('href');return}try{const res=await fetch('/auth/roblox-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(!res.ok){chip.classList.remove('show');chip.removeAttribute('href');return}const d=await res.json();const av=d.avatar_url?(bust?d.avatar_url+(d.avatar_url.includes('?')?'&':'?')+'_t='+Date.now():d.avatar_url):'';document.getElementById('sb-rbx-avatar').style.backgroundImage=av?`url("${av}")`:'none';document.getElementById('sb-rbx-name').textContent=d.display_name||d.username||'Roblox User';document.getElementById('sb-rbx-handle').textContent=`@${d.username||'unknown'}`;chip.href=`https://www.roblox.com/users/${encodeURIComponent(d.roblox_id)}/profile`;chip.classList.add('show');chip.title=`Open @${d.username||'unknown'} on Roblox (ID ${d.roblox_id})`}catch(e){chip.classList.remove('show');chip.removeAttribute('href')}}
+async function refreshRobloxChip(ev){if(ev){ev.preventDefault();ev.stopPropagation()}const btn=document.getElementById('sb-rbx-refresh');if(!btn||btn.classList.contains('spinning'))return;btn.classList.add('spinning');try{await updateRobloxChip(true);if(typeof showToast==='function')showToast('Profile refreshed','success')}catch(e){}finally{setTimeout(()=>btn.classList.remove('spinning'),500)}}
 
 function sendHeartbeat(){
   return api('/web/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(r=>{
