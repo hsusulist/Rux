@@ -1913,6 +1913,25 @@ def delete_conversation(conv_id):
     store.delete_conv(user["id"], conv_id)
     return jsonify({"ok": True})
 
+@app.route("/api/conversations/<conv_id>/rename", methods=["POST"])
+@require_auth
+def rename_conversation(conv_id):
+    user = request.user
+    data = request.get_json(force=True) or {}
+    new_title = (data.get("title") or "").strip()
+    if not new_title:
+        return jsonify({"error": "Title required"}), 400
+    if len(new_title) > 100:
+        new_title = new_title[:100]
+    conv = store.get_conv(conv_id)
+    if not conv:
+        return jsonify({"error": "Not found"}), 404
+    if conv.get("user_id") and conv["user_id"] != user["id"]:
+        return jsonify({"error": "Forbidden"}), 403
+    conv["title"] = new_title
+    store.save_conv(user["id"], conv_id, conv)
+    return jsonify({"ok": True, "title": new_title})
+
 # ═══ CHECKPOINT ROUTES
 
 @app.route("/api/checkpoints", methods=["GET"])
