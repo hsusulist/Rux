@@ -140,7 +140,12 @@
 
     /* ═══ MAIN ═══ */
     .main{margin-left:48px;height:100vh;display:flex;flex-direction:column;min-width:0;position:relative}
-    .chat-screen{flex-direction:column;height:100%;overflow:hidden;position:relative}
+    .chat-screen{flex-direction:column;height:100%;overflow:hidden;position:relative;background:#0a0a0a}
+    /* warm yellow ambient glow — subtle, like the landing page */
+    .chat-screen::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;background:
+      radial-gradient(900px 520px at 12% 18%, rgba(244,196,77,.08), transparent 60%),
+      radial-gradient(700px 460px at 88% 92%, rgba(244,196,77,.05), transparent 60%),
+      radial-gradient(600px 360px at 50% 50%, rgba(244,196,77,.025), transparent 65%)}
 
     /* subtle dot grid */
     .chat-screen::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.012) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
@@ -215,6 +220,31 @@
     .empty-conn-dot{width:4px;height:4px;border-radius:100px;background:var(--muted);transition:all .3s}
     .empty-conn-dot.on{background:var(--lp-green)}
     .empty-conn-text{font-size:10px;font-weight:500;color:var(--text3)}
+
+    /* ═══ CHAT HERO (project open, no messages) ═══ */
+    .chat-hero{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px 80px;z-index:6;overflow-y:auto}
+    .chat-hero.show{display:flex}
+    .hero-eyebrow{display:inline-flex;align-items:center;gap:7px;font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:18px;padding:6px 12px;border-radius:100px;background:rgba(244,196,77,.06);border:1px solid rgba(244,196,77,.18)}
+    .hero-eyebrow svg{width:11px;height:11px;fill:var(--accent)}
+    .hero-title{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:clamp(30px,4.4vw,52px);font-weight:800;letter-spacing:-1.6px;line-height:1.04;margin-bottom:26px;color:var(--text);text-align:center;max-width:760px}
+    .hero-title .accent{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;background:linear-gradient(135deg,#ffd454 0%,#d4a843 50%,#a07d2c 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.6px}
+    .hero-input-slot{width:100%;max-width:720px;margin:0 auto 20px}
+    .hero-input-slot .input-wrapper{position:static!important}
+    .hero-input-slot .input-area{padding:0!important}
+    .hero-pills{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;max-width:720px;margin:0 auto}
+    .hero-pill{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:100px;background:rgba(255,255,255,.04);border:1px solid var(--border2);color:var(--text2);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:background .12s,border-color .12s,color .12s,transform .12s}
+    .hero-pill:hover{background:rgba(244,196,77,.07);border-color:rgba(244,196,77,.32);color:var(--text);transform:translateY(-1px)}
+    .hero-pill svg{width:13px;height:13px;fill:var(--accent);flex-shrink:0}
+
+    /* state-driven layout */
+    body[data-chat-state="dashboard"] #input-wrapper{display:none}
+    body[data-chat-state="dashboard"] #dashboard{opacity:1;visibility:visible;pointer-events:auto}
+    body[data-chat-state="empty"] #dashboard{opacity:0;visibility:hidden;pointer-events:none}
+    body[data-chat-state="empty"] #chat-hero{display:flex}
+    body[data-chat-state="empty"] #messages{display:none}
+    body[data-chat-state="empty"] #input-wrapper.at-bottom-fixed{display:none}
+    body[data-chat-state="chatting"] #dashboard{opacity:0;visibility:hidden;pointer-events:none}
+    body[data-chat-state="chatting"] #chat-hero{display:none}
 
     /* ═══ MESSAGES ═══ */
     .messages{position:absolute;inset:0;overflow-y:auto;padding:20px 0 12px;display:none;z-index:3}
@@ -638,10 +668,21 @@
         </div>
       </div>
 
+      <div class="chat-hero" id="chat-hero">
+        <div class="hero-eyebrow"><svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg> Project ready</div>
+        <div class="hero-title">Describe a <span class="accent">game mechanic</span>...</div>
+        <div class="hero-input-slot" id="hero-input-slot"></div>
+        <div class="hero-pills" id="hero-pills">
+          <button class="hero-pill" type="button" onclick="useSuggestion('Make a combat system with melee, ranged and stamina')"><svg viewBox="0 0 24 24"><path d="M6.92 5L5 6.92l9 9 1.92-1.92L6.92 5zm10.16 0l-3.06 3.06 1.92 1.92L19 6.92 17.08 5zM5 17.08l1.92 1.92 9-9-1.92-1.92-9 9z"/></svg>Make a combat system</button>
+          <button class="hero-pill" type="button" onclick="useSuggestion('Make a plot system with branching dialogue and quests')"><svg viewBox="0 0 24 24"><path d="M12 2l2.39 7.36H22l-6.19 4.5 2.36 7.36L12 16.72 5.83 21.22l2.36-7.36L2 9.36h7.61L12 2z"/></svg>Make a plot system</button>
+          <button class="hero-pill" type="button" onclick="useSuggestion('Make a round-based system with timer, scoring and lobby')"><svg viewBox="0 0 24 24"><path d="M21 6h-2.18A2.99 2.99 0 0 0 16 4c-1.31 0-2.42.83-2.83 2H10.83A2.99 2.99 0 0 0 8 4C6.69 4 5.58 4.83 5.18 6H3a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1zM8 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm8 0a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>Make a round system</button>
+        </div>
+      </div>
+
       <div class="messages" id="messages"></div>
     </div>
 
-    <div class="input-wrapper" id="input-wrapper">
+    <div class="input-wrapper at-bottom-fixed" id="input-wrapper">
       <div class="input-area" id="input-area">
 
         <div class="picker-dropdown left" id="model-picker">
@@ -907,7 +948,7 @@ function updatePluginUI(){
   if(pluginConnected&&window.location.pathname.startsWith('/code/')){window.history.replaceState({},'','/app')}
 }
 
-function enterChat(){document.body.classList.add('ready');document.getElementById('sb-new-btn').disabled=false;updateInputState();startStatusPoll()}
+function enterChat(){document.body.classList.add('ready');document.getElementById('sb-new-btn').disabled=false;updateInputState();applyChatState();startStatusPoll()}
 function startStatusPoll(){if(statusPoll)clearInterval(statusPoll);statusPoll=setInterval(async()=>{try{const r=await api('/status');if(!r||!r.ok)return;const wasConnected=pluginConnected;pluginConnected=r.data.plugin_connected;updatePluginUI();if(wasConnected&&!pluginConnected)updateInputState()}catch(e){}},5000)}
 
 function updateInputState(){
@@ -918,10 +959,41 @@ function updateInputState(){
   document.getElementById('chat-input').placeholder=mode==='agent'?'Describe a multi-step task...':'Ask about your Roblox game...';
 }
 
+let _inputOriginalParent=null,_inputOriginalNext=null;
+function _captureInputHome(){if(_inputOriginalParent)return;const w=document.getElementById('input-wrapper');if(!w)return;_inputOriginalParent=w.parentNode;_inputOriginalNext=w.nextSibling}
+function applyChatState(){
+  _captureInputHome();
+  const wrapper=document.getElementById('input-wrapper');
+  const slot=document.getElementById('hero-input-slot');
+  let state;
+  if(!activeConvId&&!inConversation){state='dashboard'}
+  else if(inConversation&&currentMessages.length===0){state='empty'}
+  else{state='chatting'}
+  document.body.dataset.chatState=state;
+  if(!wrapper||!slot||!_inputOriginalParent)return;
+  if(state==='empty'){
+    if(wrapper.parentNode!==slot){slot.appendChild(wrapper);wrapper.classList.remove('at-bottom-fixed')}
+    setTimeout(()=>{const ta=document.getElementById('chat-input');if(ta)ta.focus()},80);
+  }else{
+    if(wrapper.parentNode!==_inputOriginalParent){
+      if(_inputOriginalNext&&_inputOriginalNext.parentNode===_inputOriginalParent){_inputOriginalParent.insertBefore(wrapper,_inputOriginalNext)}
+      else{_inputOriginalParent.appendChild(wrapper)}
+      wrapper.classList.add('at-bottom-fixed');
+    }
+  }
+  document.getElementById('messages').classList.toggle('show',state==='chatting');
+}
+function useSuggestion(text){
+  const ta=document.getElementById('chat-input');
+  if(!ta)return;
+  ta.value=text;
+  ta.dispatchEvent(new Event('input',{bubbles:true}));
+  ta.focus();
+}
 function setViewMode(chatting){
   inConversation=chatting;
   document.getElementById('dashboard').classList.toggle('hidden',chatting);
-  document.getElementById('messages').classList.toggle('show',chatting);
+  applyChatState();
 }
 
 function togglePicker(which){
@@ -1137,7 +1209,7 @@ function renderMessage(m){
   if(m.role==='assistant'){const r=document.createElement('div');r.classList.add('log-row','log-output');r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">⚡</span><div class="log-content"><div class="log-title"><div class="md-content">${renderMarkdown(m.text||'')}</div></div></div>`;msgs.appendChild(r);scrollMessagesToBottom();return}
 }
 
-function pushMsg(m){currentMessages.push(m);renderMessage(m)}
+function pushMsg(m){const wasEmpty=currentMessages.length===0;currentMessages.push(m);renderMessage(m);if(wasEmpty&&typeof applyChatState==='function')applyChatState()}
 function pushLog(type,icon,title,detail){renderMessage({isLogEntry:true,logType:type,logIcon:icon,logTitle:title,logDetail:detail||'',logTime:_now()})}
 function pushLogDivider(){renderMessage({isLogDivider:true})}
 function addThinking(){renderMessage({isThinking:true})}

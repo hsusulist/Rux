@@ -2,7 +2,7 @@
   "auto_scroll": true,
   "compact_mode": false,
   "default_mode": "chat",
-  "default_model": "gemini-pro",
+  "default_model": "sonnet",
   "show_credits_log": true,
   "show_thinking": true,
   "sound_enabled": false
