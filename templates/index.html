@@ -6,7 +6,7 @@
   <title>Rux</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
     :root{
@@ -172,11 +172,17 @@
     .empty-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;transition:opacity .3s ease,visibility .3s;z-index:5}
     .empty-state.hidden{opacity:0;visibility:hidden;pointer-events:none}
 
-    .empty-logo{width:36px;height:36px;border-radius:8px;background:var(--text);display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+    .empty-logo{width:36px;height:36px;border-radius:8px;background:var(--text);display:flex;align-items:center;justify-content:center;margin-bottom:20px;display:none}
     .empty-logo svg{width:16px;height:16px;fill:#000}
 
-    .empty-title{font-size:15px;font-weight:600;letter-spacing:-.3px;margin-bottom:6px;color:var(--text2)}
-    .empty-sub{font-size:11.5px;color:var(--text3);margin-bottom:28px;text-align:center;max-width:280px;line-height:1.6}
+    .empty-eyebrow{display:inline-flex;align-items:center;gap:6px;font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;color:var(--accent);margin-bottom:18px;opacity:.95}
+    .empty-eyebrow svg{width:11px;height:11px;fill:var(--accent)}
+    .empty-title{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:clamp(28px,4.2vw,44px);font-weight:800;letter-spacing:-1.4px;line-height:1.05;margin-bottom:14px;color:var(--text);text-align:center;max-width:680px}
+    .empty-title .accent{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;background:linear-gradient(135deg,#ffd454 0%,#d4a843 50%,#a07d2c 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px}
+    .empty-sub{font-size:13px;color:var(--text2);margin-bottom:28px;text-align:center;max-width:420px;line-height:1.6}
+    .empty-create-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:var(--accent);color:#1a1100;border:none;border-radius:100px;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:700;letter-spacing:-.1px;cursor:pointer;transition:all .15s;box-shadow:0 0 40px rgba(212,168,67,.18);margin-bottom:32px}
+    .empty-create-btn:hover{background:#ffd454;transform:translateY(-1px);box-shadow:0 0 60px rgba(212,168,67,.32)}
+    .empty-create-btn svg{width:14px;height:14px;fill:currentColor}
 
     .empty-suggestions{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:380px;width:100%;margin-bottom:24px}
     .suggestion-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .12s}
@@ -400,6 +406,28 @@
     .connect-modal-refresh:hover{color:var(--text2)}
 
     /* ═══ SETTINGS MODAL ═══ */
+    /* CREATE PROJECT MODAL */
+    .proj-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(16px);z-index:220;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s ease;padding:20px}
+    .proj-overlay.open{opacity:1;pointer-events:all}
+    .proj-modal{background:#070707;border:1px solid var(--border2);border-radius:14px;padding:22px 24px 20px;width:100%;max-width:430px;position:relative;transform:translateY(8px) scale(.98);transition:transform .2s ease;box-shadow:0 20px 80px rgba(0,0,0,.6)}
+    .proj-overlay.open .proj-modal{transform:translateY(0) scale(1)}
+    .proj-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;line-height:1;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:5px;transition:all .12s;font-family:'Inter',sans-serif}
+    .proj-close:hover{color:var(--text);background:var(--surface3)}
+    .proj-title{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.4px;color:var(--text);margin-bottom:16px}
+    .proj-field{margin-bottom:18px}
+    .proj-label{font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:8px;display:block;letter-spacing:-.1px}
+    .proj-input{width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:all .15s}
+    .proj-input:focus{border-color:var(--accent);background:var(--surface2);box-shadow:0 0 0 3px rgba(212,168,67,.08)}
+    .proj-input::placeholder{color:#3a3a3a}
+    .proj-err{font-size:11px;color:var(--danger);margin-top:6px;display:none}
+    .proj-err.show{display:block}
+    .proj-actions{display:flex;justify-content:flex-end;gap:8px}
+    .proj-btn-cancel{padding:9px 18px;background:transparent;color:var(--text2);border:none;border-radius:8px;font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:all .12s}
+    .proj-btn-cancel:hover{color:var(--text);background:var(--surface3)}
+    .proj-btn-create{padding:9px 22px;background:var(--accent);color:#1a1100;border:none;border-radius:8px;font-size:12.5px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:all .12s;letter-spacing:-.1px}
+    .proj-btn-create:hover{background:#ffd454}
+    .proj-btn-create:disabled{opacity:.5;cursor:not-allowed}
+
     .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(14px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
     .settings-overlay.open{opacity:1;pointer-events:all}
     .settings-modal{background:#070707;border:1px solid var(--border2);border-radius:16px;padding:24px 26px;width:100%;max-width:340px;position:relative;transform:translateY(6px) scale(.99);transition:transform .18s ease}
@@ -462,14 +490,14 @@
 
   <button class="sb-new" id="sb-new-btn" disabled>
     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-    <span class="sb-new-label">New conversation</span>
+    <span class="sb-new-label">New project</span>
   </button>
 
   <input class="sb-search" id="sb-search" placeholder="Search..." oninput="filterSidebarConversations()" />
 
-  <div class="sb-section">Conversations</div>
+  <div class="sb-section">Projects</div>
   <div class="sb-list" id="sb-conv-list">
-    <div class="sb-empty" id="sb-empty">No conversations yet</div>
+    <div class="sb-empty" id="sb-empty">No projects yet</div>
   </div>
 
   <div class="sb-bottom">
@@ -538,28 +566,13 @@
     <div class="chat-body" id="chat-body">
 
       <div class="empty-state" id="dashboard">
-        <div class="empty-logo"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-        <div class="empty-title">Rux</div>
-        <div class="empty-sub">Your Roblox Studio AI — read scripts, fix bugs, build features.</div>
-
-        <div class="empty-suggestions">
-          <div class="suggestion-card" onclick="useSuggestion('Read all my scripts')">
-            <div class="suggestion-icon">📂</div>
-            <div class="suggestion-body"><div class="suggestion-label">Read all scripts</div><div class="suggestion-desc">List every script</div></div>
-          </div>
-          <div class="suggestion-card" onclick="useSuggestion('Fix the bug in my script')">
-            <div class="suggestion-icon">🔧</div>
-            <div class="suggestion-body"><div class="suggestion-label">Fix a bug</div><div class="suggestion-desc">Debug script errors</div></div>
-          </div>
-          <div class="suggestion-card" onclick="useSuggestion('Explain the game instance tree')">
-            <div class="suggestion-icon">🌳</div>
-            <div class="suggestion-body"><div class="suggestion-label">Explore the tree</div><div class="suggestion-desc">Browse instance hierarchy</div></div>
-          </div>
-          <div class="suggestion-card" onclick="useSuggestion('Add a health system to my game')">
-            <div class="suggestion-icon">✨</div>
-            <div class="suggestion-body"><div class="suggestion-label">Add a feature</div><div class="suggestion-desc">Build new game systems</div></div>
-          </div>
-        </div>
+        <div class="empty-eyebrow"><svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg> Welcome</div>
+        <div class="empty-title">Start by <span class="accent">creating a project</span></div>
+        <div class="empty-sub">Each project keeps its own conversation, history and Studio session.</div>
+        <button class="empty-create-btn" onclick="openCreateProjectModal()">
+          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Create your first project
+        </button>
 
         <div class="empty-status">
           <div class="empty-conn-dot" id="empty-conn-dot"></div>
@@ -681,11 +694,27 @@
     <button class="settings-btn" id="settings-change-pw-btn" onclick="changePassword()">Change Password</button>
     <div class="settings-err" id="settings-pw-err"></div>
     <div class="settings-divider"></div>
-    <div class="settings-field"><label class="settings-label">Roblox User ID</label><input class="settings-input" id="settings-rbx-id" type="text" placeholder="Enables auto-connect"><div style="font-size:9px;color:var(--muted);margin-top:3px">Find at roblox.com → profile → number in URL</div></div>
+    <div class="settings-field"><label class="settings-label">Roblox User ID</label><input class="settings-input" id="settings-rbx-id" type="text" placeholder="Enables auto-connect"><div style="font-size:9px;color:var(--muted);margin-top:3px">Find at roblox.com → profile → number in URL</div><a id="settings-rbx-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none;font-size:9.5px;color:var(--accent);margin-top:6px;text-decoration:none;font-weight:600">Visit on Roblox ↗</a></div>
     <button class="settings-btn" id="settings-save-rbx-btn" onclick="saveRobloxId()">Save Roblox ID</button>
     <div class="settings-divider"></div>
     <button class="settings-btn danger" onclick="deleteAccount()">Delete Account</button>
     <div class="settings-err" id="settings-del-err"></div>
+  </div>
+</div>
+
+<div class="proj-overlay" id="proj-overlay">
+  <div class="proj-modal">
+    <button class="proj-close" onclick="closeCreateProjectModal()" aria-label="Close">&#10005;</button>
+    <div class="proj-title">Create a project</div>
+    <div class="proj-field">
+      <label class="proj-label">Project name</label>
+      <input class="proj-input" id="proj-name" type="text" placeholder="My RPG game" maxlength="60" autocomplete="off">
+      <div class="proj-err" id="proj-err"></div>
+    </div>
+    <div class="proj-actions">
+      <button class="proj-btn-cancel" onclick="closeCreateProjectModal()">Cancel</button>
+      <button class="proj-btn-create" id="proj-create-btn" onclick="confirmCreateProject()">Create</button>
+    </div>
   </div>
 </div>
 
@@ -700,7 +729,7 @@ let sessionId=null,mode='chat',activeConvId=null,pendingSessionId=null;
 let isLoading=false,conversationHistory=[],currentMessages=[],selectedModel='sonnet';
 let activeModelTab='all';
 let pluginConnected=false,statusPoll=null,connectPoll=null,heartbeatInterval=null,lastShownToolId=null;
-let openPicker=null,inConversation=false,convCache={};
+let openPicker=null,inConversation=false,convCache={},currentProjectTitle='';
 let agentStepCount=0,agentTotalTokens=0,agentTotalSteps=0,lastToolNameForResult='';
 let hadToolActivity=false;
 let currentAbortController=null;
@@ -730,13 +759,14 @@ function stopGeneration(){if(currentAbortController){currentAbortController.abor
 
 function useSuggestion(text){document.getElementById('chat-input').value=text;document.getElementById('chat-input').focus();autoResizeInput()}
 
-function openSettingsModal(){if(!userData)return;document.getElementById('settings-email').textContent=userData.email||'';document.getElementById('settings-current-pw').value='';document.getElementById('settings-new-pw').value='';document.getElementById('settings-rbx-id').value=userData.roblox_id||'';document.getElementById('settings-pw-err').classList.remove('show');document.getElementById('settings-del-err').classList.remove('show');document.getElementById('settings-overlay').classList.add('open')}
+function openSettingsModal(){if(!userData)return;document.getElementById('settings-email').textContent=userData.email||'';document.getElementById('settings-current-pw').value='';document.getElementById('settings-new-pw').value='';document.getElementById('settings-rbx-id').value=userData.roblox_id||'';document.getElementById('settings-pw-err').classList.remove('show');document.getElementById('settings-del-err').classList.remove('show');updateSettingsRobloxLink();document.getElementById('settings-overlay').classList.add('open')}
+function updateSettingsRobloxLink(){const link=document.getElementById('settings-rbx-link');if(!link)return;const rbx=userData&&userData.roblox_id;if(rbx){link.href=`https://www.roblox.com/users/${encodeURIComponent(rbx)}/profile`;link.style.display='inline-block'}else{link.style.display='none';link.removeAttribute('href')}}
 function closeSettingsModal(){document.getElementById('settings-overlay').classList.remove('open')}
 document.getElementById('settings-overlay').addEventListener('click',function(e){if(e.target===this)closeSettingsModal()});
 
 async function changePassword(){const cur=document.getElementById('settings-current-pw').value;const nw=document.getElementById('settings-new-pw').value;const errEl=document.getElementById('settings-pw-err');if(!cur||!nw){errEl.textContent='Fill in both fields';errEl.classList.add('show');return}if(nw.length<6){errEl.textContent='New password must be at least 6 characters';errEl.classList.add('show');return}const btn=document.getElementById('settings-change-pw-btn');btn.disabled=true;btn.textContent='Changing...';try{const r=await api('/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:cur,new_password:nw})});if(r&&r.ok){showToast('Password changed','success');closeSettingsModal()}else{errEl.textContent=r?.data?.error||'Failed';errEl.classList.add('show')}}catch(e){errEl.textContent='Network error';errEl.classList.add('show')}btn.disabled=false;btn.textContent='Change Password'}
 
-async function saveRobloxId(){const rbx=document.getElementById('settings-rbx-id').value.trim();const btn=document.getElementById('settings-save-rbx-btn');btn.disabled=true;btn.textContent='Saving...';try{const r=await api('/auth/update-roblox-id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(r&&r.ok){if(userData)userData.roblox_id=rbx;showToast('Roblox ID saved','success');updateRobloxChip()}}catch(e){showToast('Failed to save','error')}btn.disabled=false;btn.textContent='Save Roblox ID'}
+async function saveRobloxId(){const rbx=document.getElementById('settings-rbx-id').value.trim();const btn=document.getElementById('settings-save-rbx-btn');btn.disabled=true;btn.textContent='Saving...';try{const r=await api('/auth/update-roblox-id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(r&&r.ok){if(userData)userData.roblox_id=rbx;showToast('Roblox ID saved','success');updateRobloxChip();updateSettingsRobloxLink()}}catch(e){showToast('Failed to save','error')}btn.disabled=false;btn.textContent='Save Roblox ID'}
 
 async function deleteAccount(){if(!confirm('Are you sure you want to delete your account? This cannot be undone.'))return;if(!confirm('Really delete? All your data will be permanently removed.'))return;const errEl=document.getElementById('settings-del-err');const pw=prompt('Enter your password to confirm:');if(!pw){errEl.textContent='Password required';errEl.classList.add('show');return}try{const r=await api('/auth/delete-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});if(r&&r.ok){localStorage.removeItem(TOKEN_KEY);window.location.href='/'}else{errEl.textContent=r?.data?.error||'Failed';errEl.classList.add('show')}}catch(e){errEl.textContent='Network error';errEl.classList.add('show')}}
 
@@ -858,7 +888,7 @@ document.addEventListener('click',e=>{
 });
 
 async function loadConversations(){try{const r=await api('/api/conversations');if(!r)return;convCache=r.data||{};renderSidebar()}catch(e){convCache={};renderSidebar()}}
-async function saveConv(){if(!currentMessages.length)return;const first=currentMessages.find(m=>m.role==='user');const title=first?first.text.slice(0,48):'Conversation';const cid=activeConvId||'conv-'+Date.now();activeConvId=cid;const convData={id:cid,title,messages:currentMessages,history:conversationHistory,mode,model:selectedModel,sessionId,updatedAt:Date.now()};try{await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});convCache[cid]=convData;renderSidebar()}catch(e){}}
+async function saveConv(){if(!currentMessages.length&&!currentProjectTitle)return;const cid=activeConvId||'conv-'+Date.now();activeConvId=cid;let title=currentProjectTitle;if(!title){const first=currentMessages.find(m=>m.role==='user');title=first?first.text.slice(0,48):'Project'}const convData={id:cid,title,messages:currentMessages,history:conversationHistory,mode,model:selectedModel,sessionId,updatedAt:Date.now()};try{await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});convCache[cid]=convData;renderSidebar()}catch(e){}}
 async function deleteConv(id){try{await api('/api/conversations/'+id,{method:'DELETE'})}catch(e){}delete convCache[id];if(activeConvId===id){activeConvId=null;showDashboard()}renderSidebar()}
 function getConvList(){return Object.values(convCache).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
 
@@ -866,21 +896,30 @@ function filterSidebarConversations(){const q=document.getElementById('sb-search
 
 function renderSidebar(){const list=document.getElementById('sb-conv-list'),empty=document.getElementById('sb-empty');list.querySelectorAll('.sb-item').forEach(e=>e.remove());const convs=getConvList();if(!convs.length){empty.style.display='';return}empty.style.display='none';convs.forEach(c=>{const item=document.createElement('div');item.classList.add('sb-item');if(c.id===activeConvId)item.classList.add('active');item.innerHTML=`<div class="sb-item-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div><div class="sb-item-text">${escHtml(c.title)}</div><button class="sb-item-del" title="Delete">&times;</button>`;item.querySelector('.sb-item-del').addEventListener('click',e=>{e.stopPropagation();deleteConv(c.id)});item.addEventListener('click',e=>{if(e.target.closest('.sb-item-del'))return;openConv(c.id)});list.appendChild(item)})}
 
-async function openConv(id){let c=convCache[id];if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight});setViewMode(true);renderSidebar()}
+async function openConv(id){let c=convCache[id];if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';currentProjectTitle=c.title||'';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight});setViewMode(true);renderSidebar()}
 function showDashboard(){activeConvId=null;document.getElementById('messages').innerHTML='';setViewMode(false);renderSidebar()}
 
-function startNewConv(){
+function startNewConv(title){
   activeConvId='new-'+Date.now();
   sessionId=sessionId||crypto.randomUUID();
   conversationHistory=[];currentMessages=[];pendingSessionId=null;mode='chat';updateModeUI();
+  currentProjectTitle=title||'';
   document.getElementById('messages').innerHTML='';
   document.getElementById('plan-banner').classList.remove('show');
-  setViewMode(true);renderSidebar();
+  setViewMode(true);
+  if(currentProjectTitle){saveConv()}
+  renderSidebar();
   document.getElementById('chat-input').focus();
   registerSessionForAutoConnect(sessionId);
   if(!pluginConnected){window.history.pushState({},'','/code/'+sessionId)}
 }
-document.getElementById('sb-new-btn').addEventListener('click',startNewConv);
+document.getElementById('sb-new-btn').addEventListener('click',()=>openCreateProjectModal());
+
+function openCreateProjectModal(){const ov=document.getElementById('proj-overlay');const inp=document.getElementById('proj-name');inp.value='';document.getElementById('proj-err').classList.remove('show');ov.classList.add('open');setTimeout(()=>inp.focus(),60)}
+function closeCreateProjectModal(){document.getElementById('proj-overlay').classList.remove('open')}
+async function confirmCreateProject(){const inp=document.getElementById('proj-name');const err=document.getElementById('proj-err');const btn=document.getElementById('proj-create-btn');const name=inp.value.trim();if(!name){err.textContent='Give your project a name';err.classList.add('show');inp.focus();return}if(name.length<2){err.textContent='Name must be at least 2 characters';err.classList.add('show');return}btn.disabled=true;btn.textContent='Creating...';try{await startNewConv(name);closeCreateProjectModal()}catch(e){err.textContent='Failed to create project';err.classList.add('show')}btn.disabled=false;btn.textContent='Create'}
+document.getElementById('proj-overlay').addEventListener('click',function(e){if(e.target===this)closeCreateProjectModal()});
+document.getElementById('proj-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();confirmCreateProject()}});
 
 const chatInput=document.getElementById('chat-input');
 chatInput.addEventListener('input',autoResizeInput);
@@ -1023,7 +1062,7 @@ function closeCheckpointPanel(){document.getElementById('checkpoint-panel').clas
 async function deleteCheckpoint(id,btn){btn.disabled=true;const r=await api('/api/checkpoints/'+id,{method:'DELETE'});if(r&&r.data&&r.data.ok){checkpoints=checkpoints.filter(c=>c.id!==id);const item=document.getElementById('cp-item-'+id);if(item)item.remove();const count=document.getElementById('cp-count');const badge=document.getElementById('cp-trigger-badge');count.textContent=checkpoints.length;if(checkpoints.length===0){badge.style.display='none';document.getElementById('cp-list').innerHTML='<div class="cp-empty">No checkpoints yet.</div>'}else{badge.textContent=checkpoints.length>9?'9+':checkpoints.length}}else{btn.disabled=false}}
 async function restoreCheckpoint(id,label,btn){if(!pluginConnected){pushLog('error','❌','Cannot restore: Studio not connected');closeCheckpointPanel();return}if(!confirm(`Restore checkpoint "${label}"?\n\nThis will write the saved scripts back to Studio.`))return;btn.disabled=true;btn.textContent='Restoring…';closeCheckpointPanel();pushLogDivider();pushLog('warn','🔄',`Restoring checkpoint: <span class="lc">${escHtml(label)}</span>`,'Writing scripts back to Studio…');setAgentStatus('Restoring',true);setAgentProgress(5);try{const r=await api('/api/checkpoints/'+id+'/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId})});if(!r||!r.data||!r.data.ok){pushLog('error','❌','Restore failed: '+(r&&r.data&&r.data.error?r.data.error:'Unknown error'));setAgentStatus('Error',true);if(btn){btn.disabled=false;btn.textContent='Restore'}return}const scriptCount=r.data.scripts_count||0;lastToolNameForResult='write_script';await pollForResult(sessionId);pushLog('result','✅',`Checkpoint restored: ${scriptCount} script${scriptCount!==1?'s':''} rolled back`,'Changes sent to Studio');pushLogDivider()}catch(e){pushLog('error','❌','Restore error: '+escHtml(e.message));setAgentStatus('Error',true);if(btn){btn.disabled=false;btn.textContent='Restore'}}}
 
-document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefault();startNewConv()}if(e.key==='Escape'){closeConnectModal();closeSettingsModal();if(cpPanelOpen)closeCheckpointPanel()}});
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefault();openCreateProjectModal()}if(e.key==='Escape'){closeConnectModal();closeSettingsModal();closeCreateProjectModal();if(cpPanelOpen)closeCheckpointPanel()}});
 
 (async function(){
   const t=getToken();
