@@ -305,8 +305,12 @@
     /* ═══ PICKER DROPDOWNS ═══ */
     .picker-dropdown{position:absolute;bottom:calc(100% + 8px);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:4px;display:none;flex-direction:column;gap:1px;box-shadow:0 -12px 40px rgba(0,0,0,.7);z-index:50;min-width:210px}
     .picker-dropdown.open{display:flex;animation:pickerIn .14s ease both}
-    .picker-dropdown.left{left:24px}
-    .picker-dropdown.right{right:24px}
+    .picker-dropdown.left{left:50%;transform:translateX(calc(-50% - 220px))}
+    .picker-dropdown.right{left:50%;transform:translateX(calc(-50% - 90px))}
+    .picker-dropdown.open.left{animation:pickerInL .14s ease both}
+    .picker-dropdown.open.right{animation:pickerInR .14s ease both}
+    @keyframes pickerInL{from{opacity:0;transform:translateX(calc(-50% - 220px)) translateY(4px)}to{opacity:1;transform:translateX(calc(-50% - 220px)) translateY(0)}}
+    @keyframes pickerInR{from{opacity:0;transform:translateX(calc(-50% - 90px)) translateY(4px)}to{opacity:1;transform:translateX(calc(-50% - 90px)) translateY(0)}}
     @keyframes pickerIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
     .picker-tabs{display:flex;gap:1px;padding:3px;border-bottom:1px solid var(--border);margin:-4px -4px 3px;flex-shrink:0}
@@ -331,41 +335,65 @@
     .picker-option-badge.free{color:var(--lp-green);border-color:rgba(69,196,122,.1);background:rgba(69,196,122,.03)}
 
     /* ═══ INPUT SHELL ═══ */
-    .input-shell{display:flex;flex-direction:column;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:8px 8px 7px;transition:border-color .2s;max-width:660px;margin:0 auto}
-    .input-shell:focus-within{border-color:var(--border3)}
+    .input-shell{display:flex;flex-direction:column;gap:6px;background:linear-gradient(180deg,rgba(20,20,20,.85),rgba(14,14,14,.9));border:1px solid var(--border2);border-radius:16px;padding:10px 10px 9px;transition:border-color .2s,box-shadow .2s,transform .12s;max-width:720px;margin:0 auto;box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 8px 28px rgba(0,0,0,.35)}
+    .input-shell:focus-within{border-color:rgba(255,255,255,.18);box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 36px rgba(0,0,0,.5),0 0 0 3px rgba(255,255,255,.025)}
+    .input-shell.dragging{border-color:rgba(244,196,77,.55);box-shadow:0 0 0 3px rgba(244,196,77,.12),0 10px 36px rgba(0,0,0,.5)}
 
-    .input-top-row{display:flex;align-items:center;gap:3px;padding:0 2px;flex-shrink:0}
+    .input-textrow{display:flex;align-items:flex-end;gap:8px;padding:2px 4px 0}
+    #chat-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;resize:none;min-height:26px;max-height:200px;line-height:1.55;padding:2px 0}
+    #chat-input::placeholder{color:var(--muted)}
 
-    .pill-trigger{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;font-size:9.5px;font-weight:600;font-family:'Inter',sans-serif;color:var(--text3);cursor:pointer;transition:all .12s;white-space:nowrap;letter-spacing:-.1px}
-    .pill-trigger:hover{color:var(--text2);border-color:var(--border3)}
-    .pill-trigger svg{width:8px;height:8px;fill:currentColor}
-    .pill-trigger .chevron{width:6px;height:6px;opacity:.2}
+    .input-controls-row{display:flex;align-items:center;gap:6px;padding:0 2px;flex-shrink:0}
+
+    .pill-trigger{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:rgba(255,255,255,.025);border:1px solid var(--border2);border-radius:8px;font-size:10.5px;font-weight:600;font-family:'Inter',sans-serif;color:var(--text3);cursor:pointer;transition:all .12s;white-space:nowrap;letter-spacing:-.1px}
+    .pill-trigger:hover{color:var(--text);background:rgba(255,255,255,.045);border-color:var(--border3)}
+    .pill-trigger svg{width:10px;height:10px;fill:currentColor}
+    .pill-trigger .chevron{width:7px;height:7px;opacity:.35}
+
+    .icon-pill{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:rgba(255,255,255,.025);border:1px solid var(--border2);border-radius:8px;color:var(--text3);cursor:pointer;transition:all .12s;flex-shrink:0;padding:0}
+    .icon-pill:hover{color:var(--text);background:rgba(255,255,255,.05);border-color:var(--border3)}
+    .icon-pill svg{width:13px;height:13px;fill:currentColor}
 
     .top-spacer{flex:1}
 
-    .credit-pill{display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:6px;background:var(--surface3);border:1px solid var(--border);font-size:8.5px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:default;white-space:nowrap;transition:all .2s;color:var(--text3)}
-    .credit-pill svg{width:8px;height:8px;fill:currentColor}
+    .credit-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:8px;background:rgba(255,255,255,.025);border:1px solid var(--border);font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:default;white-space:nowrap;transition:all .2s;color:var(--text3)}
+    .credit-pill svg{width:9px;height:9px;fill:currentColor}
 
     .cp-pill{position:relative}
-    .cp-pill-badge{position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:100px;background:var(--text);color:#000;font-size:7px;font-weight:800;display:none;align-items:center;justify-content:center}
+    .cp-pill-badge{position:absolute;top:-5px;right:-5px;width:13px;height:13px;border-radius:100px;background:var(--text);color:#000;font-size:7.5px;font-weight:800;display:none;align-items:center;justify-content:center}
 
-    .input-bottom-row{display:flex;align-items:flex-end;gap:6px}
+    .send-btn{width:32px;height:32px;border-radius:9px;background:var(--text);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s;box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 4px 12px rgba(0,0,0,.3)}
+    .send-btn:hover:not(:disabled){background:#fff;transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 6px 16px rgba(0,0,0,.4)}
+    .send-btn:active:not(:disabled){transform:translateY(0)}
+    .send-btn:disabled{opacity:.2;cursor:not-allowed}
+    .send-btn svg{width:13px;height:13px;fill:#000}
 
-    #chat-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;resize:none;min-height:24px;max-height:180px;line-height:1.55;padding-top:1px}
-    #chat-input::placeholder{color:var(--muted)}
-
-    .send-btn{width:28px;height:28px;border-radius:7px;background:var(--text);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
-    .send-btn:hover{background:#e0e0e0}
-    .send-btn:disabled{opacity:.15;cursor:not-allowed}
-    .send-btn svg{width:11px;height:11px;fill:#000}
-
-    .stop-btn{width:28px;height:28px;border-radius:7px;background:var(--surface3);border:1px solid var(--border2);cursor:pointer;display:none;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
+    .stop-btn{width:32px;height:32px;border-radius:9px;background:var(--surface3);border:1px solid var(--border2);cursor:pointer;display:none;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
     .stop-btn.visible{display:flex}
-    .stop-btn:hover{background:var(--danger2);border-color:rgba(224,78,82,.18)}
-    .stop-btn svg{width:9px;height:9px;fill:var(--danger)}
+    .stop-btn:hover{background:var(--danger2);border-color:rgba(224,78,82,.25)}
+    .stop-btn svg{width:10px;height:10px;fill:var(--danger)}
 
-    .input-hint{font-size:8px;color:var(--muted);margin-top:3px;text-align:center;max-width:660px;margin-left:auto;margin-right:auto}
-    kbd{background:var(--surface3);border:1px solid var(--border2);border-radius:3px;padding:0 3px;font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--text3)}
+    /* attachment chips */
+    .attach-row{display:flex;flex-wrap:wrap;gap:6px;padding:2px 2px 0;animation:attachIn .14s ease}
+    .attach-row:empty{display:none}
+    @keyframes attachIn{from{opacity:0;transform:translateY(-2px)}to{opacity:1;transform:translateY(0)}}
+    .attach-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 6px 5px 7px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;font-size:10.5px;color:var(--text2);max-width:240px;transition:border-color .12s}
+    .attach-chip:hover{border-color:var(--border3)}
+    .attach-chip-thumb{width:22px;height:22px;border-radius:5px;background:var(--surface3);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:1px solid var(--border)}
+    .attach-chip-thumb img{width:100%;height:100%;object-fit:cover}
+    .attach-chip-thumb svg{width:11px;height:11px;fill:var(--text3)}
+    .attach-chip-info{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+    .attach-chip-name{font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px}
+    .attach-chip-meta{font-size:8.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:1px}
+    .attach-chip-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 4px;transition:color .12s;border-radius:4px}
+    .attach-chip-remove:hover{color:var(--danger);background:rgba(224,78,82,.08)}
+
+    /* drop overlay */
+    .drop-hint{position:absolute;inset:0;border:2px dashed rgba(244,196,77,.5);border-radius:16px;background:rgba(244,196,77,.04);display:none;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:rgba(244,196,77,.9);pointer-events:none;letter-spacing:.2px;z-index:5}
+    .input-shell.dragging .drop-hint{display:flex}
+
+    .input-hint{font-size:9px;color:var(--muted);margin-top:5px;text-align:center;max-width:720px;margin-left:auto;margin-right:auto;letter-spacing:.1px}
+    kbd{background:var(--surface3);border:1px solid var(--border2);border-radius:3px;padding:1px 4px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text3)}
 
     /* ═══ CHECKPOINT PANEL ═══ */
     .checkpoint-panel{position:absolute;bottom:calc(100% + 8px);right:24px;left:24px;max-width:380px;margin-left:auto;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:7px;box-shadow:0 -12px 40px rgba(0,0,0,.7);z-index:51;display:none;animation:pickerIn .14s ease both}
@@ -633,36 +661,42 @@
           <div class="cp-list" id="cp-list"><div class="cp-empty">No checkpoints yet.</div></div>
         </div>
 
-        <div class="input-shell">
-          <div class="input-top-row">
+        <div class="input-shell" id="input-shell">
+          <div class="drop-hint">Drop files to attach</div>
+          <div class="attach-row" id="attach-row"></div>
+          <div class="input-textrow">
+            <textarea id="chat-input" rows="1" placeholder="Ask about your Roblox game..."></textarea>
+          </div>
+          <div class="input-controls-row">
+            <button class="icon-pill" id="attach-btn" onclick="document.getElementById('file-input').click()" title="Attach files">
+              <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
+            </button>
+            <input type="file" id="file-input" multiple style="display:none" accept="*/*" onchange="handleFileSelect(event)">
             <button class="pill-trigger" id="model-trigger" onclick="togglePicker('model')">
               <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               <span id="model-label">Sonnet</span>
               <svg class="chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
             </button>
-            <div class="credit-pill" id="credit-pill" title="Credits remaining">
-              <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
-              <span id="credit-pill-text">10.00</span>
-            </div>
-            <div class="top-spacer"></div>
             <button class="pill-trigger" id="mode-trigger" onclick="togglePicker('mode')">
               <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
               <span id="mode-label">Chat</span>
               <svg class="chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
             </button>
             <button class="pill-trigger cp-pill" id="checkpoint-trigger" onclick="toggleCheckpointPanel()">
-              <svg viewBox="0 0 24 24" style="width:8px;height:8px;fill:currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
               <span>History</span>
               <div class="cp-pill-badge" id="cp-trigger-badge">0</div>
             </button>
-          </div>
-          <div class="input-bottom-row">
-            <textarea id="chat-input" rows="1" placeholder="Ask about your Roblox game..."></textarea>
-            <button class="send-btn" id="send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-            <button class="stop-btn" id="stop-btn" onclick="stopGeneration()"><svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg></button>
+            <div class="top-spacer"></div>
+            <div class="credit-pill" id="credit-pill" title="Credits remaining">
+              <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+              <span id="credit-pill-text">10.00</span>
+            </div>
+            <button class="send-btn" id="send-btn" onclick="sendMessage()" title="Send (Enter)"><svg viewBox="0 0 24 24"><path d="M3.4 20.4l17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a1 1 0 0 0-1.39 1.21L4.5 11 14 12 4.5 13l-2.48 6.19a1 1 0 0 0 1.38 1.21z"/></svg></button>
+            <button class="stop-btn" id="stop-btn" onclick="stopGeneration()" title="Stop"><svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg></button>
           </div>
         </div>
-        <div class="input-hint"><kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line</div>
+        <div class="input-hint"><kbd>Enter</kbd> send · <kbd>Shift+Enter</kbd> new line · drag &amp; drop or paste files to attach</div>
       </div>
       <div class="no-credits" id="no-credits" style="display:none">
         <div class="no-credits-text">No credits remaining</div>
@@ -946,6 +980,92 @@ const chatInput=document.getElementById('chat-input');
 chatInput.addEventListener('input',autoResizeInput);
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}});
 
+/* ═══ FILE ATTACHMENTS ═══ */
+let pendingAttachments=[];
+const MAX_ATTACH_BYTES=512*1024; // 512KB per file inlined
+const MAX_ATTACH_COUNT=8;
+const TEXT_EXTS=['txt','md','json','xml','yaml','yml','csv','log','lua','luau','rbxlx','rbxmx','js','jsx','ts','tsx','py','rb','go','rs','c','cpp','h','hpp','java','kt','swift','sh','bash','zsh','toml','ini','cfg','conf','env','html','htm','css','scss','sass','less','sql','graphql','vue','svelte'];
+
+function _humanSize(b){if(b<1024)return b+' B';if(b<1024*1024)return (b/1024).toFixed(1)+' KB';return (b/1024/1024).toFixed(1)+' MB'}
+function _fileExt(name){const i=name.lastIndexOf('.');return i<0?'':name.slice(i+1).toLowerCase()}
+function _isTextFile(f){if(f.type.startsWith('text/'))return true;const ext=_fileExt(f.name);return TEXT_EXTS.includes(ext)}
+function _isImage(f){return f.type.startsWith('image/')}
+
+function handleFileSelect(ev){
+  const files=Array.from(ev.target.files||[]);
+  addFiles(files);
+  ev.target.value='';
+}
+
+async function addFiles(files){
+  for(const f of files){
+    if(pendingAttachments.length>=MAX_ATTACH_COUNT){showToast(`Max ${MAX_ATTACH_COUNT} files`,'error');break}
+    if(f.size>MAX_ATTACH_BYTES&&!_isImage(f)){showToast(`${f.name} too large (max ${_humanSize(MAX_ATTACH_BYTES)})`,'error');continue}
+    if(_isImage(f)&&f.size>2*1024*1024){showToast(`${f.name} image too large (max 2MB)`,'error');continue}
+    const att={id:'att-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:f.name,size:f.size,mime:f.type||'application/octet-stream',kind:'other'};
+    try{
+      if(_isImage(f)){
+        att.kind='image';
+        att.dataUrl=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)});
+      }else if(_isTextFile(f)){
+        att.kind='text';
+        att.text=await f.text();
+      }else{
+        att.kind='binary';
+      }
+      pendingAttachments.push(att);
+    }catch(e){showToast('Could not read '+f.name,'error')}
+  }
+  renderAttachRow();
+}
+
+function removeAttachment(id){
+  pendingAttachments=pendingAttachments.filter(a=>a.id!==id);
+  renderAttachRow();
+}
+
+function renderAttachRow(){
+  const row=document.getElementById('attach-row');
+  if(!row)return;
+  if(pendingAttachments.length===0){row.innerHTML='';return}
+  row.innerHTML=pendingAttachments.map(a=>{
+    const thumb=a.kind==='image'&&a.dataUrl
+      ? `<div class="attach-chip-thumb"><img src="${a.dataUrl}" alt=""></div>`
+      : `<div class="attach-chip-thumb"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg></div>`;
+    const meta=a.kind==='text'?`text · ${_humanSize(a.size)}`:a.kind==='image'?`image · ${_humanSize(a.size)}`:`${(a.mime||'file').split('/').pop()} · ${_humanSize(a.size)}`;
+    return `<div class="attach-chip" data-id="${a.id}">${thumb}<div class="attach-chip-info"><div class="attach-chip-name" title="${escHtml(a.name)}">${escHtml(a.name)}</div><div class="attach-chip-meta">${meta}</div></div><button class="attach-chip-remove" onclick="removeAttachment('${a.id}')" title="Remove">&#10005;</button></div>`;
+  }).join('');
+}
+
+function buildAttachmentBlock(){
+  if(pendingAttachments.length===0)return '';
+  const parts=['\n\n--- Attached files ---'];
+  for(const a of pendingAttachments){
+    if(a.kind==='text'){
+      const ext=_fileExt(a.name);
+      parts.push(`\n### ${a.name} (${_humanSize(a.size)})\n\`\`\`${ext}\n${a.text}\n\`\`\``);
+    }else if(a.kind==='image'){
+      parts.push(`\n### ${a.name} (image, ${_humanSize(a.size)}) — attached but not shown inline`);
+    }else{
+      parts.push(`\n### ${a.name} (${a.mime}, ${_humanSize(a.size)}) — binary file, contents not included`);
+    }
+  }
+  return parts.join('');
+}
+
+/* drag-drop on input shell */
+const inputShell=document.getElementById('input-shell');
+let dragCounter=0;
+['dragenter','dragover'].forEach(ev=>inputShell.addEventListener(ev,e=>{if(e.dataTransfer&&Array.from(e.dataTransfer.types||[]).includes('Files')){e.preventDefault();e.stopPropagation();if(ev==='dragenter')dragCounter++;inputShell.classList.add('dragging')}}));
+['dragleave','drop'].forEach(ev=>inputShell.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();if(ev==='dragleave'){dragCounter--;if(dragCounter<=0){dragCounter=0;inputShell.classList.remove('dragging')}}else{dragCounter=0;inputShell.classList.remove('dragging');if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){addFiles(Array.from(e.dataTransfer.files))}}}));
+
+/* paste files from clipboard */
+chatInput.addEventListener('paste',e=>{
+  if(!e.clipboardData||!e.clipboardData.files||!e.clipboardData.files.length)return;
+  const files=Array.from(e.clipboardData.files);
+  if(files.length){e.preventDefault();addFiles(files)}
+});
+
 function _pad(n){return String(n).padStart(2,'0')}
 function _now(){const d=new Date();return`${_pad(d.getHours())}:${_pad(d.getMinutes())}:${_pad(d.getSeconds())}`}
 function setAgentProgress(pct){document.getElementById('agent-progress-bar').style.width=Math.min(pct,100)+'%'}
@@ -962,7 +1082,7 @@ function renderMessage(m){
   if(m.isThinking){const r=document.createElement('div');r.classList.add('log-row','log-thinking');r.id='thinking-log-row';r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🧠</span><div class="log-content"><div class="log-title">Thinking <div class="log-dots"><span></span><span></span><span></span></div></div></div>`;msgs.appendChild(r);scrollMessagesToBottom();return}
   if(m.isToolEvent){const r=document.createElement('div');r.classList.add('log-row','log-tool');r.innerHTML=`<span class="log-time">${_now()}</span><span class="log-icon">🔧</span><div class="log-content"><div class="log-title">Tool → <span class="lc">${escHtml(m.toolName||'')}</span> <span class="tool-chevron">▶</span></div>${m.toolArgs?`<div class="log-detail">${escHtml(m.toolArgs)}</div>`:''}</div>`;msgs.appendChild(r);scrollMessagesToBottom();return}
   if(m.isResponseBlock){const r=document.createElement('div');r.classList.add('log-row','log-output');r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">⚡</span><div class="log-content"><div class="log-title"><div class="md-content">${renderMarkdown(m.text||'')}</div></div></div>`;msgs.appendChild(r);scrollMessagesToBottom();return}
-  if(m.role==='user'){const r=document.createElement('div');r.classList.add('log-row','log-user');r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">▸</span><div class="log-content"><div class="log-title">${escHtml(m.text||'')}</div></div>`;msgs.appendChild(r);scrollMessagesToBottom();return}
+  if(m.role==='user'){const r=document.createElement('div');r.classList.add('log-row','log-user');let attHtml='';if(m.attachments&&m.attachments.length){attHtml='<div class="msg-attach-row" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">'+m.attachments.map(a=>{const thumb=a.kind==='image'&&a.dataUrl?`<div class="attach-chip-thumb"><img src="${a.dataUrl}" alt=""></div>`:`<div class="attach-chip-thumb"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg></div>`;return `<div class="attach-chip">${thumb}<div class="attach-chip-info"><div class="attach-chip-name" title="${escHtml(a.name)}">${escHtml(a.name)}</div><div class="attach-chip-meta">${a.kind} · ${_humanSize(a.size||0)}</div></div></div>`}).join('')+'</div>'}r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">▸</span><div class="log-content"><div class="log-title">${escHtml(m.text||'')}</div>${attHtml}</div>`;msgs.appendChild(r);scrollMessagesToBottom();return}
   if(m.role==='assistant'){const r=document.createElement('div');r.classList.add('log-row','log-output');r.innerHTML=`<span class="log-time">${escHtml(m.logTime||_now())}</span><span class="log-icon">⚡</span><div class="log-content"><div class="log-title"><div class="md-content">${renderMarkdown(m.text||'')}</div></div></div>`;msgs.appendChild(r);scrollMessagesToBottom();return}
 }
 
@@ -1046,16 +1166,23 @@ async function pollForResult(sid){
 }
 
 async function sendMessage(){
-  const text=chatInput.value.trim();if(!text||isLoading)return;
+  const rawText=chatInput.value.trim();
+  const hasAttachments=pendingAttachments.length>0;
+  if((!rawText&&!hasAttachments)||isLoading)return;
   const bal=typeof credits.balance==='number'?credits.balance:parseFloat(credits.balance)||0;
   if(bal<=0){updateInputState();return}
   if(!activeConvId)startNewConv();
+  const attachmentBlock=buildAttachmentBlock();
+  const text=(rawText||'(see attached files)')+attachmentBlock;
+  const displayText=rawText||'(see attached files)';
+  const attachmentsForDisplay=pendingAttachments.map(a=>({name:a.name,size:a.size,kind:a.kind,mime:a.mime,dataUrl:a.kind==='image'?a.dataUrl:null}));
+  pendingAttachments=[];renderAttachRow();
   isLoading=true;chatInput.value='';chatInput.style.height='auto';
   document.getElementById('send-btn').classList.add('hidden-btn');
   document.getElementById('stop-btn').classList.add('visible');
   document.getElementById('send-btn').disabled=true;
   conversationHistory.push({role:'user',content:text});
-  pushMsg({role:'user',text,logTime:_now()});
+  pushMsg({role:'user',text:displayText,attachments:attachmentsForDisplay,logTime:_now()});
   agentStepCount=0;agentTotalTokens=0;agentTotalSteps=0;lastToolNameForResult='';
   hadToolActivity=false;
   if(mode==='agent'){updateAgentStepUI();setAgentProgress(3);setAgentStatus('Running',true);const modelLabel=MODEL_LABELS[selectedModel]||'Sonnet';pushLog('system','⚙️','Session started',`mode: <span class="lb">${escHtml(mode)}</span> · model: <span class="lb">${escHtml(modelLabel)}</span>`);pushLogDivider();pushLog('thinking','📋','Generating plan...');}
