@@ -46,5 +46,11 @@
     "amount": 0,
     "reason": "AI chat (Gemma 4 26B)",
     "timestamp": 1776512017580
+  },
+  {
+    "amount": -0.0905,
+    "reason": "AI chat (Claude Sonnet)",
+    "admin_id": "",
+    "timestamp": 1777471410989
   }
 ]
