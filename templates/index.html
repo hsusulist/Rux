@@ -93,18 +93,26 @@
     .sidebar:hover .sb-empty{opacity:1}
 
     .sb-bottom{padding:6px 8px 8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:1px;flex-shrink:0}
-    .sb-rbx{display:none;align-items:center;gap:8px;padding:6px 5px;margin-bottom:4px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;text-decoration:none;cursor:pointer;transition:background .12s,border-color .12s}
-    .sb-rbx.show{display:flex}
-    .sb-rbx:hover{background:var(--surface3);border-color:var(--text3)}
-    .sb-rbx-avatar{width:22px;height:22px;border-radius:100px;background:#111 center/cover no-repeat;flex-shrink:0;border:1px solid rgba(255,255,255,.06)}
+    /* combined profile + settings row */
+    .sb-profile-row{display:flex;align-items:center;gap:6px;padding:5px 4px;margin-bottom:4px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);transition:background .12s,border-color .12s}
+    .sb-profile-row:hover{background:var(--surface3);border-color:var(--text3)}
+    .sb-profile-link{display:flex;align-items:center;gap:8px;flex:1;min-width:0;text-decoration:none;color:inherit;padding:1px;border-radius:6px;transition:opacity .12s}
+    .sb-profile-link:hover{opacity:.92}
+    .sb-rbx-avatar{width:28px;height:28px;border-radius:100px;background:#161616 center/cover no-repeat;flex-shrink:0;border:1px solid rgba(255,255,255,.08);position:relative;overflow:hidden}
+    .sb-rbx-avatar.empty::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#1f1f1f,#0a0a0a);display:block}
+    .sb-rbx-avatar.empty::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23555'><path d='M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z'/></svg>");background-size:60% 60%;background-position:center;background-repeat:no-repeat;z-index:1}
     .sb-rbx-meta{min-width:0;flex:1;opacity:0;transition:opacity .12s .06s}
     .sidebar:hover .sb-rbx-meta{opacity:1}
-    .sb-rbx-name{font-size:10px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+    .sb-rbx-name{font-size:10.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
     .sb-rbx-handle{font-size:8.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-    .sb-rbx-refresh{width:18px;height:18px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;border-radius:6px;cursor:pointer;opacity:0;transition:opacity .12s .06s,background .12s;flex-shrink:0;padding:0;color:var(--muted)}
+    .sb-rbx-handle.placeholder{color:var(--muted);font-style:italic}
+    .sb-settings-icon-btn{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;border-radius:7px;cursor:pointer;flex-shrink:0;color:var(--muted);transition:background .12s,color .12s}
+    .sb-settings-icon-btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+    .sb-settings-icon-btn svg{width:13px;height:13px;fill:currentColor}
+    .sb-rbx-refresh{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;border-radius:6px;cursor:pointer;opacity:0;transition:opacity .12s .06s,background .12s;flex-shrink:0;padding:0;color:var(--muted)}
     .sidebar:hover .sb-rbx-refresh{opacity:1}
-    .sb-rbx-refresh:hover{background:rgba(255,255,255,.06);color:var(--text2)}
-    .sb-rbx-refresh svg{width:10px;height:10px;fill:currentColor}
+    .sb-rbx-refresh:hover{background:rgba(255,255,255,.08);color:var(--text2)}
+    .sb-rbx-refresh svg{width:11px;height:11px;fill:currentColor}
     .sb-rbx-refresh.spinning svg{animation:rbxspin .7s linear infinite}
     @keyframes rbxspin{to{transform:rotate(360deg)}}
     .sb-bottom-row{display:flex;align-items:center;gap:6px;height:22px;padding:0 3px}
@@ -322,17 +330,27 @@
     .picker-options-list::-webkit-scrollbar{width:1px}
     .picker-options-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:1px}
 
-    .picker-option{display:flex;align-items:center;gap:8px;padding:6px 7px;border-radius:7px;cursor:pointer;transition:background .1s;border:1px solid transparent}
-    .picker-option:hover{background:var(--surface3)}
-    .picker-option.selected{background:var(--surface3);border-color:var(--border2)}
+    .picker-option{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;cursor:pointer;transition:background .12s,border-color .12s;border:1px solid transparent;min-width:260px}
+    .picker-option:hover{background:rgba(255,255,255,.035)}
+    .picker-option.selected{background:rgba(255,255,255,.045);border-color:var(--border2)}
     .picker-option.hidden{display:none}
-    .picker-option-icon{width:24px;height:24px;border-radius:6px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surface)}
-    .picker-option-icon svg{width:10px;height:10px}
+    .picker-option-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surface);border:1px solid var(--border)}
+    .picker-option-icon svg{width:16px;height:16px;display:block}
+    /* per-provider tints */
+    .picker-option[data-provider="google"] .picker-option-icon{background:rgba(66,133,244,.08);border-color:rgba(66,133,244,.18)}
+    .picker-option[data-provider="anthropic"] .picker-option-icon{background:rgba(217,119,87,.08);border-color:rgba(217,119,87,.2)}
+    .picker-option[data-provider="openai"] .picker-option-icon{background:rgba(16,163,127,.08);border-color:rgba(16,163,127,.22)}
+    .picker-option[data-provider="openrouter"] .picker-option-icon{background:rgba(155,89,182,.08);border-color:rgba(155,89,182,.2)}
     .picker-option-body{flex:1;min-width:0}
-    .picker-option-name{font-size:10.5px;font-weight:600;letter-spacing:-.2px;color:var(--text2)}
-    .picker-option-desc{font-size:8.5px;color:var(--muted);margin-top:1px}
-    .picker-option-badge{font-size:7px;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--surface3);color:var(--text3);border:1px solid var(--border);flex-shrink:0;letter-spacing:.2px;text-transform:uppercase}
-    .picker-option-badge.free{color:var(--lp-green);border-color:rgba(69,196,122,.1);background:rgba(69,196,122,.03)}
+    .picker-option-name{font-size:11.5px;font-weight:600;letter-spacing:-.2px;color:var(--text)}
+    .picker-option-desc{font-size:9.5px;color:var(--muted);margin-top:2px}
+    .picker-option-badge{font-size:7.5px;font-weight:800;padding:2px 6px;border-radius:5px;background:var(--surface3);color:var(--text3);border:1px solid var(--border);flex-shrink:0;letter-spacing:.3px;text-transform:uppercase}
+    .picker-option-badge.free{color:var(--lp-green);border-color:rgba(69,196,122,.18);background:rgba(69,196,122,.06)}
+    .picker-option-badge.smart{color:#9bb6ff;border-color:rgba(110,140,255,.22);background:rgba(110,140,255,.06)}
+    .picker-option-badge.fast{color:#ffd16e;border-color:rgba(255,200,80,.22);background:rgba(255,200,80,.06)}
+    .picker-option-badge.code{color:#7ee0a0;border-color:rgba(69,196,122,.18);background:rgba(69,196,122,.05)}
+    .picker-option-badge.power{color:#ff8a8a;border-color:rgba(255,120,120,.22);background:rgba(255,120,120,.06)}
+    .picker-option-badge.default{color:#000;background:var(--text);border-color:var(--text)}
 
     /* ═══ INPUT SHELL ═══ */
     .input-shell{display:flex;flex-direction:column;gap:6px;background:linear-gradient(180deg,rgba(20,20,20,.85),rgba(14,14,14,.9));border:1px solid var(--border2);border-radius:16px;padding:10px 10px 9px;transition:border-color .2s,box-shadow .2s,transform .12s;max-width:720px;margin:0 auto;box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 8px 28px rgba(0,0,0,.35)}
@@ -540,20 +558,21 @@
   </div>
 
   <div class="sb-bottom">
-    <a class="sb-rbx" id="sb-rbx" title="Linked Roblox account" target="_blank" rel="noopener noreferrer">
-      <div class="sb-rbx-avatar" id="sb-rbx-avatar"></div>
-      <div class="sb-rbx-meta">
-        <div class="sb-rbx-name" id="sb-rbx-name"></div>
-        <div class="sb-rbx-handle" id="sb-rbx-handle"></div>
-      </div>
+    <div class="sb-profile-row" id="sb-profile-row">
+      <a class="sb-profile-link" id="sb-rbx" title="Linked Roblox account" target="_blank" rel="noopener noreferrer">
+        <div class="sb-rbx-avatar empty" id="sb-rbx-avatar"></div>
+        <div class="sb-rbx-meta">
+          <div class="sb-rbx-name" id="sb-rbx-name">Guest</div>
+          <div class="sb-rbx-handle placeholder" id="sb-rbx-handle">Link Roblox ID</div>
+        </div>
+      </a>
       <button class="sb-rbx-refresh" id="sb-rbx-refresh" type="button" title="Refresh profile" onclick="refreshRobloxChip(event)">
         <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
       </button>
-    </a>
-    <button class="sb-bottom-btn" onclick="openSettingsModal()">
-      <div class="sb-bottom-btn-icon"><svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg></div>
-      <span class="sb-bottom-btn-label">Settings</span>
-    </button>
+      <button class="sb-settings-icon-btn" onclick="openSettingsModal()" title="Settings">
+        <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+      </button>
+    </div>
 
     <div class="sb-bottom-spacer"></div>
 
@@ -634,17 +653,17 @@
             <button class="picker-tab" data-tab="openrouter" onclick="switchModelTab('openrouter')">OpenRouter</button>
           </div>
           <div class="picker-options-list">
-            <div class="picker-option" data-key="gemini-flash" data-provider="google" onclick="selectModel('gemini-flash')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#666"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#555"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemini Flash</div><div class="picker-option-desc">Fast responses</div></div><div class="picker-option-badge">Fast</div></div>
-            <div class="picker-option" data-key="gemini-pro" data-provider="google" onclick="selectModel('gemini-pro')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#666"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#555"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemini Pro</div><div class="picker-option-desc">Deep reasoning</div></div><div class="picker-option-badge">Smart</div></div>
-            <div class="picker-option selected" data-key="sonnet" data-provider="anthropic" onclick="selectModel('sonnet')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="var(--text3)"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Claude Sonnet</div><div class="picker-option-desc">Balanced</div></div><div class="picker-option-badge">Default</div></div>
-            <div class="picker-option" data-key="opus" data-provider="anthropic" onclick="selectModel('opus')"><div class="picker-option-icon"><svg viewBox="0 0 24 24"><path d="M13.8 3h-3.6L4 21h3.6l1.2-3.6h6.4l1.2 3.6H20L13.8 3zm-4 11.4L12 7.2l2.2 7.2H9.8z" fill="var(--text3)"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Claude Opus</div><div class="picker-option-desc">Maximum intelligence</div></div><div class="picker-option-badge">Power</div></div>
-            <div class="picker-option" data-key="gpt-5-chat" data-provider="openai" onclick="selectModel('gpt-5-chat')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text3)"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">GPT-5.2</div><div class="picker-option-desc">General purpose</div></div><div class="picker-option-badge">Smart</div></div>
-            <div class="picker-option" data-key="gpt-5-codex" data-provider="openai" onclick="selectModel('gpt-5-codex')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text3)"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">GPT-5.1</div><div class="picker-option-desc">Code focused</div></div><div class="picker-option-badge">Code</div></div>
-            <div class="picker-option" data-key="qwen-coder" data-provider="openrouter" onclick="selectModel('qwen-coder')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text3)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Qwen3 Coder</div><div class="picker-option-desc">Code generation</div></div><div class="picker-option-badge">Code</div></div>
-            <div class="picker-option" data-key="glm-5" data-provider="openrouter" onclick="selectModel('glm-5')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text3)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">GLM-5.1</div><div class="picker-option-desc">Fast & efficient</div></div><div class="picker-option-badge">Fast</div></div>
-            <div class="picker-option" data-key="grok-4" data-provider="openrouter" onclick="selectModel('grok-4')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text3)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Grok 4</div><div class="picker-option-desc">Advanced reasoning</div></div><div class="picker-option-badge">Smart</div></div>
-            <div class="picker-option" data-key="gemma-31b" data-provider="openrouter" onclick="selectModel('gemma-31b')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text3)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemma 4 31B</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
-            <div class="picker-option" data-key="gemma-26b" data-provider="openrouter" onclick="selectModel('gemma-26b')"><div class="picker-option-icon"><svg viewBox="0 0 24 24" fill="var(--text3)"><path d="M17 8C8 10 5.9 16.17 3.82 22H5.71C6.72 19 8.5 14 13 12l3 5 6-10z"/></svg></div><div class="picker-option-body"><div class="picker-option-name">Gemma 4 26B</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
+            <div class="picker-option" data-key="gemini-flash" data-provider="google" onclick="selectModel('gemini-flash')"><div class="picker-option-icon">{{ICON_GEMINI}}</div><div class="picker-option-body"><div class="picker-option-name">Gemini Flash</div><div class="picker-option-desc">Fast responses</div></div><div class="picker-option-badge fast">Fast</div></div>
+            <div class="picker-option" data-key="gemini-pro" data-provider="google" onclick="selectModel('gemini-pro')"><div class="picker-option-icon">{{ICON_GEMINI}}</div><div class="picker-option-body"><div class="picker-option-name">Gemini Pro</div><div class="picker-option-desc">Deep reasoning</div></div><div class="picker-option-badge smart">Smart</div></div>
+            <div class="picker-option selected" data-key="sonnet" data-provider="anthropic" onclick="selectModel('sonnet')"><div class="picker-option-icon">{{ICON_ANTHROPIC}}</div><div class="picker-option-body"><div class="picker-option-name">Claude Sonnet</div><div class="picker-option-desc">Balanced</div></div><div class="picker-option-badge default">Default</div></div>
+            <div class="picker-option" data-key="opus" data-provider="anthropic" onclick="selectModel('opus')"><div class="picker-option-icon">{{ICON_ANTHROPIC}}</div><div class="picker-option-body"><div class="picker-option-name">Claude Opus</div><div class="picker-option-desc">Maximum intelligence</div></div><div class="picker-option-badge power">Power</div></div>
+            <div class="picker-option" data-key="gpt-5-chat" data-provider="openai" onclick="selectModel('gpt-5-chat')"><div class="picker-option-icon">{{ICON_OPENAI}}</div><div class="picker-option-body"><div class="picker-option-name">GPT-5.2</div><div class="picker-option-desc">General purpose</div></div><div class="picker-option-badge smart">Smart</div></div>
+            <div class="picker-option" data-key="gpt-5-codex" data-provider="openai" onclick="selectModel('gpt-5-codex')"><div class="picker-option-icon">{{ICON_OPENAI}}</div><div class="picker-option-body"><div class="picker-option-name">GPT-5.1</div><div class="picker-option-desc">Code focused</div></div><div class="picker-option-badge code">Code</div></div>
+            <div class="picker-option" data-key="qwen-coder" data-provider="openrouter" onclick="selectModel('qwen-coder')"><div class="picker-option-icon">{{ICON_QWEN}}</div><div class="picker-option-body"><div class="picker-option-name">Qwen3 Coder</div><div class="picker-option-desc">Code generation</div></div><div class="picker-option-badge code">Code</div></div>
+            <div class="picker-option" data-key="glm-5" data-provider="openrouter" onclick="selectModel('glm-5')"><div class="picker-option-icon">{{ICON_GLM}}</div><div class="picker-option-body"><div class="picker-option-name">GLM-5.1</div><div class="picker-option-desc">Fast & efficient</div></div><div class="picker-option-badge fast">Fast</div></div>
+            <div class="picker-option" data-key="grok-4" data-provider="openrouter" onclick="selectModel('grok-4')"><div class="picker-option-icon">{{ICON_GROK}}</div><div class="picker-option-body"><div class="picker-option-name">Grok 4</div><div class="picker-option-desc">Advanced reasoning</div></div><div class="picker-option-badge smart">Smart</div></div>
+            <div class="picker-option" data-key="gemma-31b" data-provider="openrouter" onclick="selectModel('gemma-31b')"><div class="picker-option-icon">{{ICON_GEMMA}}</div><div class="picker-option-body"><div class="picker-option-name">Gemma 4 31B</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
+            <div class="picker-option" data-key="gemma-26b" data-provider="openrouter" onclick="selectModel('gemma-26b')"><div class="picker-option-icon">{{ICON_GEMMA}}</div><div class="picker-option-body"><div class="picker-option-name">Gemma 4 26B</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
           </div>
         </div>
 
@@ -673,7 +692,7 @@
             </button>
             <input type="file" id="file-input" multiple style="display:none" accept="*/*" onchange="handleFileSelect(event)">
             <button class="pill-trigger" id="model-trigger" onclick="togglePicker('model')">
-              <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span class="model-trigger-icon" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px"></span>
               <span id="model-label">Sonnet</span>
               <svg class="chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
             </button>
@@ -838,7 +857,8 @@ function renderAnnouncements(anns){const bar=document.getElementById('ann-bar');
 function dismissAnn(id){const el=document.getElementById('ann-'+id);if(el){el.style.opacity='0';el.style.transition='opacity .2s';setTimeout(()=>el.remove(),200)}const dismissed=JSON.parse(localStorage.getItem('rux_dismissed_anns')||'[]');if(!dismissed.includes(id)){dismissed.push(id);localStorage.setItem('rux_dismissed_anns',JSON.stringify(dismissed))}}
 
 async function enterApp(){const r=await api('/auth/me');if(!r)return;credits=r.data.credits;sessionId=r.data.session_id;if(r.data.preferences){if(r.data.preferences.default_model)selectedModel=r.data.preferences.default_model;if(r.data.preferences.default_mode)mode=r.data.preferences.default_mode;updateModelUI();updateModeUI()}if(r.data.user)userData=r.data.user;updateCreditUI();updateRobloxChip();if(sessionId)pluginConnected=true;updatePluginUI();renderAnnouncements(r.data.announcements);enterChat();loadConversations();startWebHeartbeat();}
-async function updateRobloxChip(bust){const chip=document.getElementById('sb-rbx');if(!chip)return;const rbx=userData&&userData.roblox_id;if(!rbx){chip.classList.remove('show');chip.removeAttribute('href');return}try{const res=await fetch('/auth/roblox-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(!res.ok){chip.classList.remove('show');chip.removeAttribute('href');return}const d=await res.json();const av=d.avatar_url?(bust?d.avatar_url+(d.avatar_url.includes('?')?'&':'?')+'_t='+Date.now():d.avatar_url):'';document.getElementById('sb-rbx-avatar').style.backgroundImage=av?`url("${av}")`:'none';document.getElementById('sb-rbx-name').textContent=d.display_name||d.username||'Roblox User';document.getElementById('sb-rbx-handle').textContent=`@${d.username||'unknown'}`;chip.href=`https://www.roblox.com/users/${encodeURIComponent(d.roblox_id)}/profile`;chip.classList.add('show');chip.title=`Open @${d.username||'unknown'} on Roblox (ID ${d.roblox_id})`}catch(e){chip.classList.remove('show');chip.removeAttribute('href')}}
+function _setRbxPlaceholder(){const av=document.getElementById('sb-rbx-avatar');const name=document.getElementById('sb-rbx-name');const handle=document.getElementById('sb-rbx-handle');const chip=document.getElementById('sb-rbx');if(av){av.classList.add('empty');av.style.backgroundImage='none'}if(name)name.textContent=(userData&&userData.email)?(userData.email.split('@')[0]||'Guest'):'Guest';if(handle){handle.textContent='Link Roblox ID';handle.classList.add('placeholder')}if(chip){chip.removeAttribute('href');chip.title='Add your Roblox ID in Settings to link your profile'}}
+async function updateRobloxChip(bust){const chip=document.getElementById('sb-rbx');if(!chip)return;const rbx=userData&&userData.roblox_id;if(!rbx){_setRbxPlaceholder();return}try{const res=await fetch('/auth/roblox-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(!res.ok){_setRbxPlaceholder();return}const d=await res.json();const av=d.avatar_url?(bust?d.avatar_url+(d.avatar_url.includes('?')?'&':'?')+'_t='+Date.now():d.avatar_url):'';const avEl=document.getElementById('sb-rbx-avatar');if(av){avEl.classList.remove('empty');avEl.style.backgroundImage=`url("${av}")`}else{avEl.classList.add('empty');avEl.style.backgroundImage='none'}document.getElementById('sb-rbx-name').textContent=d.display_name||d.username||'Roblox User';const handle=document.getElementById('sb-rbx-handle');handle.textContent=`@${d.username||'unknown'}`;handle.classList.remove('placeholder');chip.href=`https://www.roblox.com/users/${encodeURIComponent(d.roblox_id)}/profile`;chip.title=`Open @${d.username||'unknown'} on Roblox (ID ${d.roblox_id})`}catch(e){_setRbxPlaceholder()}}
 async function refreshRobloxChip(ev){if(ev){ev.preventDefault();ev.stopPropagation()}const btn=document.getElementById('sb-rbx-refresh');if(!btn||btn.classList.contains('spinning'))return;btn.classList.add('spinning');try{await updateRobloxChip(true);if(typeof showToast==='function')showToast('Profile refreshed','success')}catch(e){}finally{setTimeout(()=>btn.classList.remove('spinning'),500)}}
 
 function sendHeartbeat(){
@@ -916,7 +936,38 @@ function togglePicker(which){
 function switchModelTab(tab){activeModelTab=tab;document.querySelectorAll('#model-picker .picker-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));document.querySelectorAll('#model-picker .picker-option').forEach(o=>{const show=tab==='all'||o.dataset.provider===tab;o.classList.toggle('hidden',!show)})}
 function selectModel(k){selectedModel=k;updateModelUI();document.getElementById('model-picker').classList.remove('open');openPicker=null;try{api('/api/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({default_model:k})})}catch(e){}}
 function selectMode(m){mode=m;updateModeUI();document.getElementById('mode-picker').classList.remove('open');openPicker=null;updateInputState();try{api('/api/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({default_mode:m})})}catch(e){}}
-function updateModelUI(){const lbl=MODEL_LABELS[selectedModel]||'Sonnet';document.getElementById('model-label').textContent=lbl;document.querySelectorAll('#model-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.key===selectedModel))}
+const BRAND_ICONS={
+  google:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>',
+  anthropic:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#D97757" d="M13.86 4.5h-3.72L4 19.5h3.39l1.21-3.18h7.41L17.22 19.5h3.39L13.86 4.5zm-4.13 9.05L12 7.94l2.27 5.61H9.73z"/></svg>',
+  openai:'<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path fill="#10A37F" d="M29.71 13.09a8 8 0 0 0-.69-6.57 8.1 8.1 0 0 0-8.71-3.86A8 8 0 0 0 14.21.5 8.06 8.06 0 0 0 6.51 6.1a8 8 0 0 0-5.34 3.86 8.08 8.08 0 0 0 1 9.5 8 8 0 0 0 .69 6.58 8.1 8.1 0 0 0 8.71 3.85 7.94 7.94 0 0 0 6 2.66 8.06 8.06 0 0 0 7.7-5.6 8 8 0 0 0 5.34-3.86 8.08 8.08 0 0 0-.91-9.5zM17.93 28.94a6 6 0 0 1-3.85-1.39l.19-.11 6.39-3.69a1.06 1.06 0 0 0 .53-.91v-9l2.7 1.56a.1.1 0 0 1 .05.07v7.46a6 6 0 0 1-6.01 6.01zM5 24.34a6 6 0 0 1-.71-4l.19.11 6.39 3.69a1 1 0 0 0 1.05 0l7.81-4.5v3.11a.09.09 0 0 1-.04.08L13.22 26.5a6 6 0 0 1-8.22-2.16zM3.36 10.99a6 6 0 0 1 3.13-2.63V16a1 1 0 0 0 .53.91l7.78 4.49-2.7 1.56a.1.1 0 0 1-.09 0L5.55 19.23a6 6 0 0 1-2.19-8.24zm22.07 5.13L17.62 11.61l2.7-1.56a.1.1 0 0 1 .09 0l6.46 3.74a6 6 0 0 1-.91 10.83v-7.6a1.06 1.06 0 0 0-.53-.9zM28.12 9.4l-.19-.11-6.39-3.69a1 1 0 0 0-1.05 0L12.68 10.1V6.99a.09.09 0 0 1 .04-.08L19.18 3.18a6 6 0 0 1 8.94 6.21zM11.21 17.62l-2.7-1.55a.1.1 0 0 1-.05-.07V8.55a6 6 0 0 1 9.84-4.61l-.19.11-6.39 3.69a1.06 1.06 0 0 0-.53.91zm1.46-3.16L16.15 12l3.49 2.46v4.94L16.15 22l-3.48-2.6z"/></svg>',
+  qwen:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="qwg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#615CED"/><stop offset="100%" stop-color="#9B59B6"/></linearGradient></defs><path fill="url(#qwg)" d="M12 2L2 7v10l10 5 10-5V7L12 2zm6.5 13.85l-6.5 3.25-6.5-3.25v-7.7L12 4.9l6.5 3.25v7.7zM12 7.4L7.5 9.65v4.7L12 16.6l4.5-2.25v-4.7L12 7.4z"/></svg>',
+  glm:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="glmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#5B9BFF"/><stop offset="100%" stop-color="#1763E5"/></linearGradient></defs><circle cx="12" cy="12" r="9" fill="url(#glmg)"/><path fill="#fff" d="M8 8h6.5l-4.2 4.2H14v3.8H8V8z"/></svg>',
+  grok:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M3.7 3l7.4 9.95L3 21h2.36l6.62-7.36L17.4 21h3.9l-7.97-10.7L20.7 3h-2.35l-5.93 6.6L8.1 3H3.7z"/></svg>',
+  gemma:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4285F4"/><stop offset="55%" stop-color="#9B72F1"/><stop offset="100%" stop-color="#F44E83"/></linearGradient></defs><path fill="url(#gmg)" d="M12 2c1.5 4.5 4 7 8.5 8.5C16 12 13.5 14.5 12 19c-1.5-4.5-4-7-8.5-8.5C8 9 10.5 6.5 12 2z"/></svg>'
+};
+const MODEL_BRAND={'gemini-flash':'google','gemini-pro':'google','sonnet':'anthropic','opus':'anthropic','gpt-5-chat':'openai','gpt-5-codex':'openai','qwen-coder':'qwen','glm-5':'glm','grok-4':'grok','gemma-31b':'gemma','gemma-26b':'gemma'};
+
+function _injectBrandIcons(){
+  const map={ICON_GEMINI:BRAND_ICONS.google,ICON_ANTHROPIC:BRAND_ICONS.anthropic,ICON_OPENAI:BRAND_ICONS.openai,ICON_QWEN:BRAND_ICONS.qwen,ICON_GLM:BRAND_ICONS.glm,ICON_GROK:BRAND_ICONS.grok,ICON_GEMMA:BRAND_ICONS.gemma};
+  document.querySelectorAll('#model-picker .picker-option-icon').forEach(el=>{
+    const t=el.textContent.trim();
+    const k=t.replace(/[{}]/g,'');
+    if(map[k])el.innerHTML=map[k];
+  });
+}
+_injectBrandIcons();
+
+function updateModelUI(){
+  const lbl=MODEL_LABELS[selectedModel]||'Sonnet';
+  document.getElementById('model-label').textContent=lbl;
+  const trigger=document.getElementById('model-trigger');
+  if(trigger){
+    const brand=MODEL_BRAND[selectedModel]||'anthropic';
+    const iconHost=trigger.querySelector('.model-trigger-icon');
+    if(iconHost){iconHost.innerHTML=BRAND_ICONS[brand]||''}
+  }
+  document.querySelectorAll('#model-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.key===selectedModel));
+}
 function updateModeUI(){document.getElementById('mode-label').textContent=MODE_LABELS[mode]||'Chat';document.querySelectorAll('#mode-picker .picker-option').forEach(o=>o.classList.toggle('selected',o.dataset.mode===mode))}
 
 function autoResizeInput(){const inp=document.getElementById('chat-input');inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,180)+'px'}
