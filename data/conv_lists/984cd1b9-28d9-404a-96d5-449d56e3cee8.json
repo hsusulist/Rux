@@ -54,5 +54,19 @@
     "mode": "chat",
     "model": "gemma-26b",
     "updatedAt": 1777458179141
+  },
+  "new-1777467809032": {
+    "id": "new-1777467809032",
+    "title": "ia",
+    "mode": "chat",
+    "model": "sonnet",
+    "updatedAt": 1777467809033
+  },
+  "new-1777469679632": {
+    "id": "new-1777469679632",
+    "title": "hi",
+    "mode": "chat",
+    "model": "sonnet",
+    "updatedAt": 1777469679633
   }
 }

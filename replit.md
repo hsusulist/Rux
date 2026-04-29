@@ -6,7 +6,7 @@ A web application that bridges an AI assistant (Claude / Gemini) with a Roblox S
 ## Architecture
 
 - **Backend**: Flask (Python) served via Gunicorn on port 5000
-- **AI**: Anthropic Claude and/or Google Gemini (both optional, gracefully handles missing keys)
+- **AI**: Anthropic Claude, Google Gemini, OpenAI, and OpenRouter — all wired via the Replit AI Integrations blueprints (no user-managed keys). Env vars `AI_INTEGRATIONS_*_BASE_URL` / `AI_INTEGRATIONS_*_API_KEY` are auto-set by the platform.
 - **Frontend**: Vanilla HTML/CSS/JS served via Flask templates
 - **Data store**: File-based JSON persistence via `store.py` in the `data/` directory
 - **Plugin**: Roblox Studio Luau plugin (connects via HTTP polling)
