@@ -3,7 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rux</title>
+  <title>Rux — AI for Roblox Studio</title>
+  <meta name="description" content="Connect an AI assistant to your Roblox Studio. Read, write, and manage scripts through conversation with multi-model support." />
+  <meta name="theme-color" content="#f5c842" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Rux" />
+  <meta property="og:title" content="Rux — AI for Roblox Studio" />
+  <meta property="og:description" content="11 AI models. 1 plugin. Zero API keys. Build smarter in Roblox Studio — read, write, and manage scripts just by chatting." />
+  <meta property="og:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}" />
+  <meta property="og:image:width" content="1024" />
+  <meta property="og:image:height" content="538" />
+  <meta property="og:image:alt" content="Rux — Build smarter in Roblox Studio" />
+  <meta property="og:url" content="{{ request.url_root }}" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rux — AI for Roblox Studio" />
+  <meta name="twitter:description" content="11 AI models. 1 plugin. Zero API keys. Build smarter in Roblox Studio." />
+  <meta name="twitter:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}" />
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='og-image.png') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -126,8 +144,19 @@
     .sb-empty{padding:20px 14px;font-size:11px;color:var(--muted);font-style:italic;text-align:center;line-height:1.5}
     body.sb-collapsed .sb-empty{display:none}
 
-    .sb-bottom{padding:8px 12px 12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;flex-shrink:0;background:rgba(0,0,0,.2)}
+    .sb-bottom{padding:8px 12px 12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;flex-shrink:0;background:rgba(0,0,0,.2)}
     body.sb-collapsed .sb-bottom{padding:8px 8px 12px}
+    .sb-link-row{display:flex;gap:6px}
+    body.sb-collapsed .sb-link-row{flex-direction:column}
+    .sb-link-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:32px;padding:0 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:-.1px;text-decoration:none;cursor:pointer;transition:all .12s;white-space:nowrap;overflow:hidden}
+    .sb-link-btn:hover{background:var(--surface3);color:var(--text);border-color:var(--text3);transform:translateY(-1px)}
+    .sb-link-btn svg{width:13px;height:13px;fill:currentColor;flex-shrink:0}
+    .sb-link-btn.plugin{background:linear-gradient(180deg,rgba(212,168,67,.16),rgba(212,168,67,.05));border-color:rgba(212,168,67,.32);color:#ffd454}
+    .sb-link-btn.plugin:hover{background:linear-gradient(180deg,rgba(212,168,67,.26),rgba(212,168,67,.10));border-color:rgba(212,168,67,.55);color:#ffe07a}
+    .sb-link-btn.discord{background:linear-gradient(180deg,rgba(88,101,242,.16),rgba(88,101,242,.05));border-color:rgba(88,101,242,.32);color:#a3acff}
+    .sb-link-btn.discord:hover{background:linear-gradient(180deg,rgba(88,101,242,.26),rgba(88,101,242,.10));border-color:rgba(88,101,242,.55);color:#c4caff}
+    body.sb-collapsed .sb-link-btn .sb-link-label{display:none}
+    body.sb-collapsed .sb-link-btn{padding:0;height:30px}
     .sb-profile-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);transition:background .12s,border-color .12s}
     .sb-profile-row:hover{background:var(--surface3);border-color:var(--text3)}
     .sb-profile-link{display:flex;align-items:center;gap:9px;flex:1;min-width:0;text-decoration:none;color:inherit;border-radius:6px;transition:opacity .12s}
@@ -964,6 +993,16 @@
   </div>
 
   <div class="sb-bottom">
+    <div class="sb-link-row">
+      <a class="sb-link-btn plugin" href="https://create.roblox.com/store/asset/8810276456413" target="_blank" rel="noopener noreferrer" title="Get the Roblox Studio plugin">
+        <svg viewBox="0 0 24 24"><path d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7s2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z"/></svg>
+        <span class="sb-link-label">Plugin</span>
+      </a>
+      <a class="sb-link-btn discord" href="https://discord.gg/YtqNEXTYkF" target="_blank" rel="noopener noreferrer" title="Join the Discord">
+        <svg viewBox="0 0 24 24"><path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12z"/></svg>
+        <span class="sb-link-label">Discord</span>
+      </a>
+    </div>
     <div class="sb-profile-row" id="sb-profile-row">
       <a class="sb-profile-link" id="sb-rbx" title="Linked Roblox account" target="_blank" rel="noopener noreferrer">
         <div class="sb-rbx-avatar empty" id="sb-rbx-avatar"></div>
