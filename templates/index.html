@@ -208,17 +208,20 @@
     .agent-status-step{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace}
     .agent-status-tokens{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace}
 
-    /* ═══ CONNECTION BAR ═══ */
-    .connection-bar{position:absolute;top:10px;right:14px;display:inline-flex;align-items:center;gap:8px;padding:5px 6px 5px 12px;background:rgba(20,20,22,.72);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);border:1px solid rgba(255,255,255,.07);border-radius:999px;box-shadow:0 4px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);z-index:18;transition:opacity .25s,transform .25s,background .25s,border-color .25s,top .2s,left .2s,right .2s,bottom .2s}
-    body[data-chat-state="chatting"] .connection-bar{top:auto;right:auto;left:14px;bottom:96px}
-    .connection-bar.connected{opacity:.55;background:rgba(20,20,22,.5);border-color:rgba(255,255,255,.05)}
-    .connection-bar.connected:hover{opacity:1}
-    .connection-bar-dot{width:6px;height:6px;border-radius:100px;background:#8a6a1c;box-shadow:0 0 0 3px rgba(212,176,90,.10);flex-shrink:0;transition:all .3s}
-    .connection-bar.connected .connection-bar-dot{background:#45c47a;box-shadow:0 0 0 3px rgba(69,196,122,.18)}
-    .connection-bar-text{font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.1px;transition:color .3s;white-space:nowrap}
+    /* ═══ CONNECTION BAR — refined, no overlap ═══ */
+    .connection-bar{position:absolute;top:14px;right:18px;display:none;align-items:center;gap:9px;padding:6px 6px 6px 13px;background:rgba(16,16,18,.78);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.08);border-radius:999px;box-shadow:0 6px 22px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.05);z-index:18;transition:opacity .25s,transform .2s,background .25s,border-color .25s,box-shadow .25s}
+    /* Show only when project is open (sidebar already shows status on dashboard) */
+    body[data-chat-state="empty"] .connection-bar,
+    body[data-chat-state="chatting"] .connection-bar{display:inline-flex}
+    .connection-bar:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
+    .connection-bar.connected{background:rgba(16,18,16,.6);border-color:rgba(69,196,122,.22)}
+    .connection-bar-dot{width:7px;height:7px;border-radius:100px;background:#d4a843;box-shadow:0 0 0 3px rgba(212,176,90,.14),0 0 10px rgba(212,176,90,.45);flex-shrink:0;transition:all .3s;animation:connDotPulse 2.4s ease-in-out infinite}
+    .connection-bar.connected .connection-bar-dot{background:#45c47a;box-shadow:0 0 0 3px rgba(69,196,122,.20),0 0 10px rgba(69,196,122,.40);animation:none}
+    @keyframes connDotPulse{0%,100%{box-shadow:0 0 0 3px rgba(212,176,90,.14),0 0 10px rgba(212,176,90,.40)}50%{box-shadow:0 0 0 4px rgba(212,176,90,.24),0 0 18px rgba(212,176,90,.65)}}
+    .connection-bar-text{font-size:10.5px;font-weight:600;color:var(--text2);letter-spacing:.1px;transition:color .3s;white-space:nowrap}
     .connection-bar.connected .connection-bar-text{color:var(--text3)}
-    .connection-bar-action{font-size:10px;font-weight:700;color:#0c0c0d;cursor:pointer;background:linear-gradient(180deg,#f1d77a,#d4b05a);border:1px solid #b08d2c;font-family:'Inter',sans-serif;padding:4px 11px;border-radius:999px;transition:all .12s;letter-spacing:.1px;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 2px 8px rgba(212,176,90,.18)}
-    .connection-bar-action:hover{filter:brightness(1.06)}
+    .connection-bar-action{font-size:10.5px;font-weight:700;color:#1a1100;cursor:pointer;background:linear-gradient(180deg,#ffd87a,#d4a843);border:1px solid rgba(176,141,44,.65);font-family:'Inter',sans-serif;padding:5px 13px;border-radius:999px;transition:all .14s;letter-spacing:.1px;box-shadow:0 1px 0 rgba(255,255,255,.32) inset,0 3px 10px rgba(212,176,90,.28)}
+    .connection-bar-action:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 5px 14px rgba(212,176,90,.42)}
     .connection-bar.connected .connection-bar-action{display:none}
 
     /* ═══ PLAN BANNER ═══ */
@@ -246,11 +249,13 @@
     .empty-logo{width:36px;height:36px;border-radius:8px;background:var(--text);display:flex;align-items:center;justify-content:center;margin-bottom:20px;display:none}
     .empty-logo svg{width:16px;height:16px;fill:#000}
 
-    .empty-eyebrow{display:inline-flex;align-items:center;gap:6px;font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;color:var(--accent);margin-bottom:18px;opacity:.95}
-    .empty-eyebrow svg{width:11px;height:11px;fill:var(--accent)}
-    .empty-title{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:clamp(28px,4.2vw,44px);font-weight:800;letter-spacing:-1.4px;line-height:1.05;margin-bottom:14px;color:var(--text);text-align:center;max-width:680px}
-    .empty-title .accent{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;background:linear-gradient(135deg,#ffd454 0%,#d4a843 50%,#a07d2c 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px}
-    .empty-sub{font-size:13px;color:var(--text2);margin-bottom:28px;text-align:center;max-width:420px;line-height:1.6}
+    .empty-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 14px 7px 12px;border-radius:100px;background:linear-gradient(180deg,rgba(244,196,77,.10),rgba(244,196,77,.025));border:1px solid rgba(244,196,77,.24);font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:3.2px;text-transform:uppercase;color:#ffd454;margin-bottom:22px;box-shadow:0 4px 18px rgba(244,196,77,.10),inset 0 1px 0 rgba(255,255,255,.04);animation:eyebrowIn .5s cubic-bezier(.2,.7,.2,1) both}
+    .empty-eyebrow svg{width:11px;height:11px;fill:currentColor;filter:drop-shadow(0 0 6px rgba(244,196,77,.55))}
+    @keyframes eyebrowIn{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .empty-title{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:clamp(30px,4.4vw,46px);font-weight:800;letter-spacing:-1.4px;line-height:1.05;margin-bottom:16px;color:var(--text);text-align:center;max-width:720px;animation:dashFadeUp .55s cubic-bezier(.2,.7,.2,1) .04s both}
+    .empty-title .accent{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;background:linear-gradient(135deg,#ffe27a 0%,#ffd454 30%,#d4a843 60%,#a07d2c 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px}
+    .empty-sub{font-size:13.5px;color:var(--text2);margin-bottom:30px;text-align:center;max-width:460px;line-height:1.6;animation:dashFadeUp .55s cubic-bezier(.2,.7,.2,1) .08s both}
+    @keyframes dashFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     .empty-create-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:var(--accent);color:#1a1100;border:none;border-radius:100px;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:700;letter-spacing:-.1px;cursor:pointer;transition:all .15s;box-shadow:0 0 40px rgba(212,168,67,.18);margin-bottom:32px}
     .empty-create-btn:hover{background:#ffd454;transform:translateY(-1px);box-shadow:0 0 60px rgba(212,168,67,.32)}
     .empty-create-btn svg{width:14px;height:14px;fill:currentColor}
@@ -263,27 +268,31 @@
     .suggestion-label{font-size:10.5px;font-weight:600;color:var(--text2);letter-spacing:-.15px}
     .suggestion-desc{font-size:9px;color:var(--muted);margin-top:1px}
 
-    .empty-status{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:100px;background:rgba(255,255,255,.03);border:1px solid var(--border);margin-top:6px}
-    .empty-conn-dot{width:5px;height:5px;border-radius:100px;background:#8a6a1c;box-shadow:0 0 0 3px rgba(212,176,90,.10);transition:all .3s}
-    .empty-conn-dot.on{background:#45c47a;box-shadow:0 0 0 3px rgba(69,196,122,.18)}
-    .empty-conn-text{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1px}
-
     /* ═══ DASHBOARD HERO ═══ */
-    .dash-stack{display:flex;flex-direction:column;align-items:center;width:100%;max-width:880px}
-    .dash-cta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:780px;margin:8px 0 22px}
-    .dash-card{appearance:none;-webkit-appearance:none;text-align:left;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:16px 18px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.07);cursor:pointer;font-family:'Inter',sans-serif;color:var(--text);transition:transform .15s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);position:relative;overflow:hidden}
-    .dash-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(420px 200px at 0% 0%,rgba(244,196,77,.10),transparent 60%);opacity:0;transition:opacity .2s}
-    .dash-card:hover{transform:translateY(-2px);border-color:rgba(244,196,77,.35);box-shadow:0 14px 40px rgba(0,0,0,.45),0 0 0 1px rgba(244,196,77,.15) inset}
+    /* Ambient gold backdrop only when in dashboard mode */
+    body[data-chat-state="dashboard"] #dashboard::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(900px 520px at 50% -10%,rgba(244,196,77,.08) 0%,transparent 55%),radial-gradient(700px 360px at 50% 110%,rgba(244,196,77,.045) 0%,transparent 60%);z-index:0}
+    body[data-chat-state="dashboard"] #dashboard .dash-stack{position:relative;z-index:1}
+    .dash-stack{display:flex;flex-direction:column;align-items:center;width:100%;max-width:880px;animation:dashStackIn .5s cubic-bezier(.2,.7,.2,1) both}
+    @keyframes dashStackIn{from{opacity:0}to{opacity:1}}
+    .dash-cta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:780px;margin:8px 0 22px;animation:dashFadeUp .55s cubic-bezier(.2,.7,.2,1) .12s both}
+    .dash-card{appearance:none;-webkit-appearance:none;text-align:left;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:18px 20px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.014));border:1px solid rgba(255,255,255,.07);cursor:pointer;font-family:'Inter',sans-serif;color:var(--text);transition:transform .18s cubic-bezier(.2,.7,.2,1),border-color .2s,background .2s,box-shadow .2s;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);position:relative;overflow:hidden}
+    .dash-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(520px 240px at 0% 0%,rgba(244,196,77,.13),transparent 55%);opacity:0;transition:opacity .25s}
+    .dash-card::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;border:1px solid transparent;background:linear-gradient(135deg,rgba(244,196,77,.4),rgba(244,196,77,0) 40%,rgba(244,196,77,0) 60%,rgba(244,196,77,.25)) border-box;-webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .25s}
+    .dash-card:hover{transform:translateY(-3px);border-color:rgba(244,196,77,.32);box-shadow:0 18px 48px rgba(0,0,0,.5),0 0 0 1px rgba(244,196,77,.14) inset}
     .dash-card:hover::before{opacity:1}
-    .dash-card-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#f1d77a,#d4b05a);color:#1a1100;flex-shrink:0;box-shadow:0 6px 18px rgba(212,176,90,.28),inset 0 1px 0 rgba(255,255,255,.35)}
+    .dash-card:hover::after{opacity:.7}
+    .dash-card-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#ffe27a,#d4a843);color:#1a1100;flex-shrink:0;box-shadow:0 8px 22px rgba(212,176,90,.32),inset 0 1px 0 rgba(255,255,255,.4);transition:transform .2s,box-shadow .2s}
+    .dash-card:hover .dash-card-icon{transform:scale(1.06) rotate(-2deg);box-shadow:0 12px 28px rgba(212,176,90,.45),inset 0 1px 0 rgba(255,255,255,.5)}
     .dash-card-icon svg{width:20px;height:20px;fill:currentColor}
-    .dash-card-icon.analyze-icon{background:linear-gradient(180deg,#1d1d22,#0e0e12);color:#f1d77a;border:1px solid rgba(244,196,77,.32);box-shadow:0 6px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05)}
-    .dash-card-body{min-width:0}
-    .dash-card-title{font-size:14px;font-weight:700;letter-spacing:-.2px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .dash-card-desc{font-size:11.5px;color:var(--text3);margin-top:3px;line-height:1.45}
-    .dash-card-cta{font-size:11px;font-weight:700;color:var(--text2);display:inline-flex;align-items:center;gap:3px;padding:6px 10px;border-radius:100px;background:rgba(255,255,255,.04);border:1px solid var(--border2);white-space:nowrap;transition:all .15s}
-    .dash-card-cta svg{width:11px;height:11px;fill:currentColor}
-    .dash-card:hover .dash-card-cta{background:rgba(244,196,77,.12);border-color:rgba(244,196,77,.4);color:#ffd454}
+    .dash-card-icon.analyze-icon{background:linear-gradient(180deg,#1d1d22,#0e0e12);color:#ffd454;border:1px solid rgba(244,196,77,.32);box-shadow:0 6px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05)}
+    .dash-card:hover .dash-card-icon.analyze-icon{box-shadow:0 10px 24px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(244,196,77,.5)}
+    .dash-card-body{min-width:0;position:relative;z-index:1}
+    .dash-card-title{font-size:14.5px;font-weight:700;letter-spacing:-.25px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .dash-card-desc{font-size:11.5px;color:var(--text3);margin-top:4px;line-height:1.5}
+    .dash-card-cta{font-size:11px;font-weight:700;color:var(--text2);display:inline-flex;align-items:center;gap:4px;padding:7px 12px;border-radius:100px;background:rgba(255,255,255,.04);border:1px solid var(--border2);white-space:nowrap;transition:all .18s;position:relative;z-index:1}
+    .dash-card-cta svg{width:11px;height:11px;fill:currentColor;transition:transform .18s}
+    .dash-card:hover .dash-card-cta{background:linear-gradient(180deg,rgba(244,196,77,.18),rgba(244,196,77,.06));border-color:rgba(244,196,77,.45);color:#ffd454}
+    .dash-card:hover .dash-card-cta svg{transform:translateX(2px)}
     .dash-credit-chip{font-size:9.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:2px 8px;border-radius:100px;background:rgba(244,196,77,.10);border:1px solid rgba(244,196,77,.32);color:#ffd454}
     @media (max-width:720px){.dash-cta-grid{grid-template-columns:1fr}}
 
@@ -551,14 +560,30 @@
     .picker-option.max-tier .picker-option-badge.power{background:linear-gradient(135deg,#d4a843,#b8851f);color:#0a0a0a;font-weight:800}
     .picker-option.max-tier.locked{opacity:.55;position:relative}
     .picker-option.max-tier.locked::after{content:"🔒";position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px}
-    /* Dashboard examples */
-    .dash-examples{margin-top:18px;width:100%;max-width:680px}
-    .dash-examples-title{font-family:'Inter',sans-serif;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:uppercase;text-align:center;margin-bottom:10px}
-    .dash-examples-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
-    .dash-example{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text2);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:background .14s,border-color .14s,transform .14s;text-align:left}
-    .dash-example:hover{background:var(--surface3);border-color:var(--border2);color:var(--text);transform:translateY(-1px)}
-    .dex-emoji{font-size:16px;flex-shrink:0}
-    .dex-text{line-height:1.3}
+    /* Dashboard examples — refined */
+    .dash-examples{margin-top:24px;width:100%;max-width:760px;animation:dashFadeUp .55s cubic-bezier(.2,.7,.2,1) .18s both}
+    .dash-examples-title{font-family:'Inter',sans-serif;font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1.4px;text-transform:uppercase;text-align:center;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:12px}
+    .dash-examples-title::before,.dash-examples-title::after{content:'';width:36px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent)}
+    .dash-examples-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px}
+    .dash-example{display:flex;align-items:center;gap:11px;padding:11px 13px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.008));border:1px solid rgba(255,255,255,.06);border-radius:11px;color:var(--text2);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s,color .2s;text-align:left;position:relative;overflow:hidden}
+    .dash-example::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(280px 130px at 0% 0%,rgba(244,196,77,.12),transparent 60%);opacity:0;transition:opacity .25s}
+    .dash-example:hover{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.014));border-color:rgba(244,196,77,.28);color:var(--text);transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.38),0 0 0 1px rgba(244,196,77,.08) inset}
+    .dash-example:hover::before{opacity:1}
+    .dex-emoji{font-size:15px;flex-shrink:0;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);transition:all .2s}
+    .dash-example:hover .dex-emoji{background:linear-gradient(180deg,rgba(244,196,77,.14),rgba(244,196,77,.05));border-color:rgba(244,196,77,.32);transform:scale(1.06) rotate(-3deg)}
+    .dex-text{line-height:1.3;font-weight:500;position:relative;z-index:1}
+
+    /* Dashboard "Pro tip" rotating ribbon */
+    .dash-tip{display:flex;align-items:center;gap:11px;margin-top:24px;padding:9px 14px 9px 11px;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.006));border:1px solid rgba(255,255,255,.06);border-radius:100px;max-width:520px;width:100%;animation:dashFadeUp .55s cubic-bezier(.2,.7,.2,1) .26s both;transition:border-color .25s,background .25s}
+    .dash-tip:hover{border-color:rgba(244,196,77,.22);background:linear-gradient(180deg,rgba(244,196,77,.04),rgba(244,196,77,.01))}
+    .dash-tip-icon{width:24px;height:24px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(244,196,77,.20),rgba(244,196,77,.06));border:1px solid rgba(244,196,77,.30);color:#ffd454}
+    .dash-tip-icon svg{width:12px;height:12px;fill:currentColor}
+    .dash-tip-label{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:8.5px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#ffd454;margin-right:6px}
+    .dash-tip-text{font-size:11.5px;color:var(--text2);font-family:'Inter',sans-serif;line-height:1.4;flex:1;min-width:0;transition:opacity .25s}
+    .dash-tip-text.fade{opacity:0}
+    .dash-tip-dots{display:flex;gap:4px;flex-shrink:0}
+    .dash-tip-dot{width:5px;height:5px;border-radius:100px;background:rgba(255,255,255,.12);transition:background .25s,transform .25s;cursor:pointer}
+    .dash-tip-dot.active{background:#d4a843;transform:scale(1.2);box-shadow:0 0 8px rgba(244,196,77,.5)}
     /* Per-message cost badge */
     .msg-cost{display:inline-block;font-size:9.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:4px;letter-spacing:.2px}
     .msg-cost .mc-num{color:var(--accent);font-weight:600}
@@ -1223,9 +1248,13 @@
             </div>
           </div>
 
-          <div class="empty-status">
-            <div class="empty-conn-dot" id="empty-conn-dot"></div>
-            <span class="empty-conn-text" id="empty-conn-text">Studio disconnected</span>
+          <div class="dash-tip" id="dash-tip" role="status" aria-live="polite" title="Click a dot to skip">
+            <div class="dash-tip-icon">
+              <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+            </div>
+            <span class="dash-tip-label">Pro tip</span>
+            <div class="dash-tip-text" id="dash-tip-text">Drag &amp; drop image references into the chat — Rux uses them as visual style guides.</div>
+            <div class="dash-tip-dots" id="dash-tip-dots"></div>
           </div>
         </div>
       </div>
@@ -1881,6 +1910,44 @@ document.addEventListener('click',e=>{const panel=document.getElementById('memor
 
 // ═══ DASHBOARD EXAMPLES ═══
 async function dashStartExample(prompt){if(!prompt)return;startNewConv();await new Promise(r=>setTimeout(r,40));chatInput.value=prompt;chatInput.dispatchEvent(new Event('input'));sendMessage()}
+
+// ═══ DASHBOARD PRO TIPS (rotating) ═══
+const DASH_TIPS=[
+  'Drag &amp; drop image references into the chat — Rux uses them as visual style guides.',
+  'Press <kbd>⌘K</kbd> in the workspace to filter scripts instantly.',
+  'Switch between <b>Chat</b> and <b>Agent</b> mode for multi-step automated builds.',
+  'Connect Studio to live-edit scripts with the right-side Explorer.',
+  'Paste a Roblox game URL on <b>Analyze</b> to clone its concept in seconds.',
+  'Models like <b>Sonnet</b> are best for code; <b>Flash</b> is fastest for quick edits.',
+  'Use <b>Project memory</b> to teach Rux your naming conventions across sessions.'
+];
+let dashTipIdx=0,dashTipTimer=null;
+function renderDashTipDots(){
+  const dots=document.getElementById('dash-tip-dots');if(!dots)return;
+  dots.innerHTML='';
+  DASH_TIPS.forEach((_,i)=>{
+    const d=document.createElement('button');
+    d.type='button';d.className='dash-tip-dot'+(i===dashTipIdx?' active':'');
+    d.setAttribute('aria-label','Tip '+(i+1));
+    d.onclick=()=>{dashTipIdx=i;showDashTip(false);resetDashTipTimer()};
+    dots.appendChild(d);
+  });
+}
+function showDashTip(animate=true){
+  const t=document.getElementById('dash-tip-text');if(!t)return;
+  if(animate){
+    t.classList.add('fade');
+    setTimeout(()=>{t.innerHTML=DASH_TIPS[dashTipIdx];t.classList.remove('fade')},220);
+  }else{t.innerHTML=DASH_TIPS[dashTipIdx]}
+  renderDashTipDots();
+}
+function resetDashTipTimer(){
+  if(dashTipTimer)clearInterval(dashTipTimer);
+  dashTipTimer=setInterval(()=>{dashTipIdx=(dashTipIdx+1)%DASH_TIPS.length;showDashTip(true)},6500);
+}
+function startDashTips(){if(document.getElementById('dash-tip')){showDashTip(false);resetDashTipTimer()}}
+document.addEventListener('DOMContentLoaded',startDashTips);
+if(document.readyState!=='loading')startDashTips();
 
 // ═══ SPENDING CAP ═══
 async function saveSpendingCap(){const inp=document.getElementById('settings-cap-input');const err=document.getElementById('settings-cap-err');err.classList.remove('show');err.textContent='';let v=parseFloat(inp.value);if(isNaN(v)||v<0)v=0;try{const r=await api('/api/spending_cap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cap:v})});if(r&&r.ok){spendingCap=r.data.cap;showToast(v>0?`Daily cap set to ${v} credits`:'Spending cap removed','success')}else{err.textContent=r?.data?.error||'Failed';err.classList.add('show')}}catch(e){err.textContent='Network error';err.classList.add('show')}}
