@@ -1,4 +1,4 @@
-modules = ["web", "python-3.11"]
+modules = ["web", "python-3.11", "lua-5.2"]
 [agent]
 expertMode = true
 integrations = ["python_anthropic_ai_integrations:1.0.0", "python_gemini_ai_integrations:1.0.0", "python_openai_ai_integrations:1.0.0", "python_openrouter_ai_integrations:1.0.0"]
