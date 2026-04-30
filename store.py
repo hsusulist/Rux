@@ -1082,6 +1082,79 @@ def export_all():
         return result
 
 
+# ═══════════════════════════════════════════
+#  WORKSPACE SCRIPT CACHE
+# ═══════════════════════════════════════════
+
+def _ws_file(user_id):
+    return f"ws_scripts/{user_id}.json"
+
+def ws_get_all(user_id):
+    with _lock:
+        return _load(_ws_file(user_id), default={})
+
+def ws_get_script(user_id, name):
+    with _lock:
+        data = _load(_ws_file(user_id), default={})
+        return data.get(name)
+
+def ws_pull_script(user_id, name, studio_content):
+    with _lock:
+        data = _load(_ws_file(user_id), default={})
+        existing = data.get(name, {})
+        local = existing.get("local", studio_content)
+        data[name] = {
+            "name": name,
+            "base": studio_content,
+            "local": local,
+            "pulled_at": int(time.time()),
+            "local_modified_at": existing.get("local_modified_at", int(time.time())),
+            "dirty": local != studio_content,
+        }
+        _save(_ws_file(user_id), data)
+        return data[name]
+
+def ws_save_local(user_id, name, local_content):
+    with _lock:
+        data = _load(_ws_file(user_id), default={})
+        existing = data.get(name, {})
+        base = existing.get("base", local_content)
+        data[name] = {
+            "name": name,
+            "base": base,
+            "local": local_content,
+            "pulled_at": existing.get("pulled_at", int(time.time())),
+            "local_modified_at": int(time.time()),
+            "dirty": local_content != base,
+        }
+        _save(_ws_file(user_id), data)
+        return data[name]
+
+def ws_mark_pushed(user_id, name, pushed_content):
+    with _lock:
+        data = _load(_ws_file(user_id), default={})
+        data[name] = {
+            "name": name,
+            "base": pushed_content,
+            "local": pushed_content,
+            "pulled_at": int(time.time()),
+            "local_modified_at": int(time.time()),
+            "dirty": False,
+        }
+        _save(_ws_file(user_id), data)
+
+def ws_get_dirty(user_id):
+    with _lock:
+        data = _load(_ws_file(user_id), default={})
+        return {k: v for k, v in data.items() if v.get("dirty")}
+
+def ws_delete_script(user_id, name):
+    with _lock:
+        data = _load(_ws_file(user_id), default={})
+        data.pop(name, None)
+        _save(_ws_file(user_id), data)
+
+
 def import_all(data):
     with _lock:
         for key in ["users", "sessions", "credits", "plugins", "admins",

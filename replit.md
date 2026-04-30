@@ -13,13 +13,43 @@ A web application that bridges an AI assistant (Claude / Gemini) with a Roblox S
 
 ## Key Files
 
-- `main.py` — Flask server with all API endpoints, AI logic, and tool bridge definitions
-- `store.py` — File-based persistence (users, sessions, credits, conversations)
+- `main.py` — Flask server with all API endpoints, AI logic, tool bridge, and workspace routes
+- `store.py` — File-based persistence (users, sessions, credits, conversations, workspace script cache)
 - `templates/landing.html` — Landing page
-- `templates/index.html` — Main chat/agent UI
+- `templates/index.html` — Main chat/agent UI + Workspace (Monaco editor, script tree, AI chat)
 - `templates/admin.html` — Admin dashboard
 - `data/` — JSON data files (users, sessions, credits, conversations)
+- `data/ws_scripts/` — Per-user offline workspace script cache
 - `attached_assets/` — Roblox Luau plugin code snippets
+
+## Workspace Feature
+
+The Workspace is a VS Code-style IDE overlay (FAB button → full screen):
+- **Left panel**: AI chat assistant scoped to the open script
+- **Middle panel**: Monaco Editor with Lua syntax highlighting, AI Tab-to-accept inline suggestions
+- **Right panel**: Explorer tree of all Studio scripts grouped by service
+
+**Offline-first sync model:**
+- Pulling a script from Studio saves a base snapshot + local copy to `data/ws_scripts/{user_id}.json`
+- Edits auto-save to the cache every ~1.2s (no Studio connection needed)
+- The "Save to Studio" button pushes local → Studio and clears the dirty flag
+- On reconnect (`wsOnReconnect`): fetches current Studio content, compares with base + local
+  - Studio ahead only → update local silently
+  - Local ahead only → show "Push" banner
+  - Both changed → AI merge (Claude Haiku) → load merged code for review
+- Orange dot badge on tree items = local changes not yet pushed
+- "Push all" sync banner for batch-pushing all dirty scripts
+
+**Backend routes:**
+- `POST /workspace/call` — queue a plugin tool call
+- `GET /workspace/result/<req_id>` — poll result
+- `POST /workspace/complete` — AI inline completion (Haiku)
+- `GET /workspace/scripts/cached` — list all cached scripts
+- `GET /workspace/script/content?name=...` — get cached script
+- `POST /workspace/script/save` — save local edit to cache
+- `POST /workspace/sync` — compare studio_content with cache, AI-merge on conflict
+- `POST /workspace/push` — queue write_script tool call
+- `POST /workspace/push/confirm` — mark script as cleanly pushed
 
 ## Running
 

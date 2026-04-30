@@ -1334,7 +1334,7 @@ function updatePluginUI(){
 }
 
 function enterChat(){document.body.classList.add('ready');document.getElementById('sb-new-btn').disabled=false;updateInputState();applyChatState();startStatusPoll()}
-function startStatusPoll(){if(statusPoll)clearInterval(statusPoll);statusPoll=setInterval(async()=>{try{const r=await api('/status');if(!r||!r.ok)return;const wasConnected=pluginConnected;pluginConnected=r.data.plugin_connected;updatePluginUI();if(wasConnected&&!pluginConnected)updateInputState()}catch(e){}},5000)}
+function startStatusPoll(){if(statusPoll)clearInterval(statusPoll);statusPoll=setInterval(async()=>{try{const r=await api('/status');if(!r||!r.ok)return;const wasConnected=pluginConnected;pluginConnected=r.data.plugin_connected;updatePluginUI();if(wasConnected&&!pluginConnected)updateInputState();if(!wasConnected&&r.data.plugin_connected){updateInputState();if(wsOpen)wsOnReconnect()}}catch(e){}},5000)}
 
 function updateInputState(){
   const ia=document.getElementById('input-area'),nc=document.getElementById('no-credits'),pill=document.getElementById('credit-pill');
@@ -1971,13 +1971,16 @@ document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefa
 document.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();window.open('/admin','_blank')}});
 
 // ═══════════════════════════════════════════════════
-// WORKSPACE
+// WORKSPACE  (offline-first, sync-on-reconnect)
 // ═══════════════════════════════════════════════════
 let wsOpen=false,wsMonaco=null,wsMonacoReady=false;
 let wsCurrentScript=null,wsCurrentCode='',wsDirty=false;
 let wsAllScripts=[],wsSuggestion=null,wsSuggTimer=null;
-let wsConvHistory=[],wsIsChatLoading=false,wsAutoSaveTimer=null;
+let wsConvHistory=[],wsIsChatLoading=false;
+let wsCacheTimer=null,wsSyncBanner=null;
+let wsCachedScripts={};  // name → entry from server
 
+// ── open / close ──
 function toggleWorkspace(){if(wsOpen)closeWorkspace();else openWorkspace()}
 
 function openWorkspace(){
@@ -1985,7 +1988,7 @@ function openWorkspace(){
   document.getElementById('ws-overlay').classList.add('open');
   document.getElementById('ws-fab').classList.add('ws-open');
   wsInitMonaco();
-  if(pluginConnected)wsLoadScriptTree();
+  wsLoadScriptTree();
 }
 
 function closeWorkspace(){
@@ -2006,8 +2009,7 @@ function wsInitMonaco(){
       fontSize:13,fontFamily:"'JetBrains Mono',monospace",
       lineHeight:20,tabSize:2,insertSpaces:true,
       minimap:{enabled:false},scrollBeyondLastLine:false,
-      automaticLayout:true,wordWrap:'on',
-      renderLineHighlight:'gutter',
+      automaticLayout:true,wordWrap:'on',renderLineHighlight:'gutter',
       suggestOnTriggerCharacters:true,
       quickSuggestions:{other:false,comments:false,strings:false},
       inlineSuggest:{enabled:false},
@@ -2015,37 +2017,49 @@ function wsInitMonaco(){
     wsMonaco.onDidChangeModelContent(()=>{
       if(!wsCurrentScript)return;
       wsDirty=true;
-      wsSetSaveStatus('');
+      wsSetSaveStatus('Unsaved');
       clearTimeout(wsSuggTimer);
       wsSuggTimer=setTimeout(wsRequestCompletion,900);
-      clearTimeout(wsAutoSaveTimer);
-      wsAutoSaveTimer=setTimeout(()=>{if(wsDirty)wsSaveScript()},3000);
+      clearTimeout(wsCacheTimer);
+      wsCacheTimer=setTimeout(wsCacheCurrentScript,1200);
     });
     wsMonaco.addCommand(monaco.KeyCode.Tab,()=>{
       if(wsSuggestion){wsAcceptSuggestion();return}
       wsMonaco.trigger('keyboard','tab',[]);
     });
     wsMonaco.addCommand(monaco.KeyCode.Escape,()=>{wsDismissSuggestion()});
-    if(wsCurrentCode&&wsCurrentScript){
-      wsMonaco.setValue(wsCurrentCode);
-      wsShowEditor();
-    }
+    if(wsCurrentCode&&wsCurrentScript){wsMonaco.setValue(wsCurrentCode);wsShowEditor()}
   });
 }
 
 function wsShowEditor(){
   document.getElementById('ws-editor-empty').style.display='none';
-  document.getElementById('ws-monaco-container').style.display='flex';
-  document.getElementById('ws-monaco-container').style.flexDirection='column';
+  const mc=document.getElementById('ws-monaco-container');
+  mc.style.display='flex';mc.style.flexDirection='column';
   if(wsMonaco)wsMonaco.layout();
 }
 
-// ── Workspace tool call ──
+// ── Cache helpers ──
+async function wsCacheCurrentScript(){
+  if(!wsCurrentScript||!wsMonaco)return;
+  const content=wsMonaco.getValue();
+  await api('/workspace/script/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,content})});
+  wsCachedScripts[wsCurrentScript]={...(wsCachedScripts[wsCurrentScript]||{}),local:content,dirty:true};
+  wsUpdateDirtyBadges();
+}
+
+async function wsLoadCachedScriptsList(){
+  const r=await api('/workspace/scripts/cached');
+  if(!r||!r.ok)return;
+  wsCachedScripts={};
+  (r.data.scripts||[]).forEach(e=>{wsCachedScripts[e.name]=e});
+}
+
+// ── Studio tool call ──
 async function wsCall(tool,args,timeout=20000){
   const r=await api('/workspace/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool,args})});
   if(!r||!r.ok)throw new Error(r?.data?.error||'Studio not connected');
-  const reqId=r.data.req_id;
-  const start=Date.now();
+  const reqId=r.data.req_id,start=Date.now();
   while(Date.now()-start<timeout){
     await new Promise(res=>setTimeout(res,600));
     const poll=await api('/workspace/result/'+reqId);
@@ -2060,11 +2074,23 @@ async function wsCall(tool,args,timeout=20000){
 async function wsLoadScriptTree(){
   const btn=document.getElementById('ws-tree-refresh');
   const list=document.getElementById('ws-tree-list');
+  btn.classList.add('spinning');
+
+  await wsLoadCachedScriptsList();
+
   if(!pluginConnected){
-    list.innerHTML='<div class="ws-conn-warn"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg> Studio disconnected</div>';
+    const cached=Object.keys(wsCachedScripts);
+    if(!cached.length){
+      list.innerHTML='<div class="ws-conn-warn"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>Studio disconnected — no cached scripts yet</div>';
+    }else{
+      wsAllScripts=cached;
+      wsRenderTree(cached,true);
+      wsShowSyncBanner('Offline mode — showing '+cached.length+' cached script'+(cached.length!==1?'s':''),null,'offline');
+    }
+    btn.classList.remove('spinning');
     return;
   }
-  btn.classList.add('spinning');
+
   list.innerHTML='<div class="ws-tree-empty" style="color:var(--muted)">Loading scripts...</div>';
   try{
     const result=await wsCall('list_scripts',{});
@@ -2077,53 +2103,71 @@ async function wsLoadScriptTree(){
       if(vals.length&&Array.isArray(vals[0]))scripts=vals[0];
       else scripts=Object.keys(result).filter(k=>!['ok','error','status'].includes(k));
     }
-    wsAllScripts=scripts;
-    wsRenderTree(scripts);
+    wsAllScripts=scripts.map(s=>typeof s==='string'?s:(s.name||String(s)));
+    wsRenderTree(wsAllScripts,false);
+    const dirtyCount=Object.values(wsCachedScripts).filter(e=>e.dirty).length;
+    if(dirtyCount>0)wsShowSyncBanner(dirtyCount+' script'+(dirtyCount!==1?'s':'')+' have local changes ready to push','wsPushAllDirty','push');
+    else wsHideSyncBanner();
   }catch(e){
     list.innerHTML=`<div class="ws-tree-empty">${escHtml(e.message)}</div>`;
   }finally{btn.classList.remove('spinning')}
 }
 
+// ── Sync banner ──
+function wsShowSyncBanner(msg,actionFn,type){
+  let bar=document.getElementById('ws-sync-bar');
+  if(!bar){
+    bar=document.createElement('div');bar.id='ws-sync-bar';
+    bar.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 14px;font-size:10.5px;font-weight:600;flex-shrink:0;border-bottom:1px solid';
+    document.querySelector('.ws-body').insertAdjacentElement('beforebegin',bar);
+  }
+  const colors={offline:'rgba(155,154,222,.12)|#9b9ade|rgba(155,154,222,.2)',push:'rgba(212,168,67,.08)|var(--accent)|rgba(212,168,67,.15)',merge:'rgba(69,196,122,.08)|#45c47a|rgba(69,196,122,.15)'};
+  const [bg,col,border]=(colors[type]||colors.push).split('|');
+  bar.style.background=bg;bar.style.color=col;bar.style.borderColor=border;
+  bar.innerHTML=`<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;flex-shrink:0"><path d="${type==='offline'?'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z':'M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'}"/></svg>
+  <span style="flex:1">${escHtml(msg)}</span>
+  ${actionFn?`<button onclick="${actionFn}()" style="padding:3px 10px;background:currentColor;color:#000;border:none;border-radius:5px;font-size:9.5px;font-weight:700;cursor:pointer;font-family:inherit;filter:brightness(.9)">Push all</button>`:''}
+  <button onclick="wsHideSyncBanner()" style="padding:2px 6px;background:none;border:1px solid currentColor;border-radius:5px;font-size:9px;cursor:pointer;color:inherit;font-family:inherit;opacity:.6">Dismiss</button>`;
+}
+function wsHideSyncBanner(){document.getElementById('ws-sync-bar')?.remove()}
+
 const WS_SERVICES=['ServerScriptService','StarterPlayerScripts','StarterCharacterScripts','ReplicatedStorage','Workspace','ServerStorage','StarterGui'];
 const WS_ICONS={Script:'<svg viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm-1 8v-5l5 5h-5z" fill="#4ec9b0"/></svg>',LocalScript:'<svg viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm-1 8v-5l5 5h-5z" fill="#ce9178"/></svg>',ModuleScript:'<svg viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7zm-1 8v-5l5 5h-5z" fill="#9b9ade"/></svg>'};
 
-function wsRenderTree(scripts){
+function wsRenderTree(scripts,offlineMode=false){
   const list=document.getElementById('ws-tree-list');
   if(!scripts||!scripts.length){
-    list.innerHTML='<div class="ws-tree-empty">No scripts found.<br>Make sure your place has scripts.</div>';
-    return;
+    list.innerHTML='<div class="ws-tree-empty">No scripts found.</div>';return;
   }
   const grouped={};
-  scripts.forEach(s=>{
-    const name=typeof s==='string'?s:(s.name||String(s));
+  scripts.forEach(name=>{
     let svc='Other';
     for(const sv of WS_SERVICES){if(name.startsWith(sv+'.')||name===sv){svc=sv;break}}
-    if(!grouped[svc])grouped[svc]=[];
-    grouped[svc].push(name);
+    if(!grouped[svc])grouped[svc]=[];grouped[svc].push(name);
   });
   let html='';
   const order=[...WS_SERVICES,'Other'];
   order.forEach(svc=>{
     if(!grouped[svc]||!grouped[svc].length)return;
-    html+=`<div class="ws-group" id="wsg-${svc}">
-      <div class="ws-group-label" onclick="wsToggleGroup('${svc}')">
-        <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-        ${escHtml(svc)} <span style="color:var(--text3);margin-left:auto;font-size:8.5px">${grouped[svc].length}</span>
-      </div>
-      <div class="ws-group-children">`;
+    html+=`<div class="ws-group" id="wsg-${svc}"><div class="ws-group-label" onclick="wsToggleGroup('${svc}')"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>${escHtml(svc)}<span style="color:var(--text3);margin-left:auto;font-size:8.5px">${grouped[svc].length}</span></div><div class="ws-group-children">`;
     grouped[svc].forEach(name=>{
       const shortName=name.split('.').pop()||name;
       const typeMatch=name.match(/(LocalScript|ModuleScript|Script)/i);
       const type=typeMatch?typeMatch[0]:'Script';
       const icon=WS_ICONS[type]||WS_ICONS.Script;
-      html+=`<div class="ws-script-item ${wsCurrentScript===name?'active':''}" id="wsi-${btoa(name).replace(/[^a-z0-9]/gi,'')}" onclick="wsOpenScript('${escHtml(name).replace(/'/g,"\\'")}')">
+      const cached=wsCachedScripts[name];
+      const dirty=cached&&cached.dirty;
+      const safe=btoa(unescape(encodeURIComponent(name))).replace(/[^a-z0-9]/gi,'');
+      html+=`<div class="ws-script-item ${wsCurrentScript===name?'active':''}" id="wsi-${safe}" onclick="wsOpenScript('${name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" title="${escHtml(name)}">
         <span class="ws-script-icon">${icon}</span>
-        <span class="ws-script-name" title="${escHtml(name)}">${escHtml(shortName)}</span>
+        <span class="ws-script-name">${escHtml(shortName)}</span>
+        ${dirty?'<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0" title="Local changes"></span>':''}
         <span class="ws-script-type">${type==='LocalScript'?'L':type==='ModuleScript'?'M':'S'}</span>
       </div>`;
     });
     html+='</div></div>';
   });
+  if(offlineMode)html+='<div style="margin:8px 6px 0;padding:5px 8px;border-radius:6px;background:rgba(155,154,222,.08);border:1px solid rgba(155,154,222,.15);font-size:9.5px;color:#9b9ade;text-align:center">Offline mode — connect Studio to load all scripts</div>';
   list.innerHTML=html;
 }
 
@@ -2131,110 +2175,211 @@ function wsToggleGroup(svc){document.getElementById('wsg-'+svc)?.classList.toggl
 
 function wsFilterTree(q){
   const qq=q.toLowerCase();
-  document.querySelectorAll('.ws-script-item').forEach(el=>{
-    const name=(el.querySelector('.ws-script-name')?.textContent||'').toLowerCase();
-    el.style.display=name.includes(qq)?'':'none';
-  });
-  document.querySelectorAll('.ws-group').forEach(g=>{
-    const anyVisible=[...g.querySelectorAll('.ws-script-item')].some(i=>i.style.display!=='none');
-    g.style.display=anyVisible?'':'none';
+  document.querySelectorAll('.ws-script-item').forEach(el=>{el.style.display=(el.title||'').toLowerCase().includes(qq)||el.querySelector('.ws-script-name')?.textContent.toLowerCase().includes(qq)?'':'none'});
+  document.querySelectorAll('.ws-group').forEach(g=>{g.style.display=[...g.querySelectorAll('.ws-script-item')].some(i=>i.style.display!=='none')?'':'none'});
+}
+
+function wsUpdateDirtyBadges(){
+  Object.entries(wsCachedScripts).forEach(([name,entry])=>{
+    const safe=btoa(unescape(encodeURIComponent(name))).replace(/[^a-z0-9]/gi,'');
+    const el=document.getElementById('wsi-'+safe);
+    if(!el)return;
+    const existing=el.querySelector('[title="Local changes"]');
+    if(entry.dirty&&!existing){
+      const dot=document.createElement('span');
+      dot.style.cssText='width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0';
+      dot.title='Local changes';
+      const typeSpan=el.querySelector('.ws-script-type');
+      if(typeSpan)el.insertBefore(dot,typeSpan);else el.appendChild(dot);
+    }else if(!entry.dirty&&existing){existing.remove()}
   });
 }
 
 // ── Open script ──
 async function wsOpenScript(name){
-  if(!pluginConnected){showToast('Studio not connected','error');return}
   wsSetActiveTreeItem(name);
   const crumb=document.getElementById('ws-crumb');
-  crumb.innerHTML=`<span style="color:var(--muted)">${escHtml(name.split('.').slice(0,-1).join('.'))}.</span><span class="ws-crumb-name">${escHtml(name.split('.').pop()||name)}</span>`;
-  document.getElementById('ws-editor-tab-name').textContent=(name.split('.').pop()||name)+'.lua';
+  const parts=name.split('.');const lastName=parts.pop()||name;const prefix=parts.join('.');
+  crumb.innerHTML=`${prefix?`<span style="color:var(--muted)">${escHtml(prefix)}.</span>`:''}<span class="ws-crumb-name">${escHtml(lastName)}</span>`;
+  document.getElementById('ws-editor-tab-name').textContent=lastName+'.lua';
+
+  if(!pluginConnected){
+    // Offline: load from cache
+    const cached=wsCachedScripts[name];
+    if(cached){
+      const code=cached.local||cached.base||'';
+      wsLoadCodeIntoEditor(name,code,!!cached.dirty);
+      wsAddChatMsg('system',`Loaded cached ${name} (offline)`);
+      if(cached.dirty)wsSetSaveStatus('Local changes — not yet in Studio');
+    }else{
+      wsAddChatMsg('system','No cached version of '+name+'. Connect Studio to load it.');
+      showToast('Studio not connected and no cached version','error');
+    }
+    return;
+  }
+
   wsAddChatMsg('system','Loading '+name+'...');
   try{
     const result=await wsCall('read_script',{name});
     let code='';
     if(typeof result==='string')code=result;
-    else if(result&&typeof result==='object'){
-      code=result.source||result.code||result.content||result.text||JSON.stringify(result,null,2);
+    else if(result&&typeof result==='object'){code=result.source||result.code||result.content||result.text||JSON.stringify(result,null,2)}
+
+    // Sync: compare studio content with local cache
+    const syncR=await api('/workspace/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,studio_content:code})});
+    if(syncR&&syncR.ok){
+      const {action,content}=syncR.data;
+      code=content||code;
+      if(action==='merged'){wsAddChatMsg('system','AI merged local + Studio changes for '+name);showToast('Merged local and Studio changes','success')}
+      else if(action==='studio_ahead'){wsAddChatMsg('system','Studio was ahead — local updated to Studio version')}
+      else if(action==='local_ahead'){wsAddChatMsg('system','You have local changes not yet in Studio');wsSetSaveStatus('Local changes — push to sync');code=syncR.data.content}
+      else if(action==='conflict'){wsAddChatMsg('system','Conflict detected — showing your local version. Studio version also available.')}
     }
-    wsCurrentScript=name;
-    wsCurrentCode=code;
-    wsDirty=false;
-    if(!wsMonacoReady){
-      wsInitMonaco();
-      setTimeout(()=>{if(wsMonaco){wsMonaco.setValue(code);wsShowEditor();document.getElementById('ws-save-btn').disabled=false}},1500);
-    }else{
-      wsMonaco.setValue(code);
-      wsShowEditor();
-      document.getElementById('ws-save-btn').disabled=false;
-    }
-    wsAddChatMsg('system','Opened '+name+' · '+code.split('\n').length+' lines');
-    wsSetSaveStatus('');
-    wsDismissSuggestion();
+
+    wsLoadCodeIntoEditor(name,code,syncR?.data?.action==='local_ahead'||syncR?.data?.action==='conflict');
+    wsAddChatMsg('system',`Opened ${name} · ${code.split('\n').length} lines`);
+    if(!syncR?.data?.action||syncR.data.action==='up_to_date')wsSetSaveStatus('');
   }catch(e){
     wsAddChatMsg('system','Error: '+e.message);
-    showToast('Failed to load script','error');
+    showToast('Failed to load script: '+e.message,'error');
   }
+}
+
+function wsLoadCodeIntoEditor(name,code,hasDirty=false){
+  wsCurrentScript=name;wsCurrentCode=code;wsDirty=hasDirty;
+  const load=()=>{wsMonaco.setValue(code);wsShowEditor();document.getElementById('ws-save-btn').disabled=false};
+  if(!wsMonacoReady){wsInitMonaco();setTimeout(()=>{if(wsMonaco)load()},1500)}else load();
+  wsDismissSuggestion();
 }
 
 function wsSetActiveTreeItem(name){
   document.querySelectorAll('.ws-script-item').forEach(el=>el.classList.remove('active'));
-  const safe=btoa(name).replace(/[^a-z0-9]/gi,'');
+  const safe=btoa(unescape(encodeURIComponent(name))).replace(/[^a-z0-9]/gi,'');
   document.getElementById('wsi-'+safe)?.classList.add('active');
 }
 
-// ── Save script ──
+// ── Save / Push ──
 async function wsSaveScript(){
-  if(!wsCurrentScript||!wsMonaco||!pluginConnected)return;
+  if(!wsCurrentScript||!wsMonaco)return;
   const code=wsMonaco.getValue();
   const saveBtn=document.getElementById('ws-save-btn');
   saveBtn.disabled=true;
-  wsSetSaveStatus('Saving...');
+
+  // Always save to cache
+  await api('/workspace/script/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,content:code})});
+  wsCachedScripts[wsCurrentScript]={...(wsCachedScripts[wsCurrentScript]||{}),local:code,dirty:true};
+
+  if(!pluginConnected){
+    wsSetSaveStatus('Saved offline ✓',true);
+    showToast('Saved locally — will push when Studio reconnects');
+    saveBtn.disabled=false;
+    wsUpdateDirtyBadges();
+    return;
+  }
+
+  // Push to Studio
+  wsSetSaveStatus('Pushing...');
   try{
     await wsCall('write_script',{name:wsCurrentScript,code});
-    wsDirty=false;
-    wsCurrentCode=code;
-    wsSetSaveStatus('Saved ✓',true);
+    await api('/workspace/push/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,content:code})});
+    wsCachedScripts[wsCurrentScript]={...(wsCachedScripts[wsCurrentScript]||{}),base:code,local:code,dirty:false};
+    wsDirty=false;wsCurrentCode=code;
+    wsSetSaveStatus('Pushed to Studio ✓',true);
     setTimeout(()=>wsSetSaveStatus(''),3000);
+    wsUpdateDirtyBadges();
   }catch(e){
-    wsSetSaveStatus('Save failed');
-    showToast('Save failed: '+e.message,'error');
+    wsSetSaveStatus('Push failed');
+    showToast('Push failed: '+e.message,'error');
   }finally{saveBtn.disabled=false}
 }
 
 function wsSetSaveStatus(msg,saved=false){
   const el=document.getElementById('ws-save-status');
-  el.textContent=msg;
-  el.className='ws-save-status'+(saved?' saved':'');
+  el.textContent=msg;el.className='ws-save-status'+(saved?' saved':'');
+}
+
+// ── Push all dirty scripts ──
+async function wsPushAllDirty(){
+  const dirty=Object.values(wsCachedScripts).filter(e=>e.dirty);
+  if(!dirty.length){wsHideSyncBanner();return}
+  if(!pluginConnected){showToast('Studio not connected','error');return}
+  wsHideSyncBanner();
+  for(const entry of dirty){
+    wsSetSaveStatus('Pushing '+entry.name+'...');
+    try{
+      await wsCall('write_script',{name:entry.name,code:entry.local});
+      await api('/workspace/push/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:entry.name,content:entry.local})});
+      wsCachedScripts[entry.name]={...entry,base:entry.local,dirty:false};
+      showToast('Pushed: '+entry.name.split('.').pop(),'success');
+    }catch(e){showToast('Failed to push '+entry.name.split('.').pop()+': '+e.message,'error')}
+  }
+  wsSetSaveStatus('All pushed ✓',true);
+  setTimeout(()=>wsSetSaveStatus(''),3000);
+  wsUpdateDirtyBadges();
+}
+
+// ── Reconnect handler ──
+async function wsOnReconnect(){
+  wsHideSyncBanner();
+  // Refresh tree (now connected)
+  await wsLoadScriptTree();
+
+  // If current script is open and was dirty, sync it
+  if(wsCurrentScript&&wsDirty&&wsMonaco){
+    const localCode=wsMonaco.getValue();
+    wsAddChatMsg('system','Studio reconnected — syncing '+wsCurrentScript+'...');
+    try{
+      const studioResult=await wsCall('read_script',{name:wsCurrentScript});
+      let studioCode='';
+      if(typeof studioResult==='string')studioCode=studioResult;
+      else if(studioResult&&typeof studioResult==='object'){studioCode=studioResult.source||studioResult.code||studioResult.content||studioResult.text||''}
+      const syncR=await api('/workspace/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,studio_content:studioCode})});
+      if(syncR&&syncR.ok){
+        const {action,content}=syncR.data;
+        if(action==='merged'){
+          wsMonaco.setValue(content);wsCurrentCode=content;wsDirty=true;
+          wsAddChatMsg('system','AI merged your local changes with Studio changes. Review and push when ready.');
+          showToast('Merged local + Studio changes — review before pushing','success');
+          wsSetSaveStatus('Merged — push to finalize');
+        }else if(action==='local_ahead'){
+          wsShowSyncBanner('You have unpushed local changes in '+wsCurrentScript,'wsSaveScript','push');
+        }else if(action==='studio_ahead'){
+          wsMonaco.setValue(content);wsCurrentCode=content;wsDirty=false;
+          wsAddChatMsg('system','Studio was updated since last sync — local updated.');
+          wsSetSaveStatus('');
+        }else{wsSetSaveStatus('')}
+      }
+    }catch(e){wsAddChatMsg('system','Sync error: '+e.message)}
+  }
+
+  // Check all dirty cached scripts
+  const dirty=Object.values(wsCachedScripts).filter(e=>e.dirty&&e.name!==wsCurrentScript);
+  if(dirty.length>0){
+    wsShowSyncBanner(dirty.length+' cached script'+(dirty.length!==1?'s':'')+' have local changes','wsPushAllDirty','push');
+  }
 }
 
 // ── AI Completion (Tab to accept) ──
 async function wsRequestCompletion(){
-  if(!wsCurrentScript||!wsMonaco||!pluginConnected)return;
-  const model=wsMonaco.getModel();
-  if(!model)return;
+  if(!wsCurrentScript||!wsMonaco)return;
+  const model=wsMonaco.getModel();if(!model)return;
   const pos=wsMonaco.getPosition();
-  const codeAll=wsMonaco.getValue();
+  const all=wsMonaco.getValue();
   const offset=model.getOffsetAt(pos);
-  const codeBefore=codeAll.substring(0,offset);
-  const codeAfter=codeAll.substring(offset);
   try{
-    const r=await api('/workspace/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code_before:codeBefore,code_after:codeAfter,script_name:wsCurrentScript})});
+    const r=await api('/workspace/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code_before:all.substring(0,offset),code_after:all.substring(offset),script_name:wsCurrentScript})});
     if(!r||!r.ok||!r.data.completion)return;
-    const suggestion=r.data.completion;
-    wsSuggestion={text:suggestion,pos:{...pos}};
-    const preview=suggestion.replace(/\n/g,'↵').substring(0,80);
-    document.getElementById('ws-sugg-text').textContent=preview;
+    const s=r.data.completion;
+    wsSuggestion={text:s,pos:{...pos}};
+    document.getElementById('ws-sugg-text').textContent=s.replace(/\n/g,'↵').substring(0,80);
     document.getElementById('ws-sugg-bar').classList.add('visible');
   }catch(e){}
 }
 
 function wsAcceptSuggestion(){
   if(!wsSuggestion||!wsMonaco)return;
-  const {text,pos}=wsSuggestion;
-  const model=wsMonaco.getModel();
-  if(!model)return;
-  const range={startLineNumber:pos.lineNumber,startColumn:pos.column,endLineNumber:pos.lineNumber,endColumn:pos.column};
-  wsMonaco.executeEdits('suggestion',[{range,text}]);
+  const {text,pos}=wsSuggestion;const model=wsMonaco.getModel();if(!model)return;
+  wsMonaco.executeEdits('suggestion',[{range:{startLineNumber:pos.lineNumber,startColumn:pos.column,endLineNumber:pos.lineNumber,endColumn:pos.column},text}]);
   wsDismissSuggestion();
 }
 
@@ -2244,62 +2389,44 @@ function wsDismissSuggestion(){
   document.getElementById('ws-sugg-text').textContent='';
 }
 
-// ── AI Chat (left panel) ──
+// ── AI Chat ──
 function wsAddChatMsg(role,text,extractedCode){
   const msgs=document.getElementById('ws-chat-msgs');
-  const div=document.createElement('div');
-  div.className='ws-msg '+role;
+  const div=document.createElement('div');div.className='ws-msg '+role;
   if(role==='ai'){
-    const withCode=text.replace(/```(?:\w*)\n([\s\S]*?)```/g,(_,c)=>`<pre>${escHtml(c.trim())}</pre>`);
-    const safe=withCode.replace(/<(?!pre|\/pre)([^>]+)>/g,'');
-    div.innerHTML=safe;
+    const withPre=text.replace(/```(?:\w*)\n([\s\S]*?)```/g,(_,c)=>`<pre>${escHtml(c.trim())}</pre>`);
+    div.innerHTML=withPre.replace(/<(?!pre|\/pre)([^>]+)>/g,'');
     if(extractedCode){
       const row=document.createElement('div');row.className='ws-chat-apply-row';
       const btn=document.createElement('button');btn.className='ws-apply-btn';btn.textContent='Apply to editor';
-      btn.onclick=()=>{if(wsMonaco){wsMonaco.setValue(extractedCode);wsDirty=true;wsSetSaveStatus('')}};
+      btn.onclick=()=>{if(wsMonaco){wsMonaco.setValue(extractedCode);wsDirty=true;wsSetSaveStatus('Unsaved')}};
       row.appendChild(btn);div.appendChild(row);
     }
-  }else{
-    div.textContent=text;
-  }
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
+  }else{div.textContent=text}
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 }
 
 async function wsSendChat(){
   const ta=document.getElementById('ws-chat-ta');
   const text=ta.value.trim();
   if(!text||wsIsChatLoading)return;
-  wsIsChatLoading=true;
-  ta.value='';ta.style.height='auto';
+  wsIsChatLoading=true;ta.value='';ta.style.height='auto';
   wsAddChatMsg('user',text);
   document.getElementById('ws-chat-send').disabled=true;
-
   const currentCode=wsMonaco?wsMonaco.getValue():'';
-  const context=wsCurrentScript?`Current script: ${wsCurrentScript}\n\nCode:\n\`\`\`lua\n${currentCode.substring(0,3000)}\n\`\`\``:'No script open.';
-
-  const systemPrompt=`You are a Roblox Luau coding assistant inside an IDE. The user is editing scripts in their Roblox place. Give concise, helpful answers about Luau code. If you write code, use lua code blocks. ${context}`;
-
+  const ctx=wsCurrentScript?`Current script: ${wsCurrentScript}\n\nCode:\n\`\`\`lua\n${currentCode.substring(0,3000)}\n\`\`\``:'No script open.';
   try{
-    const r=await api('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      session_id:sessionId,mode:'chat',
-      message:`[Workspace AI]\nContext:\n${context}\n\nUser question: ${text}`,
-      model:'haiku',conversation_history:wsConvHistory.slice(-8)
-    })});
+    const r=await api('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,mode:'chat',message:`[Workspace AI]\n${ctx}\n\nUser: ${text}`,model:'haiku',conversation_history:wsConvHistory.slice(-8)})});
     if(!r||!r.ok){wsAddChatMsg('ai','Error: Failed to get response');return}
     const reply=r.data.reply||'No response.';
     wsConvHistory.push({role:'user',content:text},{role:'assistant',content:reply});
     const codeMatch=reply.match(/```(?:\w*)\n([\s\S]+?)```/);
     wsAddChatMsg('ai',reply,codeMatch?codeMatch[1]:null);
-  }catch(e){
-    wsAddChatMsg('ai','Error: '+e.message);
-  }finally{
-    wsIsChatLoading=false;
-    document.getElementById('ws-chat-send').disabled=false;
-  }
+  }catch(e){wsAddChatMsg('ai','Error: '+e.message)}
+  finally{wsIsChatLoading=false;document.getElementById('ws-chat-send').disabled=false}
 }
 
-// ── textarea auto-resize & keyboard ──
+// ── Keyboard shortcuts ──
 document.getElementById('ws-chat-ta').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'});
 document.getElementById('ws-chat-ta').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();wsSendChat()}});
 document.getElementById('ws-overlay').addEventListener('keydown',function(e){if(e.key==='Escape'&&!document.getElementById('ws-chat-ta').matches(':focus'))closeWorkspace()});

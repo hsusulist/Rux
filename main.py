@@ -2423,6 +2423,163 @@ def workspace_complete():
         return jsonify({"error": str(e)}), 500
 
 
+# ── Workspace offline cache routes ──
+
+@app.route("/workspace/scripts/cached", methods=["GET"])
+@require_auth
+def ws_cached_scripts():
+    user = request.user
+    cached = store.ws_get_all(user["id"])
+    return jsonify({"ok": True, "scripts": list(cached.values())})
+
+
+@app.route("/workspace/script/content", methods=["GET"])
+@require_auth
+def ws_script_content():
+    user = request.user
+    name = request.args.get("name", "")
+    if not name:
+        return jsonify({"error": "name required"}), 400
+    entry = store.ws_get_script(user["id"], name)
+    if not entry:
+        return jsonify({"error": "Not in cache"}), 404
+    return jsonify({"ok": True, "entry": entry})
+
+
+@app.route("/workspace/script/save", methods=["POST"])
+@require_auth
+def ws_script_save_local():
+    data = request.get_json(force=True)
+    name = data.get("name", "")
+    content = data.get("content", "")
+    if not name:
+        return jsonify({"error": "name required"}), 400
+    user = request.user
+    entry = store.ws_save_local(user["id"], name, content)
+    return jsonify({"ok": True, "dirty": entry["dirty"]})
+
+
+@app.route("/workspace/sync", methods=["POST"])
+@require_auth
+def ws_sync():
+    """
+    Given the studio's current content for a script, compare with local cache.
+    Returns one of: 'up_to_date', 'local_ahead', 'studio_ahead', 'conflict'
+    On conflict, returns AI-merged content.
+    """
+    data = request.get_json(force=True)
+    name = data.get("name", "")
+    studio_content = data.get("studio_content", "")
+    user = request.user
+    uid = user["id"]
+
+    if not name:
+        return jsonify({"error": "name required"}), 400
+
+    entry = store.ws_get_script(uid, name)
+    if not entry:
+        # Never cached — just save as base
+        store.ws_pull_script(uid, name, studio_content)
+        return jsonify({"ok": True, "action": "up_to_date", "content": studio_content})
+
+    base = entry.get("base", "")
+    local = entry.get("local", "")
+
+    studio_changed = studio_content != base
+    local_changed = local != base
+
+    if not studio_changed and not local_changed:
+        return jsonify({"ok": True, "action": "up_to_date", "content": local})
+
+    if studio_changed and not local_changed:
+        # Studio ahead — update local to studio version
+        store.ws_pull_script(uid, name, studio_content)
+        return jsonify({"ok": True, "action": "studio_ahead", "content": studio_content})
+
+    if local_changed and not studio_changed:
+        return jsonify({"ok": True, "action": "local_ahead", "content": local})
+
+    # Both changed — AI merge
+    balance, _ = store.get_credits(uid)
+    if balance <= 0:
+        return jsonify({"ok": True, "action": "conflict_no_credits", "content": local,
+                        "studio_content": studio_content})
+
+    mi = resolve_model("haiku")
+    prompt = (
+        f"You are a Roblox Luau code merge assistant.\n\n"
+        f"Script: {name}\n\n"
+        f"=== BASE (what both started from) ===\n```lua\n{base[:3000]}\n```\n\n"
+        f"=== LOCAL CHANGES (edited in Rux workspace) ===\n```lua\n{local[:3000]}\n```\n\n"
+        f"=== STUDIO CHANGES (edited in Roblox Studio) ===\n```lua\n{studio_content[:3000]}\n```\n\n"
+        "Produce a clean merged Luau script that incorporates both sets of changes. "
+        "Resolve any conflicts sensibly. Output ONLY the merged Luau code, no explanation, no fences."
+    )
+    try:
+        r = call_anthropic(mi["id"], [{"role": "user", "content": prompt}], max_tokens=4096)
+        merged = "".join(
+            b.text for b in r.content if hasattr(b, "type") and b.type == "text"
+        ).strip()
+        cost = round(r.usage.output_tokens * mi["credit_per_token"], 6)
+        store.deduct_credits(uid, cost)
+        store.save_credit_entry(uid, -cost, f"Workspace merge ({mi['label']})")
+        store.ws_pull_script(uid, name, studio_content)
+        store.ws_save_local(uid, name, merged)
+        return jsonify({"ok": True, "action": "merged", "content": merged, "studio_content": studio_content})
+    except Exception as e:
+        logging.exception("ws merge failed")
+        return jsonify({"ok": True, "action": "conflict", "content": local,
+                        "studio_content": studio_content, "error": str(e)})
+
+
+@app.route("/workspace/push", methods=["POST"])
+@require_auth
+def ws_push_script():
+    """Push locally cached script to Studio via tool call, then mark as pushed."""
+    data = request.get_json(force=True)
+    name = data.get("name", "")
+    user = request.user
+    uid = user["id"]
+
+    entry = store.ws_get_script(uid, name)
+    if not entry:
+        return jsonify({"error": "Script not in cache"}), 404
+
+    active_session = store.get_user_plugin(uid)
+    if not active_session:
+        return jsonify({"error": "Studio not connected"}), 400
+
+    pid = active_session.get("plugin_id")
+    with plugin_registry_lock:
+        info = plugin_registry.get(pid)
+        if not info or time.time() - info.get("last_seen", 0) > 15:
+            return jsonify({"error": "Studio not connected"}), 400
+
+    code = entry["local"]
+    req_id = str(uuid.uuid4())
+    tc = {"id": f"ws-{req_id}", "name": "write_script", "arguments": {"name": name, "code": code}}
+    with workspace_calls_lock:
+        workspace_calls[req_id] = {
+            "tool_call": tc, "status": "pending", "result": None,
+            "user_id": uid, "plugin_id": pid,
+            "session_id": active_session.get("session_id") or str(uuid.uuid4()),
+            "created_at": time.time(),
+        }
+    return jsonify({"ok": True, "req_id": req_id, "name": name})
+
+
+@app.route("/workspace/push/confirm", methods=["POST"])
+@require_auth
+def ws_push_confirm():
+    """Mark script as successfully pushed (clear dirty flag)."""
+    data = request.get_json(force=True)
+    name = data.get("name", "")
+    content = data.get("content", "")
+    user = request.user
+    store.ws_mark_pushed(user["id"], name, content)
+    return jsonify({"ok": True})
+
+
 # ═══ STATUS ROUTE
 
 @app.route("/status", methods=["GET"])
