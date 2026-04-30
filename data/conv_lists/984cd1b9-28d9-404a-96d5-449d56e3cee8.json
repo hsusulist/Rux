@@ -27,13 +27,6 @@
     "title": "hi",
     "updatedAt": 1776469975073
   },
-  "new-1776502575174": {
-    "id": "new-1776502575174",
-    "mode": "chat",
-    "model": "gemma-26b",
-    "title": "Read all my scripts",
-    "updatedAt": 1776502582829
-  },
   "new-1776512007013": {
     "id": "new-1776512007013",
     "mode": "chat",
@@ -81,13 +74,6 @@
     "title": "hi",
     "mode": "chat",
     "model": "sonnet",
-    "updatedAt": 1777505182700
-  },
-  "new-1777535082144": {
-    "id": "new-1777535082144",
-    "title": "game",
-    "mode": "chat",
-    "model": "sonnet",
-    "updatedAt": 1777535082145
+    "updatedAt": 1777535345683
   }
 }

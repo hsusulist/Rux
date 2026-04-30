@@ -1,0 +1,31 @@
+{
+  "id": "new-1777505147593",
+  "title": "hi",
+  "messages": [
+    {
+      "role": "user",
+      "text": "hello bro",
+      "attachments": [],
+      "logTime": "14:49:01"
+    },
+    {
+      "role": "assistant",
+      "text": "Hey! 👋 What's up? I'm **Rux**, your Roblox Studio AI assistant. I'm connected live to your Studio session and ready to help you with:\n\n- 🛠️ **Scripting** — Writing, editing, and debugging Luau scripts\n- 🏗️ **Building** — Creating and modifying instances, parts, tools, etc.\n- 🔍 **Debugging** — Checking errors, searching code, inspecting your workspace\n- 📦 **Game Systems** — Inventories, combat, UI, data stores, and more\n\nWhat are you working on today? Let me know and we'll get into it! 🚀",
+      "logTime": "14:49:05"
+    }
+  ],
+  "history": [
+    {
+      "role": "user",
+      "content": "hello bro"
+    },
+    {
+      "role": "assistant",
+      "content": "Hey! 👋 What's up? I'm **Rux**, your Roblox Studio AI assistant. I'm connected live to your Studio session and ready to help you with:\n\n- 🛠️ **Scripting** — Writing, editing, and debugging Luau scripts\n- 🏗️ **Building** — Creating and modifying instances, parts, tools, etc.\n- 🔍 **Debugging** — Checking errors, searching code, inspecting your workspace\n- 📦 **Game Systems** — Inventories, combat, UI, data stores, and more\n\nWhat are you working on today? Let me know and we'll get into it! 🚀"
+    }
+  ],
+  "mode": "chat",
+  "model": "sonnet",
+  "sessionId": null,
+  "updatedAt": 1777535345683
+}

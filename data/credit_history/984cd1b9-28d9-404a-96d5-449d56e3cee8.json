@@ -82,5 +82,23 @@
     "reason": "AI chat (Claude Sonnet)",
     "admin_id": "",
     "timestamp": 1777518784939
+  },
+  {
+    "amount": -0.0895,
+    "reason": "AI chat (Claude Sonnet)",
+    "admin_id": "",
+    "timestamp": 1777535206784
+  },
+  {
+    "amount": -0.081,
+    "reason": "AI chat (Claude Sonnet)",
+    "admin_id": "",
+    "timestamp": 1777535318405
+  },
+  {
+    "amount": -0.0805,
+    "reason": "AI chat (Claude Sonnet)",
+    "admin_id": "",
+    "timestamp": 1777535345153
   }
 ]
