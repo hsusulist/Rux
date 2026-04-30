@@ -83,11 +83,11 @@
     "model": "sonnet",
     "updatedAt": 1777505182700
   },
-  "new-1777508190712": {
-    "id": "new-1777508190712",
-    "title": "12",
+  "new-1777535082144": {
+    "id": "new-1777535082144",
+    "title": "game",
     "mode": "chat",
-    "model": "gpt-5-codex",
-    "updatedAt": 1777508190712
+    "model": "sonnet",
+    "updatedAt": 1777535082145
   }
 }
