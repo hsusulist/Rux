@@ -187,6 +187,8 @@ pending_auto_sessions_lock = Lock()
 AUTO_CONNECT_EXPIRY_MS = 2 * 60 * 60 * 1000  # 2 hours
 web_heartbeats = {}
 web_heartbeats_lock = Lock()
+workspace_calls = {}
+workspace_calls_lock = Lock()
 
 # ═══ AUTH HELPERS ═══
 def hash_password(password):
@@ -2044,6 +2046,18 @@ def plugin_poll():
         next_write = session["restore_queue"].pop(0)
         session["pending_tool_call"] = next_write
 
+    if not session.get("pending_tool_call"):
+        now_t = time.time()
+        with workspace_calls_lock:
+            expired_ws = [k for k, v in workspace_calls.items() if now_t - v["created_at"] > 120]
+            for k in expired_ws:
+                del workspace_calls[k]
+            for req_id, wc in workspace_calls.items():
+                if wc["status"] == "pending" and wc["plugin_id"] == pid:
+                    wc["status"] = "sent"
+                    session["pending_tool_call"] = wc["tool_call"]
+                    break
+
     return jsonify({
         "status_message": session["status"],
         "tool_call": session.get("pending_tool_call"),
@@ -2057,6 +2071,18 @@ def plugin_tool_result():
     sid = data.get("session_id")
     session = get_session(sid)
     user_id = session.get("user_id")
+
+    pc = session.get("pending_tool_call")
+    if pc and isinstance(pc.get("id"), str) and pc["id"].startswith("ws-"):
+        req_id = pc["id"][3:]
+        tool_result_data = data.get("tool_result", {})
+        with workspace_calls_lock:
+            if req_id in workspace_calls:
+                workspace_calls[req_id]["status"] = "done"
+                workspace_calls[req_id]["result"] = tool_result_data
+        session["pending_tool_call"] = None
+        return jsonify({"reply": "ok", "status": "ok"})
+
     mk = session.get("model_key", DEFAULT_MODEL)
     mi = resolve_model(mk)
     cpt = mi["credit_per_token"]
@@ -2308,6 +2334,94 @@ def restore_checkpoint_route(checkpoint_id):
         "checkpoint_id": checkpoint_id,
         "label": ckpt.get("label", ""),
     })
+
+# ═══ WORKSPACE ROUTES
+
+@app.route("/workspace/call", methods=["POST"])
+@require_auth
+def workspace_call():
+    data = request.get_json(force=True)
+    tool_name = data.get("tool")
+    tool_args = data.get("args", {})
+    user = request.user
+
+    active_session = store.get_user_plugin(user["id"])
+    if not active_session:
+        return jsonify({"error": "Studio not connected"}), 400
+
+    pid = active_session.get("plugin_id")
+    with plugin_registry_lock:
+        info = plugin_registry.get(pid)
+        if not info or time.time() - info.get("last_seen", 0) > 15:
+            return jsonify({"error": "Studio not connected"}), 400
+        sid = active_session.get("session_id") or str(uuid.uuid4())
+
+    req_id = str(uuid.uuid4())
+    tc = {
+        "id": f"ws-{req_id}",
+        "name": tool_name,
+        "arguments": tool_args,
+    }
+    with workspace_calls_lock:
+        workspace_calls[req_id] = {
+            "tool_call": tc,
+            "status": "pending",
+            "result": None,
+            "user_id": user["id"],
+            "plugin_id": pid,
+            "session_id": sid,
+            "created_at": time.time(),
+        }
+    return jsonify({"ok": True, "req_id": req_id})
+
+
+@app.route("/workspace/result/<req_id>", methods=["GET"])
+@require_auth
+def workspace_result(req_id):
+    with workspace_calls_lock:
+        wc = workspace_calls.get(req_id)
+    if not wc:
+        return jsonify({"error": "Not found"}), 404
+    if wc["user_id"] != request.user["id"]:
+        return jsonify({"error": "Forbidden"}), 403
+    return jsonify({"ok": True, "status": wc["status"], "result": wc.get("result")})
+
+
+@app.route("/workspace/complete", methods=["POST"])
+@require_auth
+def workspace_complete():
+    data = request.get_json(force=True)
+    code_before = (data.get("code_before") or "")[-2000:]
+    code_after = (data.get("code_after") or "")[:500]
+    script_name = data.get("script_name") or "Script"
+
+    user = request.user
+    balance, _ = store.get_credits(user["id"])
+    if balance <= 0:
+        return jsonify({"error": "No credits"}), 403
+
+    mi = resolve_model("haiku")
+    prompt = (
+        f"You are a Roblox Luau code completion engine. Script: {script_name}\n\n"
+        f"Code before cursor:\n```lua\n{code_before}\n```\n\n"
+        f"Code after cursor:\n```lua\n{code_after}\n```\n\n"
+        "Return ONLY the completion text to insert at the cursor. "
+        "No explanation, no markdown fences. Raw Luau code only."
+    )
+    try:
+        r = call_anthropic(mi["id"], [{"role": "user", "content": prompt}], max_tokens=300)
+        completion = "".join(
+            b.text for b in r.content if hasattr(b, "type") and b.type == "text"
+        ).strip()
+        output_tokens = r.usage.output_tokens
+        cost = round(output_tokens * mi["credit_per_token"], 6)
+        store.deduct_credits(user["id"], cost)
+        store.save_credit_entry(user["id"], -cost, f"Workspace completion ({mi['label']})")
+        return jsonify({"ok": True, "completion": completion})
+    except Exception as e:
+        logging.exception("workspace complete failed")
+        return jsonify({"error": str(e)}), 500
+
 
 # ═══ STATUS ROUTE
 
