@@ -1381,7 +1381,7 @@ def search_roblox_games():
     try:
         from urllib.parse import quote
         # Roblox public games-autocomplete endpoint returns suggestions with universeId
-        url = f"https://apis.roblox.com/search-api/omni-search?searchQuery={quote(q)}&pageType=all"
+        url = f"https://apis.roblox.com/search-api/omni-search?searchQuery={quote(q)}&pageType=games&sessionId=rux"
         try:
             data = _http_json(url, timeout=6)
             search_results = data.get("searchResults") or []

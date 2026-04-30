@@ -92,6 +92,13 @@ In the Roblox plugin script, set `SERVER_BASE_URL` to your Replit app URL (e.g. 
 - **Chat**: Direct conversation with the AI about your game
 - **Agent**: Multi-step task execution with plan approval before running tools
 
+## Concepts
+- **Project** = a chat conversation (sidebar item). Persisted via `/api/conversations`.
+- **Workspace** = the per-project code editor (Monaco) opened from the in-chat **Project Bar** ("Open Workspace" button). 1:1 with the project; uses the project's name automatically.
+- **Project Bar**: shown above the message list when a project is open. Lets the user rename, switch between recent projects, open the workspace, or delete the project. Replaces the previous floating workspace FAB.
+- The workspace AI chat shares the main chat's `mode` and `selectedModel` state and persists changes through `/api/preferences`. Pickers live in the workspace's `.ws-chat-head`.
+- The last opened project id is stored in `localStorage` under `rux_last_conv` and auto-resumed on reload.
+
 ## Environment Variables
 - `AI_INTEGRATIONS_ANTHROPIC_API_KEY` — Anthropic Claude API key (optional, app starts without it)
 - `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` — Custom Anthropic base URL (optional)

@@ -698,34 +698,49 @@
     .hidden-btn{display:none!important}
     .mobile-menu-btn svg{width:12px;height:12px;fill:var(--text2)}
 
-    /* ═══ WORKSPACE FAB ═══ */
-    .ws-fab-group{position:fixed;bottom:80px;right:18px;z-index:300;display:flex;flex-direction:column;align-items:flex-end;gap:8px;transition:opacity .18s ease,transform .18s ease}
-    .ws-fab-group.ws-hidden{opacity:0;pointer-events:none;transform:translateY(8px) scale(.96)}
-    .ws-fab-row{display:flex;align-items:center;gap:6px}
-    .ws-fab{display:flex;align-items:center;gap:7px;padding:0 14px 0 10px;height:36px;background:var(--surface2);border:1px solid var(--border3);border-radius:10px;cursor:pointer;color:var(--text2);font-size:11.5px;font-weight:700;font-family:'Inter',sans-serif;transition:all .15s;box-shadow:0 4px 20px rgba(0,0,0,.4);letter-spacing:-.1px}
-    .ws-fab:hover{background:var(--surface3);color:var(--text);border-color:var(--accent);box-shadow:0 4px 24px rgba(212,168,67,.12)}
-    .ws-fab svg{width:14px;height:14px;fill:currentColor;flex-shrink:0}
-    .ws-fab.ws-open{background:var(--accent);color:#1a1100;border-color:transparent;box-shadow:0 4px 24px rgba(212,168,67,.28)}
-    .ws-fab.ws-open:hover{background:#ffd454}
-    .ws-fab.ws-create{background:linear-gradient(180deg,rgba(212,168,67,.16),rgba(212,168,67,.06));color:#ffd454;border-color:rgba(212,168,67,.4);box-shadow:0 4px 22px rgba(212,168,67,.16)}
-    .ws-fab.ws-create:hover{background:linear-gradient(180deg,rgba(212,168,67,.24),rgba(212,168,67,.10));color:#ffe07a;border-color:rgba(212,168,67,.6);box-shadow:0 6px 28px rgba(212,168,67,.22)}
-    .ws-fab-chev{display:none;align-items:center;justify-content:center;width:32px;height:36px;background:var(--surface2);border:1px solid var(--border3);border-radius:10px;cursor:pointer;color:var(--text2);transition:all .15s;box-shadow:0 4px 20px rgba(0,0,0,.4);padding:0}
-    .ws-fab-chev.show{display:inline-flex}
-    .ws-fab-chev:hover{background:var(--surface3);color:var(--accent);border-color:var(--accent)}
-    .ws-fab-chev svg{width:14px;height:14px;fill:currentColor;transition:transform .18s ease}
-    .ws-fab-chev.open svg{transform:rotate(180deg)}
-    .ws-fab-menu{display:none;flex-direction:column;min-width:240px;max-width:300px;max-height:340px;overflow-y:auto;background:var(--surface);border:1px solid var(--border3);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 1px rgba(212,168,67,.04);padding:6px;animation:wsfabPop .14s ease-out}
-    .ws-fab-menu.open{display:flex}
-    @keyframes wsfabPop{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-    .ws-fab-menu-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s;font-family:'Inter',sans-serif;font-size:12px;color:var(--text2);font-weight:500;border:none;background:none;text-align:left;width:100%;letter-spacing:-.1px}
-    .ws-fab-menu-item:hover{background:var(--surface3);color:var(--text)}
-    .ws-fab-menu-item.active{background:rgba(212,168,67,.10);color:var(--accent)}
-    .ws-fab-menu-item.create{color:#ffd454;font-weight:700;border-bottom:1px solid var(--border);border-radius:7px 7px 0 0;margin-bottom:3px;padding-bottom:10px}
-    .ws-fab-menu-item.create:hover{background:rgba(212,168,67,.10);color:#ffe07a}
-    .ws-fab-menu-item svg{width:13px;height:13px;fill:currentColor;flex-shrink:0;opacity:.85}
-    .ws-fab-menu-item .wfm-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-    .ws-fab-menu-item .wfm-time{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);opacity:.7;flex-shrink:0;letter-spacing:.04em}
-    .ws-fab-menu-empty{padding:14px 10px;text-align:center;color:var(--muted);font-size:11px;font-style:italic}
+    /* ═══ PROJECT BAR (in-chat header) ═══ */
+    #project-bar{display:none;align-items:center;gap:10px;padding:8px 18px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(20,20,24,.65),rgba(10,10,12,.45));backdrop-filter:blur(8px);position:relative;z-index:6;flex-shrink:0}
+    body[data-chat-state="chatting"] #project-bar.has-project{display:flex}
+    .pb-icon{width:28px;height:28px;border-radius:8px;background:linear-gradient(180deg,rgba(212,168,67,.18),rgba(212,168,67,.06));border:1px solid rgba(212,168,67,.32);display:flex;align-items:center;justify-content:center;color:#ffd454;flex-shrink:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+    .pb-icon svg{width:14px;height:14px;fill:currentColor}
+    .pb-name-wrap{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+    .pb-eyebrow{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:8.5px;letter-spacing:2.2px;text-transform:uppercase;color:var(--muted);font-weight:700}
+    .pb-name{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.2px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:none;background:none;padding:0;text-align:left}
+    .pb-name:hover{color:var(--accent)}
+    .pb-name svg{width:11px;height:11px;fill:currentColor;opacity:0;transition:opacity .15s}
+    .pb-name:hover svg{opacity:.7}
+    .pb-actions{display:flex;align-items:center;gap:7px;flex-shrink:0;position:relative}
+    .pb-switch{position:relative}
+    .pb-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:8px;border:1px solid var(--border3);background:var(--surface2);color:var(--text2);font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;letter-spacing:-.1px;cursor:pointer;transition:all .12s;white-space:nowrap}
+    .pb-btn:hover{background:var(--surface3);color:var(--text);border-color:var(--text3)}
+    .pb-btn svg{width:12px;height:12px;fill:currentColor;flex-shrink:0}
+    .pb-btn.gold{background:linear-gradient(180deg,rgba(212,168,67,.20),rgba(212,168,67,.08));color:#ffd454;border-color:rgba(212,168,67,.42);box-shadow:0 0 0 1px rgba(212,168,67,.04),0 4px 14px rgba(212,168,67,.12)}
+    .pb-btn.gold:hover{background:linear-gradient(180deg,rgba(212,168,67,.30),rgba(212,168,67,.13));color:#ffe07a;border-color:rgba(212,168,67,.62);box-shadow:0 0 0 1px rgba(212,168,67,.06),0 6px 18px rgba(212,168,67,.18)}
+    .pb-icon-btn{width:30px;height:30px;padding:0;border-radius:8px;border:1px solid var(--border3);background:var(--surface2);color:var(--text2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s}
+    .pb-icon-btn:hover{background:var(--surface3);color:var(--accent);border-color:var(--text3)}
+    .pb-icon-btn svg{width:14px;height:14px;fill:currentColor}
+    .pb-menu{display:none;position:absolute;top:38px;right:0;flex-direction:column;min-width:230px;max-width:280px;max-height:320px;overflow-y:auto;background:var(--surface);border:1px solid var(--border3);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.6);padding:5px;z-index:50;animation:pbPop .14s ease-out}
+    .pb-menu.open{display:flex}
+    @keyframes pbPop{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .pb-menu-section{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:8px 9px 4px}
+    .pb-menu-item{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s;font-family:'Inter',sans-serif;font-size:12px;color:var(--text2);font-weight:500;border:none;background:none;text-align:left;width:100%;letter-spacing:-.1px}
+    .pb-menu-item:hover{background:var(--surface3);color:var(--text)}
+    .pb-menu-item.active{background:rgba(212,168,67,.10);color:var(--accent)}
+    .pb-menu-item.danger{color:#e07474}
+    .pb-menu-item.danger:hover{background:rgba(224,116,116,.10);color:#ff8a8a}
+    .pb-menu-item svg{width:13px;height:13px;fill:currentColor;flex-shrink:0;opacity:.85}
+    .pb-menu-item .pbm-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+    .pb-menu-item .pbm-time{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);opacity:.7;flex-shrink:0}
+    .pb-menu-divider{height:1px;background:var(--border);margin:5px 0}
+    .pb-rename-input{flex:1;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;color:var(--text);font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:13px;font-weight:600;outline:none;letter-spacing:-.2px;min-width:0}
+    @media(max-width:720px){
+      #project-bar{padding:7px 12px;gap:7px}
+      .pb-icon{width:26px;height:26px}
+      .pb-name{font-size:12.5px}
+      .pb-eyebrow{display:none}
+      .pb-btn{font-size:11px;padding:0 9px;height:28px}
+      .pb-icon-btn{width:28px;height:28px}
+    }
 
     /* ═══ WORKSPACE OVERLAY ═══ */
     .ws-overlay{position:fixed;inset:0;z-index:400;background:#000;display:flex;flex-direction:column;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .2s ease,transform .2s ease}
@@ -749,10 +764,25 @@
     .ws-body{display:flex;flex:1;overflow:hidden}
 
     /* Left AI chat panel */
-    .ws-chat{width:270px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--sidebar)}
-    .ws-chat-head{padding:10px 12px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
-    .ws-chat-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
-    .ws-chat-sub{font-size:9.5px;color:var(--text3);margin-top:1px}
+    .ws-chat{width:300px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--sidebar)}
+    .ws-chat-head{padding:11px 12px 9px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:8px;background:linear-gradient(180deg,rgba(20,20,24,.55),transparent)}
+    .ws-chat-head-row{display:flex;align-items:flex-start;gap:8px}
+    .ws-chat-title{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:-.1px;color:var(--text);display:flex;align-items:center;gap:6px}
+    .ws-chat-title svg{width:11px;height:11px;fill:#ffd454}
+    .ws-chat-sub{font-size:9.5px;color:var(--text3);margin-top:2px;letter-spacing:.05px}
+    .ws-chat-pickers{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .ws-pick-btn{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;border:1px solid var(--border3);background:var(--surface2);color:var(--text2);font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:-.1px;cursor:pointer;transition:all .12s;position:relative;white-space:nowrap}
+    .ws-pick-btn:hover{background:var(--surface3);color:var(--text);border-color:var(--text3)}
+    .ws-pick-btn .ws-pick-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px rgba(212,168,67,.55);flex-shrink:0}
+    .ws-pick-btn.mode .ws-pick-dot{background:#9b7de8;box-shadow:0 0 6px rgba(155,125,232,.5)}
+    .ws-pick-btn svg.ws-pick-chev{width:9px;height:9px;fill:currentColor;opacity:.7}
+    .ws-pick-menu{display:none;position:absolute;top:30px;left:0;flex-direction:column;min-width:175px;max-height:280px;overflow-y:auto;background:var(--surface);border:1px solid var(--border3);border-radius:8px;padding:4px;box-shadow:0 12px 36px rgba(0,0,0,.6);z-index:60;animation:pbPop .12s ease-out}
+    .ws-pick-menu.open{display:flex}
+    .ws-pick-opt{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:5px;cursor:pointer;font-family:'Inter',sans-serif;font-size:11px;color:var(--text2);font-weight:500;border:none;background:none;text-align:left;width:100%;transition:background .1s,color .1s;letter-spacing:-.1px}
+    .ws-pick-opt:hover{background:var(--surface3);color:var(--text)}
+    .ws-pick-opt.selected{background:rgba(212,168,67,.10);color:var(--accent)}
+    .ws-pick-opt .ws-pick-opt-tag{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .ws-pick-section{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);padding:7px 9px 3px}
     .ws-chat-msgs{flex:1;overflow-y:auto;padding:10px 4px;display:flex;flex-direction:column;gap:0}
     .ws-chat-msgs::-webkit-scrollbar{width:3px}
     .ws-chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
@@ -778,14 +808,20 @@
     .ws-chat-apply-row{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
     .ws-apply-btn{padding:3px 8px;background:rgba(69,196,122,.1);border:1px solid rgba(69,196,122,.2);border-radius:5px;color:#45c47a;font-size:9px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:all .12s}
     .ws-apply-btn:hover{background:rgba(69,196,122,.18)}
-    .ws-chat-input-row{padding:8px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:6px;align-items:flex-end}
-    .ws-chat-ta{flex:1;min-height:32px;max-height:90px;padding:6px 9px;background:var(--surface3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:11px;font-family:'Inter',sans-serif;outline:none;resize:none;line-height:1.4;transition:border-color .12s}
-    .ws-chat-ta:focus{border-color:var(--border3)}
+    .ws-chat-input-row{padding:9px 10px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;align-items:flex-end;background:linear-gradient(0deg,rgba(20,20,24,.55),transparent)}
+    .ws-chat-ta{flex:1;min-height:38px;max-height:120px;padding:9px 11px;background:var(--surface3);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none;resize:none;line-height:1.45;transition:border-color .12s,box-shadow .12s}
+    .ws-chat-ta:focus{border-color:rgba(212,168,67,.45);box-shadow:0 0 0 3px rgba(212,168,67,.06)}
     .ws-chat-ta::placeholder{color:var(--muted)}
-    .ws-chat-send{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--accent);border:none;border-radius:7px;cursor:pointer;transition:background .12s;margin-bottom:2px}
-    .ws-chat-send:hover{background:#ffd454}
-    .ws-chat-send svg{width:12px;height:12px;fill:#1a1100}
-    .ws-chat-send:disabled{opacity:.4;cursor:not-allowed}
+    .ws-chat-send{width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#e8b94a,#c79839);border:none;border-radius:9px;cursor:pointer;transition:all .14s;box-shadow:0 4px 14px rgba(212,168,67,.22),inset 0 1px 0 rgba(255,255,255,.18)}
+    .ws-chat-send:hover{background:linear-gradient(180deg,#ffd454,#e0b242);box-shadow:0 6px 18px rgba(212,168,67,.32),inset 0 1px 0 rgba(255,255,255,.22);transform:translateY(-1px)}
+    .ws-chat-send:active{transform:translateY(0)}
+    .ws-chat-send svg{width:15px;height:15px;fill:#1a1100}
+    .ws-chat-send:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+    .ws-chat-empty{margin:14px 10px 6px;padding:14px 12px;border:1px dashed var(--border2);border-radius:9px;background:linear-gradient(180deg,rgba(212,168,67,.04),rgba(212,168,67,.01));text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:7px}
+    .ws-chat-empty .wsce-icon{width:30px;height:30px;border-radius:50%;background:rgba(212,168,67,.10);display:flex;align-items:center;justify-content:center;color:#ffd454}
+    .ws-chat-empty .wsce-icon svg{width:14px;height:14px;fill:currentColor}
+    .ws-chat-empty .wsce-title{font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:11.5px;color:var(--text2);font-weight:600;letter-spacing:-.1px}
+    .ws-chat-empty .wsce-hint{font-size:10px;color:var(--muted);line-height:1.5;max-width:220px}
 
     /* Middle editor panel */
     .ws-editor{flex:1;display:flex;flex-direction:column;min-width:0;background:#1e1e1e}
@@ -976,6 +1012,30 @@
       <div class="plan-actions">
         <button class="btn btn-primary" id="approve-btn"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Approve</button>
         <button class="btn btn-ghost" id="reject-plan-btn">Discard</button>
+      </div>
+    </div>
+
+    <!-- ═══ PROJECT BAR (visible inside an open project) ═══ -->
+    <div id="project-bar">
+      <div class="pb-icon"><svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></div>
+      <div class="pb-name-wrap">
+        <div class="pb-eyebrow">Project</div>
+        <button class="pb-name" id="pb-name" type="button" onclick="pbStartRename(event)" title="Click to rename">
+          <span id="pb-name-text">Untitled</span>
+          <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        </button>
+      </div>
+      <div class="pb-actions">
+        <div class="pb-switch">
+          <button class="pb-icon-btn" id="pb-switch-btn" type="button" onclick="pbToggleMenu(event)" aria-label="Switch project" title="Switch project">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+          </button>
+          <div class="pb-menu" id="pb-menu" role="menu"></div>
+        </div>
+        <button class="pb-btn gold" id="pb-open-ws" type="button" onclick="openWorkspace()" title="Open the code workspace for this project">
+          <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+          Open Workspace
+        </button>
       </div>
     </div>
 
@@ -1215,19 +1275,7 @@
   </div>
 </div>
 
-<!-- ═══ WORKSPACE FAB ═══ -->
-<div class="ws-fab-group ws-hidden" id="ws-fab-group">
-  <div class="ws-fab-menu" id="ws-fab-menu" role="menu" aria-hidden="true"></div>
-  <div class="ws-fab-row">
-    <button class="ws-fab-chev" id="ws-fab-chev" type="button" onclick="toggleWsFabMenu(event)" aria-label="Switch workspace" title="Recent workspaces">
-      <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
-    </button>
-    <button class="ws-fab" id="ws-fab" type="button" onclick="onWsFabClick()">
-      <svg id="ws-fab-icon" viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-      <span id="ws-fab-label">Open Workspace</span>
-    </button>
-  </div>
-</div>
+<!-- (Workspace controls now live in the in-chat project bar — see #project-bar) -->
 
 <!-- ═══ CREATE WORKSPACE MODAL ═══ -->
 <div class="proj-overlay" id="ws-create-overlay">
@@ -1273,20 +1321,38 @@
     <!-- Left: AI Chat -->
     <div class="ws-chat">
       <div class="ws-chat-head">
-        <div style="flex:1">
-          <div class="ws-chat-title">AI Assistant</div>
-          <div class="ws-chat-sub" id="ws-chat-sub">Ask about the open script</div>
+        <div class="ws-chat-head-row">
+          <div style="flex:1;min-width:0">
+            <div class="ws-chat-title"><svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg>AI Assistant</div>
+            <div class="ws-chat-sub" id="ws-chat-sub">Ask about the open script</div>
+          </div>
+          <button class="ws-chat-expand" id="ws-chat-expand-btn" onclick="wsToggleChatExpand()" title="Expand chat">
+            <svg id="ws-expand-icon" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </button>
         </div>
-        <button class="ws-chat-expand" id="ws-chat-expand-btn" onclick="wsToggleChatExpand()" title="Expand chat">
-          <svg id="ws-expand-icon" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-        </button>
+        <div class="ws-chat-pickers">
+          <button class="ws-pick-btn mode" id="ws-mode-btn" type="button" onclick="wsToggleModePicker(event)" title="Conversation mode">
+            <span class="ws-pick-dot"></span><span id="ws-mode-label">Chat</span>
+            <svg class="ws-pick-chev" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+            <div class="ws-pick-menu" id="ws-mode-menu" role="menu"></div>
+          </button>
+          <button class="ws-pick-btn" id="ws-model-btn" type="button" onclick="wsToggleModelPicker(event)" title="AI model">
+            <span class="ws-pick-dot"></span><span id="ws-model-label">Sonnet</span>
+            <svg class="ws-pick-chev" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+            <div class="ws-pick-menu" id="ws-model-menu" role="menu"></div>
+          </button>
+        </div>
       </div>
       <div class="ws-chat-msgs" id="ws-chat-msgs">
-        <div class="ws-log system"><span class="wsl-time"></span><span class="wsl-icon">·</span><div class="wsl-content">Open a script and ask the AI anything about it.</div></div>
+        <div class="ws-chat-empty" id="ws-chat-empty">
+          <div class="wsce-icon"><svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg></div>
+          <div class="wsce-title">Code with AI by your side</div>
+          <div class="wsce-hint">Open a script from the tree, then ask me to explain, refactor, or fix it. I can also generate brand-new scripts for your project.</div>
+        </div>
       </div>
       <div class="ws-chat-input-row">
-        <textarea class="ws-chat-ta" id="ws-chat-ta" placeholder="Ask about this script..." rows="1"></textarea>
-        <button class="ws-chat-send" id="ws-chat-send" onclick="wsSendChat()">
+        <textarea class="ws-chat-ta" id="ws-chat-ta" placeholder="Describe what you want to build or change…" rows="1"></textarea>
+        <button class="ws-chat-send" id="ws-chat-send" onclick="wsSendChat()" title="Send (Enter)">
           <svg viewBox="0 0 24 24"><path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a1 1 0 00-1.39 1.21L4.5 11 14 12 4.5 13l-2.48 6.19a1 1 0 001.38 1.21z"/></svg>
         </button>
       </div>
@@ -1541,8 +1607,8 @@ function togglePicker(which){
 }
 
 function switchModelTab(tab){activeModelTab=tab;document.querySelectorAll('#model-picker .picker-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));document.querySelectorAll('#model-picker .picker-option').forEach(o=>{const show=tab==='all'||o.dataset.provider===tab;o.classList.toggle('hidden',!show)})}
-function selectModel(k){selectedModel=k;updateModelUI();document.getElementById('model-picker').classList.remove('open');openPicker=null;try{api('/api/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({default_model:k})})}catch(e){}}
-function selectMode(m){mode=m;updateModeUI();document.getElementById('mode-picker').classList.remove('open');openPicker=null;updateInputState();try{api('/api/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({default_mode:m})})}catch(e){}}
+function selectModel(k){selectedModel=k;updateModelUI();if(typeof wsRenderPickers==='function')wsRenderPickers();document.getElementById('model-picker').classList.remove('open');openPicker=null;try{api('/api/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({default_model:k})})}catch(e){}}
+function selectMode(m){mode=m;updateModeUI();if(typeof wsRenderPickers==='function')wsRenderPickers();document.getElementById('mode-picker').classList.remove('open');openPicker=null;updateInputState();try{api('/api/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({default_mode:m})})}catch(e){}}
 const BRAND_ICONS={
   google:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>',
   anthropic:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#D97757" d="M13.86 4.5h-3.72L4 19.5h3.39l1.21-3.18h7.41L17.22 19.5h3.39L13.86 4.5zm-4.13 9.05L12 7.94l2.27 5.61H9.73z"/></svg>',
@@ -1615,8 +1681,8 @@ function startRenameProject(convId,oldTitle,itemEl){const textEl=itemEl.querySel
 
 async function confirmDeleteProject(convId,title){if(!confirm(`Delete project "${title}"? This cannot be undone.`))return;await deleteConv(convId);showToast('Project deleted','success')}
 
-async function openConv(id){let c=convCache[id];if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';currentProjectTitle=c.title||'';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight});setViewMode(true);renderSidebar();if(wsOpen)wsSetProject(id,c.title||id)}
-function showDashboard(){activeConvId=null;document.getElementById('messages').innerHTML='';setViewMode(false);renderSidebar()}
+async function openConv(id){let c=convCache[id];if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';currentProjectTitle=c.title||'';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight});setViewMode(true);renderSidebar();renderProjectBar();try{localStorage.setItem('rux_last_conv',id)}catch(e){}if(wsOpen)wsSetProject(id,c.title||id)}
+function showDashboard(){activeConvId=null;currentProjectTitle='';document.getElementById('messages').innerHTML='';setViewMode(false);renderSidebar();renderProjectBar();try{localStorage.removeItem('rux_last_conv')}catch(e){}}
 
 function startNewConv(title){
   activeConvId='new-'+Date.now();
@@ -2095,10 +2161,21 @@ document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefa
     updateModelUI();updateModeUI();
   }
   updateCreditUI();
+  updateRobloxChip();
+  if(r.data.announcements)renderAnnouncements(r.data.announcements);
   if(sessionId)pluginConnected=true;
   updatePluginUI();
   enterChat();
   loadCheckpoints();
+  await loadConversations();
+  if(typeof startWebHeartbeat==='function')startWebHeartbeat();
+  if(typeof wsRenderPickers==='function')wsRenderPickers();
+  // Auto-resume the last opened project if one exists
+  try{
+    const lastConv=localStorage.getItem('rux_last_conv');
+    if(lastConv&&convCache&&convCache[lastConv])await openConv(lastConv);
+  }catch(e){}
+  renderProjectBar();
 
   const path=window.location.pathname;
   if(path.startsWith('/code/')){
@@ -2152,60 +2229,63 @@ function wsSetProject(id,name){
   wsLoadScriptTree();
 }
 
-// ── FAB state (Create / Open / Close) ──
-function updateWsFabState(){
-  const grp=document.getElementById('ws-fab-group');
-  const fab=document.getElementById('ws-fab');
-  const lbl=document.getElementById('ws-fab-label');
-  const icn=document.getElementById('ws-fab-icon');
-  const chev=document.getElementById('ws-fab-chev');
-  if(!grp||!fab||!lbl||!icn||!chev)return;
-  // Only fully hide while the page is still bootstrapping (token not loaded).
-  if(typeof token!=='undefined'&&!token){
-    grp.classList.add('ws-hidden');
-    fab.classList.remove('ws-create','ws-open');
-    chev.classList.remove('show','open');
-    closeWsFabMenu();
-    return;
-  }
-  grp.classList.remove('ws-hidden');
-  // Chevron only visible when there is at least one workspace to switch between (and we're not currently open).
-  const hasConvs=convCache&&Object.keys(convCache).length>0;
-  if(hasConvs&&!wsOpen)chev.classList.add('show');else{chev.classList.remove('show','open');closeWsFabMenu()}
-  if(wsOpen){
-    fab.classList.add('ws-open');fab.classList.remove('ws-create');
-    lbl.textContent='Close Workspace';
-    icn.innerHTML='<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>';
-  }else if(activeConvId){
-    fab.classList.remove('ws-open','ws-create');
-    lbl.textContent='Open Workspace';
-    icn.innerHTML='<path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>';
-  }else{
-    // No active project yet → the button asks the user to create one.
-    fab.classList.add('ws-create');fab.classList.remove('ws-open');
-    lbl.textContent='Create a workspace';
-    icn.innerHTML='<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>';
-  }
+// ── Workspace mode/model pickers (mirror main chat state) ──
+function wsRenderPickers(){
+  const mLbl=document.getElementById('ws-mode-label');
+  if(mLbl)mLbl.textContent=(typeof MODE_LABELS!=='undefined'&&MODE_LABELS[mode])||(mode==='agent'?'Agent':'Chat');
+  const xLbl=document.getElementById('ws-model-label');
+  if(xLbl)xLbl.textContent=(typeof MODEL_LABELS!=='undefined'&&MODEL_LABELS[selectedModel])||'Sonnet';
 }
+function wsToggleModePicker(e){
+  if(e)e.stopPropagation();
+  const menu=document.getElementById('ws-mode-menu');
+  if(!menu)return;
+  if(menu.classList.contains('open')){wsCloseModePicker();return}
+  wsCloseModelPicker();
+  let html='';
+  const opts=[
+    {k:'chat',label:'Chat',hint:'Ask & answer'},
+    {k:'agent',label:'Agent',hint:'Plan & execute'}
+  ];
+  opts.forEach(o=>{
+    const sel=mode===o.k?' selected':'';
+    html+=`<button class="ws-pick-opt${sel}" type="button" onclick="wsPickMode(event,'${o.k}')"><span>${o.label}</span><span class="ws-pick-opt-tag">${o.hint}</span></button>`;
+  });
+  menu.innerHTML=html;
+  menu.classList.add('open');
+}
+function wsCloseModePicker(){const m=document.getElementById('ws-mode-menu');if(m)m.classList.remove('open')}
+function wsPickMode(e,k){if(e){e.stopPropagation();e.preventDefault()}wsCloseModePicker();selectMode(k);wsRenderPickers()}
+function wsToggleModelPicker(e){
+  if(e)e.stopPropagation();
+  const menu=document.getElementById('ws-model-menu');
+  if(!menu)return;
+  if(menu.classList.contains('open')){wsCloseModelPicker();return}
+  wsCloseModePicker();
+  // Group by brand for readability
+  const groups={
+    'Anthropic':['sonnet','opus','haiku'],
+    'OpenAI':['gpt-5','gpt-5-mini','gpt-4-1'],
+    'Google':['gemini-pro','gemini-flash'],
+    'Open / OpenRouter':['qwen-coder','glm-5','grok-4','deepseek','llama-70b']
+  };
+  let html='';
+  Object.keys(groups).forEach(g=>{
+    html+=`<div class="ws-pick-section">${g}</div>`;
+    groups[g].forEach(k=>{
+      if(typeof MODEL_LABELS==='undefined'||!MODEL_LABELS[k])return;
+      const sel=selectedModel===k?' selected':'';
+      html+=`<button class="ws-pick-opt${sel}" type="button" onclick="wsPickModel(event,'${k}')"><span>${MODEL_LABELS[k]}</span></button>`;
+    });
+  });
+  menu.innerHTML=html;
+  menu.classList.add('open');
+}
+function wsCloseModelPicker(){const m=document.getElementById('ws-model-menu');if(m)m.classList.remove('open')}
+function wsPickModel(e,k){if(e){e.stopPropagation();e.preventDefault()}wsCloseModelPicker();selectModel(k);wsRenderPickers()}
 
-function onWsFabClick(){
-  closeWsFabMenu();
-  if(wsOpen){closeWorkspace();return}
-  if(activeConvId){openWorkspace();return}
-  openWsCreateModal();
-}
-
-// ── Recent-workspaces dropdown ──
-function _wsRecentList(){
-  const arr=Object.entries(convCache||{}).map(([id,c])=>({
-    id,
-    title:(c&&c.title)||'Untitled',
-    updated:(c&&(c.updatedAt||c.lastUpdated||c.updated_at))||0
-  }));
-  arr.sort((a,b)=>(b.updated||0)-(a.updated||0));
-  return arr.slice(0,8);
-}
-function _wsTimeAgo(ts){
+// ── PROJECT BAR (in-chat header for the active project) ──
+function _pbTimeAgo(ts){
   if(!ts)return'';
   const d=Date.now()-Number(ts);
   if(d<60000)return'now';
@@ -2214,48 +2294,110 @@ function _wsTimeAgo(ts){
   if(d<604800000)return Math.floor(d/86400000)+'d';
   return Math.floor(d/604800000)+'w';
 }
-function renderWsFabMenu(){
-  const menu=document.getElementById('ws-fab-menu');
+function renderProjectBar(){
+  const bar=document.getElementById('project-bar');
+  if(!bar)return;
+  if(activeConvId){
+    bar.classList.add('has-project');
+    const nm=document.getElementById('pb-name-text');
+    if(nm)nm.textContent=currentProjectTitle||'Untitled project';
+  }else{
+    bar.classList.remove('has-project');
+    pbCloseMenu();
+  }
+  // Keep workspace FAB state legacy callers happy (no-op now that the FAB is gone)
+}
+// Backwards-compat shim — older code still calls updateWsFabState in a few places.
+function updateWsFabState(){renderProjectBar()}
+function pbStartRename(e){
+  if(e)e.stopPropagation();
+  if(!activeConvId)return;
+  const wrap=document.querySelector('#project-bar .pb-name-wrap');
+  if(!wrap)return;
+  const oldBtn=document.getElementById('pb-name');
+  const oldTitle=currentProjectTitle||'';
+  const input=document.createElement('input');
+  input.type='text';input.className='pb-rename-input';input.value=oldTitle;input.maxLength=100;
+  oldBtn.style.display='none';
+  wrap.appendChild(input);
+  input.focus();input.select();
+  let done=false;
+  const finish=async(commit)=>{
+    if(done)return;done=true;
+    const newTitle=input.value.trim();
+    input.remove();
+    oldBtn.style.display='';
+    if(commit&&newTitle&&newTitle!==oldTitle){
+      try{
+        const r=await api('/api/conversations/'+activeConvId+'/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:newTitle})});
+        if(r&&r.ok){
+          currentProjectTitle=newTitle;
+          if(convCache[activeConvId])convCache[activeConvId].title=newTitle;
+          showToast('Project renamed','success');
+          renderSidebar();renderProjectBar();
+          if(wsOpen)wsSetProject(activeConvId,newTitle);
+        }else{showToast(r?.data?.error||'Rename failed','error')}
+      }catch(_e){showToast('Network error','error')}
+    }
+  };
+  input.addEventListener('keydown',ev=>{
+    if(ev.key==='Enter'){ev.preventDefault();finish(true)}
+    else if(ev.key==='Escape'){ev.preventDefault();finish(false)}
+  });
+  input.addEventListener('blur',()=>finish(true));
+}
+function pbToggleMenu(e){
+  if(e)e.stopPropagation();
+  const menu=document.getElementById('pb-menu');
   if(!menu)return;
-  const recents=_wsRecentList();
-  let html='<button class="ws-fab-menu-item create" type="button" onclick="wsFabCreateNew()"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg><span class="wfm-label">Create new workspace</span></button>';
+  if(menu.classList.contains('open')){pbCloseMenu();return}
+  renderPbMenu();
+  menu.classList.add('open');
+}
+function pbCloseMenu(){
+  const menu=document.getElementById('pb-menu');
+  if(menu)menu.classList.remove('open');
+}
+function renderPbMenu(){
+  const menu=document.getElementById('pb-menu');
+  if(!menu)return;
+  const recents=Object.entries(convCache||{}).map(([id,c])=>({
+    id,title:(c&&c.title)||'Untitled',updated:(c&&c.updatedAt)||0
+  })).sort((a,b)=>b.updated-a.updated).slice(0,10);
+  let html='';
+  html+='<button class="pb-menu-item" type="button" onclick="pbNewProject()"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg><span class="pbm-label">New project</span></button>';
+  html+='<div class="pb-menu-section">Recent projects</div>';
   if(recents.length===0){
-    html+='<div class="ws-fab-menu-empty">No workspaces yet</div>';
+    html+='<div class="pb-menu-section" style="text-align:center;color:var(--muted);font-style:italic;font-weight:500;letter-spacing:0;text-transform:none;font-size:11px">No other projects yet</div>';
   }else{
     recents.forEach(r=>{
       const active=r.id===activeConvId?' active':'';
-      const t=_wsTimeAgo(r.updated);
-      html+=`<button class="ws-fab-menu-item${active}" type="button" onclick="wsFabPickConv('${r.id}')"><svg viewBox="0 0 24 24"><path d="M3 5h7l2 2h9v11a2 2 0 0 1-2 2H3V5z"/></svg><span class="wfm-label">${escHtml(r.title)}</span>${t?`<span class="wfm-time">${t}</span>`:''}</button>`;
+      const t=_pbTimeAgo(r.updated);
+      html+=`<button class="pb-menu-item${active}" type="button" onclick="pbPickProject('${r.id}')"><svg viewBox="0 0 24 24"><path d="M3 5h7l2 2h9v11a2 2 0 0 1-2 2H3V5z"/></svg><span class="pbm-label">${escHtml(r.title)}</span>${t?`<span class="pbm-time">${t}</span>`:''}</button>`;
     });
+  }
+  if(activeConvId){
+    html+='<div class="pb-menu-divider"></div>';
+    html+='<button class="pb-menu-item" type="button" onclick="pbCloseMenu();pbStartRename()"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg><span class="pbm-label">Rename project</span></button>';
+    html+='<button class="pb-menu-item" type="button" onclick="pbCloseMenu();pbBackToDashboard()"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9h-3v8h-4v-6h-4v6H6v-8H3z"/></svg><span class="pbm-label">Back to dashboard</span></button>';
+    html+=`<button class="pb-menu-item danger" type="button" onclick="pbDeleteProject()"><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><span class="pbm-label">Delete project</span></button>`;
   }
   menu.innerHTML=html;
 }
-function toggleWsFabMenu(e){
-  if(e)e.stopPropagation();
-  const menu=document.getElementById('ws-fab-menu');
-  const chev=document.getElementById('ws-fab-chev');
-  if(!menu||!chev)return;
-  if(menu.classList.contains('open')){closeWsFabMenu();return}
-  renderWsFabMenu();
-  menu.classList.add('open');
-  menu.setAttribute('aria-hidden','false');
-  chev.classList.add('open');
-}
-function closeWsFabMenu(){
-  const menu=document.getElementById('ws-fab-menu');
-  const chev=document.getElementById('ws-fab-chev');
-  if(menu){menu.classList.remove('open');menu.setAttribute('aria-hidden','true')}
-  if(chev)chev.classList.remove('open');
-}
-function wsFabCreateNew(){closeWsFabMenu();openWsCreateModal()}
-async function wsFabPickConv(id){
-  closeWsFabMenu();
-  if(id===activeConvId){
-    if(!wsOpen)openWorkspace();
-    return;
-  }
+async function pbPickProject(id){
+  pbCloseMenu();
+  if(id===activeConvId)return;
   await openConv(id);
-  setTimeout(()=>{if(!wsOpen)openWorkspace()},80);
+}
+function pbNewProject(){pbCloseMenu();openCreateProjectModal()}
+function pbBackToDashboard(){if(wsOpen)closeWorkspace();showDashboard()}
+async function pbDeleteProject(){
+  if(!activeConvId)return;
+  const title=currentProjectTitle||'this project';
+  if(!confirm(`Delete project "${title}"? This cannot be undone.`))return;
+  await deleteConv(activeConvId);
+  showToast('Project deleted','success');
+  renderProjectBar();
 }
 
 // ── Create-Workspace modal ──
@@ -2289,24 +2431,36 @@ async function confirmCreateWorkspace(){
 function toggleWorkspace(){if(wsOpen)closeWorkspace();else openWorkspace()}
 
 function openWorkspace(){
-  if(!activeConvId){openWsCreateModal();return}
+  if(!activeConvId){
+    showToast('Open or create a project first','info');
+    return;
+  }
   wsOpen=true;
   document.getElementById('ws-overlay').classList.add('open');
-  const pid=activeConvId||'default';
+  const pid=activeConvId;
   const pname=currentProjectTitle||pid;
-  wsCurrentProjectId=pid;wsCurrentProjectName=pname;
-  const nameEl=document.getElementById('ws-project-name');
-  if(nameEl)nameEl.textContent=pname.length>20?pname.substring(0,20)+'…':pname;
+  // Always sync the workspace's notion of "project" with the active conversation
+  if(wsCurrentProjectId!==pid){
+    wsSetProject(pid,pname);
+  }else{
+    wsCurrentProjectName=pname;
+    const nameEl=document.getElementById('ws-project-name');
+    if(nameEl)nameEl.textContent=pname.length>20?pname.substring(0,20)+'…':pname;
+  }
+  // Update chat-sub hint
+  const sub=document.getElementById('ws-chat-sub');
+  if(sub)sub.textContent='Project · '+(pname.length>22?pname.substring(0,22)+'…':pname);
   wsInitMonaco();
   wsLoadScriptTree();
   wsInitChatResize();
-  updateWsFabState();
+  wsRenderPickers();
+  renderProjectBar();
 }
 
 function closeWorkspace(){
   wsOpen=false;
   document.getElementById('ws-overlay').classList.remove('open');
-  updateWsFabState();
+  renderProjectBar();
 }
 
 // ── Monaco init ──
@@ -2796,6 +2950,9 @@ function wsDismissSuggestion(){
 // ── AI Chat (terminal-style log rows, no bubbles) ──
 function wsAddChatMsg(role,text,extractedCode){
   const msgs=document.getElementById('ws-chat-msgs');
+  // Hide the empty-state hint as soon as we get a real message
+  const empty=document.getElementById('ws-chat-empty');
+  if(empty)empty.remove();
   const row=document.createElement('div');
   row.className='ws-log '+role;
   const icon=role==='user'?'▸':role==='ai'?'⚡':'·';
@@ -2831,7 +2988,7 @@ async function wsSendChat(){
   const currentCode=wsMonaco?wsMonaco.getValue():'';
   const ctx=wsCurrentScript?`Current script: ${wsCurrentScript}\n\nCode:\n\`\`\`lua\n${currentCode.substring(0,3000)}\n\`\`\``:'No script open.';
   try{
-    const r=await api('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,mode:'chat',message:`[Workspace AI]\n${ctx}\n\nUser: ${text}`,model:'haiku',conversation_history:wsConvHistory.slice(-8)})});
+    const r=await api('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,mode:(mode||'chat'),message:`[Workspace AI]\n${ctx}\n\nUser: ${text}`,model:(selectedModel||'sonnet'),conversation_history:wsConvHistory.slice(-8)})});
     if(!r||!r.ok){wsAddChatMsg('ai','Error: Failed to get response');return}
     const reply=r.data.reply||'No response.';
     wsConvHistory.push({role:'user',content:text},{role:'assistant',content:reply});
@@ -2842,24 +2999,29 @@ async function wsSendChat(){
 }
 
 // ── Keyboard shortcuts ──
-document.getElementById('ws-chat-ta').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'});
+document.getElementById('ws-chat-ta').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'});
 document.getElementById('ws-chat-ta').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();wsSendChat()}});
 document.getElementById('ws-overlay').addEventListener('keydown',function(e){if(e.key==='Escape'&&!document.getElementById('ws-chat-ta').matches(':focus'))closeWorkspace()});
 document.getElementById('ws-overlay').addEventListener('keydown',function(e){if(e.ctrlKey&&e.key==='s'){e.preventDefault();wsSaveScript()}});
 document.getElementById('ws-create-overlay').addEventListener('click',function(e){if(e.target===this)closeWsCreateModal()});
 document.getElementById('ws-create-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();confirmCreateWorkspace()}else if(e.key==='Escape'){e.preventDefault();closeWsCreateModal()}});
-document.addEventListener('DOMContentLoaded',function(){setTimeout(updateWsFabState,0)});
+document.addEventListener('DOMContentLoaded',function(){setTimeout(renderProjectBar,0);setTimeout(wsRenderPickers,0)});
 document.addEventListener('click',function(e){
-  const grp=document.getElementById('ws-fab-group');
-  if(!grp)return;
-  const menu=document.getElementById('ws-fab-menu');
-  if(!menu||!menu.classList.contains('open'))return;
-  if(!grp.contains(e.target))closeWsFabMenu();
+  // Close project-bar dropdown when clicking outside
+  const pbm=document.getElementById('pb-menu');
+  const pbs=document.getElementById('pb-switch-btn');
+  if(pbm&&pbm.classList.contains('open')&&!pbm.contains(e.target)&&e.target!==pbs&&!(pbs&&pbs.contains(e.target)))pbCloseMenu();
+  // Close workspace pickers when clicking outside
+  const mm=document.getElementById('ws-mode-menu');
+  const mb=document.getElementById('ws-mode-btn');
+  if(mm&&mm.classList.contains('open')&&!(mb&&mb.contains(e.target)))wsCloseModePicker();
+  const xm=document.getElementById('ws-model-menu');
+  const xb=document.getElementById('ws-model-btn');
+  if(xm&&xm.classList.contains('open')&&!(xb&&xb.contains(e.target)))wsCloseModelPicker();
 });
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){
-    const menu=document.getElementById('ws-fab-menu');
-    if(menu&&menu.classList.contains('open'))closeWsFabMenu();
+    pbCloseMenu();wsCloseModePicker();wsCloseModelPicker();
   }
 });
 </script>
