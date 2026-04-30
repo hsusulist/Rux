@@ -25,5 +25,14 @@
     "created_at": 1777370204,
     "blocked": false,
     "admin_notes": ""
+  },
+  "316b377c-5840-4877-a2ef-877bfdffa1e8": {
+    "id": "316b377c-5840-4877-a2ef-877bfdffa1e8",
+    "email": "preview@test.com",
+    "password_hash": "$2b$12$Wiw6E7lGRMiysYobcv2hUeb.9ZivPYNFbzrEjOdml1yZSImHcw84i",
+    "roblox_id": "",
+    "created_at": 1777562887,
+    "blocked": false,
+    "admin_notes": ""
   }
 }
