@@ -4,7 +4,10 @@ import uuid
 import time
 import re
 import secrets
+import logging
 import traceback
+
+logging.basicConfig(level=logging.INFO)
 from urllib.request import urlopen
 from flask import Flask, request, jsonify, render_template
 from threading import Lock
@@ -79,15 +82,17 @@ MODELS = {
     "gemini-pro": {"id": "gemini-2.5-pro", "provider": "google", "label": "Gemini Pro", "badge": "Smart", "credit_per_token": 0.0003},
     "sonnet": {"id": "claude-sonnet-4-6", "provider": "anthropic", "label": "Claude Sonnet", "badge": "Balanced", "credit_per_token": 0.0005},
     "opus": {"id": "claude-opus-4-6", "provider": "anthropic", "label": "Claude Opus", "badge": "Powerful", "credit_per_token": 0.001},
-    "gpt-5-chat": {"id": "gpt-5.3-chat", "provider": "openai", "label": "GPT-5.3 Chat", "badge": "Smart", "credit_per_token": 0.0005},
-    "gpt-5-codex": {"id": "gpt-5.3-codex", "provider": "openai", "label": "GPT-5.3 Codex", "badge": "Strong", "credit_per_token": 0.0005},
-    "qwen-coder": {"id": "qwen/qwen3-coder-next", "provider": "openrouter", "label": "Qwen3 Coder", "badge": "Smart", "credit_per_token": 0.0003},
+    "haiku": {"id": "claude-haiku-4-5", "provider": "anthropic", "label": "Claude Haiku", "badge": "Fast", "credit_per_token": 0.0002},
+    "gpt-5": {"id": "gpt-5", "provider": "openai", "label": "GPT-5", "badge": "Smart", "credit_per_token": 0.0005},
+    "gpt-5-mini": {"id": "gpt-5-mini", "provider": "openai", "label": "GPT-5 Mini", "badge": "Fast", "credit_per_token": 0.0002},
+    "gpt-4-1": {"id": "gpt-4.1", "provider": "openai", "label": "GPT-4.1", "badge": "Strong", "credit_per_token": 0.0004},
+    "qwen-coder": {"id": "qwen/qwen3-coder", "provider": "openrouter", "label": "Qwen3 Coder", "badge": "Smart", "credit_per_token": 0.0003},
     "glm-5": {"id": "z-ai/glm-5.1", "provider": "openrouter", "label": "GLM-5.1", "badge": "Powerful", "credit_per_token": 0.0007},
-    "grok-4": {"id": "x-ai/grok-4.20", "provider": "openrouter", "label": "Grok 4", "badge": "Smart", "credit_per_token": 0.0004},
-    "gemma-31b": {"id": "google/gemma-4-31b-it", "provider": "openrouter", "label": "Gemma 4 31B", "badge": "Free", "credit_per_token": 0},
-    "gemma-26b": {"id": "google/gemma-4-26b-a4b-it", "provider": "openrouter", "label": "Gemma 4 26B", "badge": "Free", "credit_per_token": 0},
+    "grok-4": {"id": "x-ai/grok-4", "provider": "openrouter", "label": "Grok 4", "badge": "Smart", "credit_per_token": 0.0004},
+    "deepseek": {"id": "deepseek/deepseek-chat", "provider": "openrouter", "label": "DeepSeek", "badge": "Free", "credit_per_token": 0},
+    "llama-70b": {"id": "meta-llama/llama-3.3-70b-instruct", "provider": "openrouter", "label": "Llama 3.3 70B", "badge": "Free", "credit_per_token": 0},
 }
-DEFAULT_MODEL = "qwen-coder"
+DEFAULT_MODEL = "sonnet"
 OWNER_ID = "984cd1b9-28d9-404a-96d5-449d56e3cee8"
 
 
@@ -1327,14 +1332,103 @@ def _http_json(url, timeout=8):
         return json.loads(resp.read().decode("utf-8"))
 
 
+def _roblox_universe_icons(universe_ids):
+    """Return {universe_id: icon_url} for a list of universe ids."""
+    if not universe_ids:
+        return {}
+    try:
+        ids = ",".join(str(u) for u in universe_ids if u)
+        ic = _http_json(
+            f"https://thumbnails.roblox.com/v1/games/icons?universeIds={ids}"
+            f"&size=150x150&format=Png&isCircular=false"
+        )
+        out = {}
+        for row in ic.get("data") or []:
+            out[row.get("targetId")] = row.get("imageUrl") or ""
+        return out
+    except Exception:
+        return {}
+
+
+@app.route("/api/roblox/search-games", methods=["GET"])
+@require_auth
+def search_roblox_games():
+    """Search Roblox games by name. Free — no credits charged for search."""
+    q = (request.args.get("q") or "").strip()
+    if not q or len(q) < 2:
+        return jsonify({"ok": True, "results": []})
+    if len(q) > 80:
+        q = q[:80]
+    try:
+        from urllib.parse import quote
+        # Roblox public games-autocomplete endpoint returns suggestions with universeId
+        url = f"https://apis.roblox.com/search-api/omni-search?searchQuery={quote(q)}&pageType=all"
+        try:
+            data = _http_json(url, timeout=6)
+            search_results = data.get("searchResults") or []
+            picked = []
+            for block in search_results:
+                if (block.get("contentGroupType") or "").lower() != "game":
+                    continue
+                for c in block.get("contents") or []:
+                    uid = c.get("universeId") or c.get("rootPlaceId")
+                    if not uid:
+                        continue
+                    picked.append({
+                        "universe_id": c.get("universeId"),
+                        "place_id": c.get("rootPlaceId"),
+                        "name": c.get("name") or "Untitled",
+                        "creator_name": (c.get("creatorName") or "").strip(),
+                        "playing": c.get("playerCount", 0),
+                        "total_up_votes": c.get("totalUpVotes", 0),
+                        "total_down_votes": c.get("totalDownVotes", 0),
+                    })
+                if len(picked) >= 8:
+                    break
+        except Exception:
+            picked = []
+
+        # Fallback: discovery games-list omni search
+        if not picked:
+            url2 = (
+                f"https://games.roblox.com/v1/games/list?model.keyword={quote(q)}"
+                f"&model.maxRows=8&model.startRowIndex=0"
+            )
+            try:
+                d2 = _http_json(url2, timeout=6)
+                for c in d2.get("games") or []:
+                    picked.append({
+                        "universe_id": c.get("universeId"),
+                        "place_id": c.get("placeId"),
+                        "name": c.get("name") or "Untitled",
+                        "creator_name": (c.get("creatorName") or "").strip(),
+                        "playing": c.get("playerCount", 0),
+                        "total_up_votes": c.get("totalUpVotes", 0),
+                        "total_down_votes": c.get("totalDownVotes", 0),
+                    })
+                    if len(picked) >= 8:
+                        break
+            except Exception:
+                pass
+
+        icons = _roblox_universe_icons([p["universe_id"] for p in picked if p.get("universe_id")])
+        for p in picked:
+            p["icon_url"] = icons.get(p.get("universe_id"), "")
+        return jsonify({"ok": True, "results": picked[:8]})
+    except Exception as e:
+        logging.exception("search games failed")
+        return jsonify({"ok": True, "results": [], "warn": str(e)[:120]})
+
+
 @app.route("/api/roblox/analyze-game", methods=["POST"])
 @require_auth
 def analyze_roblox_game():
     user = request.user
     data = request.get_json(force=True) or {}
     raw = data.get("place_id") or data.get("url") or ""
+    given_universe = data.get("universe_id")
     place_id = _extract_place_id(raw)
-    if not place_id:
+    if not place_id and not given_universe:
         return jsonify({"error": "Couldn't read a place ID or game URL from that input."}), 400
 
     balance, _ = store.get_credits(user["id"])
@@ -1343,8 +1437,11 @@ def analyze_roblox_game():
         return jsonify({"error": "Not enough credits — analysis costs 1 credit."}), 402
 
     try:
-        u = _http_json(f"https://apis.roblox.com/universes/v1/places/{place_id}/universe")
-        universe_id = u.get("universeId")
+        if given_universe:
+            universe_id = given_universe
+        else:
+            u = _http_json(f"https://apis.roblox.com/universes/v1/places/{place_id}/universe")
+            universe_id = u.get("universeId")
         if not universe_id:
             return jsonify({"error": "Couldn't resolve that place into a game."}), 404
 
@@ -1381,6 +1478,8 @@ def analyze_roblox_game():
             pass
 
         creator = g.get("creator") or {}
+        if not place_id:
+            place_id = str(g.get("rootPlaceId") or "")
         result = {
             "place_id": place_id,
             "universe_id": universe_id,
@@ -1397,7 +1496,7 @@ def analyze_roblox_game():
             "updated": g.get("updated", ""),
             "icon_url": icon_url,
             "thumbnail_url": thumb_url,
-            "play_url": f"https://www.roblox.com/games/{place_id}",
+            "play_url": f"https://www.roblox.com/games/{place_id}" if place_id else "",
         }
     except Exception as e:
         logging.exception("analyze game failed")
@@ -1410,6 +1509,85 @@ def analyze_roblox_game():
         "game": result,
         "credits": {"balance": round(new_balance, 2), "max": store.MAX_CREDITS, "next_credit_at": next_at},
     })
+
+
+@app.route("/api/roblox/insights", methods=["POST"])
+@require_auth
+def roblox_game_insights():
+    """Have Sonnet analyze a fetched game and return structured recreatable systems."""
+    user = request.user
+    data = request.get_json(force=True) or {}
+    game = data.get("game") or {}
+    if not game or not game.get("name"):
+        return jsonify({"error": "Game data required."}), 400
+
+    if not anthropic_client:
+        return jsonify({"error": "AI provider unavailable right now."}), 503
+
+    prompt = f"""You are a senior Roblox game-design analyst.
+
+Analyse this Roblox game and produce a JSON-only response (no prose outside JSON).
+
+Game name: {game.get('name','')}
+Creator: {game.get('creator_name','')}
+Genre: {game.get('genre','')}
+Concurrent players: {game.get('playing',0)}
+Total visits: {game.get('visits',0)}
+Favorites: {game.get('favorites',0)}
+Description:
+\"\"\"
+{(game.get('description') or '')[:2500]}
+\"\"\"
+
+Return JSON of this exact shape:
+{{
+  "summary": "2-3 sentence overview of the game's hook",
+  "gameplay": "what the player actually does, 3-5 sentences",
+  "themes": ["short", "tag", "list"],
+  "appeal": "why this game grew, 2 sentences",
+  "systems": [
+    {{
+      "name": "Short name like 'Plot ownership' or 'Shop & economy'",
+      "description": "1-2 sentence explanation of the mechanic",
+      "scope": "small | medium | large",
+      "feasibility": 0-100,
+      "luau_difficulty": "easy | medium | hard",
+      "key_components": ["bullet", "of", "scripts/services/instances needed"]
+    }}
+  ]
+}}
+
+Pick 4-7 distinct, recreatable systems that capture the core loop. Be honest with feasibility — solo Studio devs may struggle with complex network or asset-heavy systems."""
+
+    try:
+        resp = anthropic_client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2200,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = ""
+        for block in resp.content:
+            if hasattr(block, "text"):
+                text += block.text
+        m = re.search(r"\{[\s\S]*\}", text)
+        if not m:
+            return jsonify({"error": "AI returned no JSON."}), 502
+        try:
+            parsed = json.loads(m.group(0))
+        except Exception:
+            cleaned = re.sub(r",\s*([}\]])", r"\1", m.group(0))
+            parsed = json.loads(cleaned)
+        if not isinstance(parsed.get("systems"), list):
+            parsed["systems"] = []
+        for s in parsed["systems"]:
+            try:
+                s["feasibility"] = max(0, min(100, int(s.get("feasibility", 50))))
+            except Exception:
+                s["feasibility"] = 50
+        return jsonify({"ok": True, "insights": parsed})
+    except Exception as e:
+        logging.exception("game insights failed")
+        return jsonify({"error": f"AI analysis failed: {e}"}), 502
 
 # ═══ PREFERENCES ROUTES ═══
 @app.route("/api/preferences", methods=["GET"])

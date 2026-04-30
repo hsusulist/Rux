@@ -567,6 +567,63 @@
     .agame-stat-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--text);letter-spacing:-.2px}
     .agame-stat-lbl{font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;font-weight:700}
 
+    /* search */
+    .analyze-search-wrap{position:relative}
+    .analyze-search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:13px;height:13px;fill:var(--text3);pointer-events:none;z-index:1}
+    .analyze-search-input{padding-left:32px !important}
+    .analyze-search-spin{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:13px;height:13px;border:2px solid rgba(244,196,77,.18);border-top-color:#ffd454;border-radius:50%;animation:agspin .7s linear infinite;display:none}
+    .analyze-search-spin.show{display:block}
+    @keyframes agspin{to{transform:translateY(-50%) rotate(360deg)}}
+    .analyze-search-results{margin-top:6px;display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto}
+    .analyze-search-results::-webkit-scrollbar{width:4px}
+    .analyze-search-results::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+    .ag-result{display:flex;gap:10px;padding:8px 10px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;cursor:pointer;align-items:center;transition:all .12s}
+    .ag-result:hover{background:rgba(244,196,77,.06);border-color:rgba(244,196,77,.32)}
+    .ag-result-icon{width:36px;height:36px;border-radius:8px;background:#0c0c10 center/cover no-repeat;border:1px solid var(--border2);flex-shrink:0}
+    .ag-result-info{flex:1;min-width:0}
+    .ag-result-name{font-size:12px;font-weight:700;color:var(--text);letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ag-result-meta{font-size:10px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ag-result-stat{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#7ed094;background:rgba(126,208,148,.08);border:1px solid rgba(126,208,148,.18);padding:3px 7px;border-radius:6px;flex-shrink:0}
+    .analyze-search-empty{font-size:10.5px;color:var(--muted);padding:8px 4px;text-align:center}
+
+    /* analysis stage */
+    .analyze-stage{display:none}
+    .analyze-stage.show{display:block;margin-bottom:18px}
+    .ag-loading{padding:16px;text-align:center;font-size:11.5px;color:var(--text3)}
+    .ag-loading .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#ffd454;margin:0 2px;animation:agbounce 1.2s ease-in-out infinite both}
+    .ag-loading .dot:nth-child(2){animation-delay:.15s}
+    .ag-loading .dot:nth-child(3){animation-delay:.3s}
+    @keyframes agbounce{0%,80%,100%{transform:scale(.5);opacity:.5}40%{transform:scale(1);opacity:1}}
+    .ag-insights{margin-top:14px;padding:12px 14px;background:linear-gradient(180deg,rgba(244,196,77,.06),rgba(244,196,77,.02));border:1px solid rgba(244,196,77,.18);border-radius:11px}
+    .ag-insights-eyebrow{font-size:9px;font-weight:700;letter-spacing:1.5px;color:#ffd454;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+    .ag-insights-eyebrow svg{width:10px;height:10px;fill:currentColor}
+    .ag-insights-summary{font-size:11.5px;color:var(--text);line-height:1.55;margin-bottom:8px;font-weight:500}
+    .ag-insights-gameplay{font-size:11px;color:var(--text2);line-height:1.55}
+    .ag-insights-themes{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+    .ag-theme{font-size:9.5px;font-weight:600;color:var(--text2);background:rgba(255,255,255,.04);border:1px solid var(--border2);padding:2px 7px;border-radius:100px}
+
+    .ag-systems-title{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--text2);margin:14px 0 8px;display:flex;align-items:center;justify-content:space-between}
+    .ag-systems-title .pick-hint{font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0;font-size:10px}
+    .ag-systems{display:grid;grid-template-columns:1fr;gap:7px;max-height:300px;overflow-y:auto;padding-right:2px}
+    .ag-systems::-webkit-scrollbar{width:4px}
+    .ag-systems::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+    .ag-system{padding:10px 12px;background:rgba(255,255,255,.025);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all .12s;position:relative;user-select:none}
+    .ag-system:hover{background:rgba(255,255,255,.04);border-color:var(--border3)}
+    .ag-system.selected{background:linear-gradient(180deg,rgba(244,196,77,.10),rgba(244,196,77,.04));border-color:rgba(244,196,77,.55);box-shadow:0 0 0 1px rgba(244,196,77,.18)}
+    .ag-system-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+    .ag-system-check{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--border3);background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s}
+    .ag-system.selected .ag-system-check{background:#ffd454;border-color:#ffd454}
+    .ag-system-check svg{width:9px;height:9px;fill:#1a1100;display:none}
+    .ag-system.selected .ag-system-check svg{display:block}
+    .ag-system-name{font-size:12.5px;font-weight:700;color:var(--text);letter-spacing:-.2px;flex:1;min-width:0}
+    .ag-feasibility{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;flex-shrink:0;letter-spacing:.3px}
+    .ag-feasibility.high{color:#7ed094;background:rgba(126,208,148,.10);border:1px solid rgba(126,208,148,.25)}
+    .ag-feasibility.med{color:#ffd454;background:rgba(244,196,77,.10);border:1px solid rgba(244,196,77,.30)}
+    .ag-feasibility.low{color:#ff8b6a;background:rgba(255,139,106,.10);border:1px solid rgba(255,139,106,.28)}
+    .ag-system-desc{font-size:10.5px;color:var(--text3);line-height:1.5;padding-left:24px}
+    .ag-system-meta{display:flex;gap:6px;margin-top:5px;padding-left:24px}
+    .ag-system-tag{font-size:8.5px;font-weight:700;color:var(--text3);background:rgba(255,255,255,.04);border:1px solid var(--border);padding:1.5px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.5px}
+
     .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(14px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
     .settings-overlay.open{opacity:1;pointer-events:all}
     .settings-modal{background:#070707;border:1px solid var(--border2);border-radius:16px;padding:24px 26px;width:100%;max-width:340px;position:relative;transform:translateY(6px) scale(.99);transition:transform .18s ease}
@@ -775,13 +832,15 @@
             <div class="picker-option" data-key="gemini-pro" data-provider="google" onclick="selectModel('gemini-pro')"><div class="picker-option-icon">{{ICON_GEMINI}}</div><div class="picker-option-body"><div class="picker-option-name">Gemini Pro</div><div class="picker-option-desc">Deep reasoning</div></div><div class="picker-option-badge smart">Smart</div></div>
             <div class="picker-option selected" data-key="sonnet" data-provider="anthropic" onclick="selectModel('sonnet')"><div class="picker-option-icon">{{ICON_ANTHROPIC}}</div><div class="picker-option-body"><div class="picker-option-name">Claude Sonnet</div><div class="picker-option-desc">Balanced</div></div><div class="picker-option-badge default">Default</div></div>
             <div class="picker-option" data-key="opus" data-provider="anthropic" onclick="selectModel('opus')"><div class="picker-option-icon">{{ICON_ANTHROPIC}}</div><div class="picker-option-body"><div class="picker-option-name">Claude Opus</div><div class="picker-option-desc">Maximum intelligence</div></div><div class="picker-option-badge power">Power</div></div>
-            <div class="picker-option" data-key="gpt-5-chat" data-provider="openai" onclick="selectModel('gpt-5-chat')"><div class="picker-option-icon">{{ICON_OPENAI}}</div><div class="picker-option-body"><div class="picker-option-name">GPT-5.2</div><div class="picker-option-desc">General purpose</div></div><div class="picker-option-badge smart">Smart</div></div>
-            <div class="picker-option" data-key="gpt-5-codex" data-provider="openai" onclick="selectModel('gpt-5-codex')"><div class="picker-option-icon">{{ICON_OPENAI}}</div><div class="picker-option-body"><div class="picker-option-name">GPT-5.1</div><div class="picker-option-desc">Code focused</div></div><div class="picker-option-badge code">Code</div></div>
+            <div class="picker-option" data-key="haiku" data-provider="anthropic" onclick="selectModel('haiku')"><div class="picker-option-icon">{{ICON_ANTHROPIC}}</div><div class="picker-option-body"><div class="picker-option-name">Claude Haiku</div><div class="picker-option-desc">Fast & cheap</div></div><div class="picker-option-badge fast">Fast</div></div>
+            <div class="picker-option" data-key="gpt-5" data-provider="openai" onclick="selectModel('gpt-5')"><div class="picker-option-icon">{{ICON_OPENAI}}</div><div class="picker-option-body"><div class="picker-option-name">GPT-5</div><div class="picker-option-desc">General purpose</div></div><div class="picker-option-badge smart">Smart</div></div>
+            <div class="picker-option" data-key="gpt-5-mini" data-provider="openai" onclick="selectModel('gpt-5-mini')"><div class="picker-option-icon">{{ICON_OPENAI}}</div><div class="picker-option-body"><div class="picker-option-name">GPT-5 Mini</div><div class="picker-option-desc">Quick & efficient</div></div><div class="picker-option-badge fast">Fast</div></div>
+            <div class="picker-option" data-key="gpt-4-1" data-provider="openai" onclick="selectModel('gpt-4-1')"><div class="picker-option-icon">{{ICON_OPENAI}}</div><div class="picker-option-body"><div class="picker-option-name">GPT-4.1</div><div class="picker-option-desc">Code focused</div></div><div class="picker-option-badge code">Code</div></div>
             <div class="picker-option" data-key="qwen-coder" data-provider="openrouter" onclick="selectModel('qwen-coder')"><div class="picker-option-icon">{{ICON_QWEN}}</div><div class="picker-option-body"><div class="picker-option-name">Qwen3 Coder</div><div class="picker-option-desc">Code generation</div></div><div class="picker-option-badge code">Code</div></div>
             <div class="picker-option" data-key="glm-5" data-provider="openrouter" onclick="selectModel('glm-5')"><div class="picker-option-icon">{{ICON_GLM}}</div><div class="picker-option-body"><div class="picker-option-name">GLM-5.1</div><div class="picker-option-desc">Fast & efficient</div></div><div class="picker-option-badge fast">Fast</div></div>
             <div class="picker-option" data-key="grok-4" data-provider="openrouter" onclick="selectModel('grok-4')"><div class="picker-option-icon">{{ICON_GROK}}</div><div class="picker-option-body"><div class="picker-option-name">Grok 4</div><div class="picker-option-desc">Advanced reasoning</div></div><div class="picker-option-badge smart">Smart</div></div>
-            <div class="picker-option" data-key="gemma-31b" data-provider="openrouter" onclick="selectModel('gemma-31b')"><div class="picker-option-icon">{{ICON_GEMMA}}</div><div class="picker-option-body"><div class="picker-option-name">Gemma 4 31B</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
-            <div class="picker-option" data-key="gemma-26b" data-provider="openrouter" onclick="selectModel('gemma-26b')"><div class="picker-option-icon">{{ICON_GEMMA}}</div><div class="picker-option-body"><div class="picker-option-name">Gemma 4 26B</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
+            <div class="picker-option" data-key="deepseek" data-provider="openrouter" onclick="selectModel('deepseek')"><div class="picker-option-icon">{{ICON_GLM}}</div><div class="picker-option-body"><div class="picker-option-name">DeepSeek</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
+            <div class="picker-option" data-key="llama-70b" data-provider="openrouter" onclick="selectModel('llama-70b')"><div class="picker-option-icon">{{ICON_GEMMA}}</div><div class="picker-option-body"><div class="picker-option-name">Llama 3.3 70B</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
           </div>
         </div>
 
@@ -909,19 +968,24 @@
       <div class="analyze-head-icon">
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
       </div>
-      <div>
-        <div class="proj-title" style="margin-bottom:2px">Analyze a Roblox game</div>
-        <div class="analyze-sub">Paste a place ID or game URL — Rux fetches the icon, description and stats. <span class="analyze-cost">Costs 1 credit per analysis.</span></div>
+      <div style="min-width:0;flex:1">
+        <div class="proj-title" id="analyze-title" style="margin-bottom:2px">Analyze a Roblox game</div>
+        <div class="analyze-sub" id="analyze-sub">Search by name, paste a game URL, or drop a place ID. Rux fetches the game and Sonnet picks systems you can recreate. <span class="analyze-cost">1 credit per analysis.</span></div>
       </div>
     </div>
 
     <div class="proj-field" id="analyze-input-field">
-      <label class="proj-label">Place ID or game URL</label>
-      <input class="proj-input" id="analyze-input" type="text" placeholder="https://www.roblox.com/games/1234567890/Adopt-Me  or  1234567890" autocomplete="off" spellcheck="false">
+      <label class="proj-label">Search game name, paste URL or place ID</label>
+      <div class="analyze-search-wrap">
+        <svg class="analyze-search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 13 15.5l.27.28v.79l5 4.99L19.49 20l-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+        <input class="proj-input analyze-search-input" id="analyze-input" type="text" placeholder="Adopt Me, Grow a Garden, Blade Ball..." autocomplete="off" spellcheck="false">
+        <div class="analyze-search-spin" id="analyze-search-spin"></div>
+      </div>
+      <div class="analyze-search-results" id="analyze-search-results"></div>
       <div class="proj-err" id="analyze-err"></div>
     </div>
 
-    <div class="analyze-result" id="analyze-result"></div>
+    <div class="analyze-stage" id="analyze-stage"></div>
 
     <div class="proj-actions" id="analyze-actions">
       <button class="proj-btn-cancel" onclick="closeAnalyzeGameModal()">Cancel</button>
@@ -930,7 +994,7 @@
 
     <div class="proj-actions" id="analyze-actions-result" style="display:none">
       <button class="proj-btn-cancel" onclick="resetAnalyzeGameModal()">Analyze another</button>
-      <button class="proj-btn-create" id="analyze-clone-btn" onclick="cloneAnalyzedGame()">Clone into new project</button>
+      <button class="proj-btn-create" id="analyze-build-btn" onclick="buildFromSelection()" disabled>Build with selected (0)</button>
     </div>
   </div>
 </div>
@@ -939,7 +1003,7 @@
 
 <script>
 const TOKEN_KEY='rux_token';
-const MODEL_LABELS={'gemini-flash':'Flash','gemini-pro':'Pro','sonnet':'Sonnet','opus':'Opus','gpt-5-chat':'GPT-5.2','gpt-5-codex':'GPT-5.1','qwen-coder':'Qwen3','glm-5':'GLM-5','grok-4':'Grok 4','gemma-31b':'Gemma 31B','gemma-26b':'Gemma 26B'};
+const MODEL_LABELS={'gemini-flash':'Flash','gemini-pro':'Pro','sonnet':'Sonnet','opus':'Opus','haiku':'Haiku','gpt-5':'GPT-5','gpt-5-mini':'GPT-5 Mini','gpt-4-1':'GPT-4.1','qwen-coder':'Qwen3','glm-5':'GLM-5','grok-4':'Grok 4','deepseek':'DeepSeek','llama-70b':'Llama 70B'};
 const MODE_LABELS={'chat':'Chat','agent':'Agent'};
 let token=null,userData=null,credits={balance:10.00,max:10.00,next_credit_at:0};
 let sessionId=null,mode='chat',activeConvId=null,pendingSessionId=null;
@@ -1129,7 +1193,7 @@ const BRAND_ICONS={
   grok:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M3.7 3l7.4 9.95L3 21h2.36l6.62-7.36L17.4 21h3.9l-7.97-10.7L20.7 3h-2.35l-5.93 6.6L8.1 3H3.7z"/></svg>',
   gemma:'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4285F4"/><stop offset="55%" stop-color="#9B72F1"/><stop offset="100%" stop-color="#F44E83"/></linearGradient></defs><path fill="url(#gmg)" d="M12 2c1.5 4.5 4 7 8.5 8.5C16 12 13.5 14.5 12 19c-1.5-4.5-4-7-8.5-8.5C8 9 10.5 6.5 12 2z"/></svg>'
 };
-const MODEL_BRAND={'gemini-flash':'google','gemini-pro':'google','sonnet':'anthropic','opus':'anthropic','gpt-5-chat':'openai','gpt-5-codex':'openai','qwen-coder':'qwen','glm-5':'glm','grok-4':'grok','gemma-31b':'gemma','gemma-26b':'gemma'};
+const MODEL_BRAND={'gemini-flash':'google','gemini-pro':'google','sonnet':'anthropic','opus':'anthropic','haiku':'anthropic','gpt-5':'openai','gpt-5-mini':'openai','gpt-4-1':'openai','qwen-coder':'qwen','glm-5':'glm','grok-4':'grok','deepseek':'glm','llama-70b':'gemma'};
 
 function _injectBrandIcons(){
   const map={ICON_GEMINI:BRAND_ICONS.google,ICON_ANTHROPIC:BRAND_ICONS.anthropic,ICON_OPENAI:BRAND_ICONS.openai,ICON_QWEN:BRAND_ICONS.qwen,ICON_GLM:BRAND_ICONS.glm,ICON_GROK:BRAND_ICONS.grok,ICON_GEMMA:BRAND_ICONS.gemma};
@@ -1212,97 +1276,208 @@ document.getElementById('proj-overlay').addEventListener('click',function(e){if(
 document.getElementById('proj-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();confirmCreateProject()}});
 
 /* ═══ ANALYZE ROBLOX GAME ═══ */
-let _lastAnalyzedGame=null;
+let _lastAnalyzedGame=null,_lastInsights=null,_pickedSystems=new Set(),_pendingSearch=null,_searchSeq=0;
 function _fmtNum(n){n=Number(n||0);if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n)}
+function _looksLikeIdOrUrl(s){return /^\d{4,}$/.test(s)||/roblox\.com\/games\//i.test(s)||/placeid=/i.test(s)}
 function openAnalyzeGameModal(){const ov=document.getElementById('analyze-overlay');resetAnalyzeGameModal();ov.classList.add('open');setTimeout(()=>document.getElementById('analyze-input').focus(),60)}
 function closeAnalyzeGameModal(){document.getElementById('analyze-overlay').classList.remove('open')}
 function resetAnalyzeGameModal(){
-  _lastAnalyzedGame=null;
+  _lastAnalyzedGame=null;_lastInsights=null;_pickedSystems=new Set();
+  if(_pendingSearch){clearTimeout(_pendingSearch);_pendingSearch=null}
   document.getElementById('analyze-input').value='';
   document.getElementById('analyze-err').classList.remove('show');
-  document.getElementById('analyze-result').classList.remove('show');
-  document.getElementById('analyze-result').innerHTML='';
+  const stage=document.getElementById('analyze-stage');stage.classList.remove('show');stage.innerHTML='';
+  const sr=document.getElementById('analyze-search-results');sr.innerHTML='';
+  document.getElementById('analyze-search-spin').classList.remove('show');
   document.getElementById('analyze-input-field').style.display='';
   document.getElementById('analyze-actions').style.display='';
   document.getElementById('analyze-actions-result').style.display='none';
+  document.getElementById('analyze-title').textContent='Analyze a Roblox game';
+  document.getElementById('analyze-sub').innerHTML='Search by name, paste a game URL, or drop a place ID. Rux fetches the game and Sonnet picks systems you can recreate. <span class="analyze-cost">1 credit per analysis.</span>';
   const btn=document.getElementById('analyze-run-btn');btn.disabled=false;btn.textContent='Analyze (1 credit)';
+  const bbtn=document.getElementById('analyze-build-btn');bbtn.disabled=true;bbtn.textContent='Build with selected (0)';
 }
-async function runAnalyzeGame(){
+
+async function _searchGames(q){
+  const seq=++_searchSeq;
+  const sr=document.getElementById('analyze-search-results');
+  const spin=document.getElementById('analyze-search-spin');
+  spin.classList.add('show');
+  try{
+    const r=await api('/api/roblox/search-games?q='+encodeURIComponent(q));
+    if(seq!==_searchSeq)return;
+    spin.classList.remove('show');
+    if(!r||!r.ok){sr.innerHTML='';return}
+    const list=(r.data&&r.data.results)||[];
+    if(!list.length){sr.innerHTML=`<div class="analyze-search-empty">No games found for "${escHtml(q)}".</div>`;return}
+    sr.innerHTML=list.map(g=>{
+      const icon=g.icon_url?`<div class="ag-result-icon" style="background-image:url('${g.icon_url}')"></div>`:`<div class="ag-result-icon"></div>`;
+      const playing=g.playing?`<div class="ag-result-stat">${_fmtNum(g.playing)} live</div>`:'';
+      const meta=[g.creator_name?'by '+escHtml(g.creator_name):'',g.universe_id?'#'+g.universe_id:''].filter(Boolean).join(' · ');
+      return `<div class="ag-result" data-uid="${g.universe_id||''}" data-pid="${g.place_id||''}" data-name="${escHtml(g.name)}">${icon}<div class="ag-result-info"><div class="ag-result-name">${escHtml(g.name)}</div><div class="ag-result-meta">${meta}</div></div>${playing}</div>`;
+    }).join('');
+    sr.querySelectorAll('.ag-result').forEach(el=>el.addEventListener('click',()=>{
+      const uid=el.dataset.uid,pid=el.dataset.pid,name=el.dataset.name;
+      runAnalyzeGame({universe_id:uid?Number(uid):null,place_id:pid||null,name});
+    }));
+  }catch(e){spin.classList.remove('show');sr.innerHTML=''}
+}
+
+document.getElementById('analyze-input').addEventListener('input',e=>{
+  const v=e.target.value.trim();
+  if(_pendingSearch){clearTimeout(_pendingSearch);_pendingSearch=null}
+  const sr=document.getElementById('analyze-search-results');
+  if(v.length<2){sr.innerHTML='';document.getElementById('analyze-search-spin').classList.remove('show');return}
+  if(_looksLikeIdOrUrl(v)){sr.innerHTML='';return}
+  _pendingSearch=setTimeout(()=>_searchGames(v),350);
+});
+document.getElementById('analyze-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();runAnalyzeGame()}
+});
+document.getElementById('analyze-overlay').addEventListener('click',function(e){if(e.target===this)closeAnalyzeGameModal()});
+
+async function runAnalyzeGame(opts){
   const inp=document.getElementById('analyze-input');
   const err=document.getElementById('analyze-err');
   const btn=document.getElementById('analyze-run-btn');
-  const raw=inp.value.trim();
   err.classList.remove('show');
-  if(!raw){err.textContent='Paste a Roblox game URL or place ID first.';err.classList.add('show');inp.focus();return}
-  btn.disabled=true;btn.textContent='Analyzing...';
+  let body={};
+  if(opts&&(opts.universe_id||opts.place_id)){body={universe_id:opts.universe_id||null,place_id:opts.place_id||null}}
+  else{
+    const raw=inp.value.trim();
+    if(!raw){err.textContent='Search a name, or paste a Roblox game URL or place ID.';err.classList.add('show');inp.focus();return}
+    body={url:raw};
+  }
+  btn.disabled=true;btn.textContent='Fetching...';
+  document.getElementById('analyze-input-field').style.display='none';
+  const stage=document.getElementById('analyze-stage');
+  stage.classList.add('show');
+  stage.innerHTML=`<div class="ag-loading">Fetching game from Roblox<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`;
   try{
-    const r=await api('/api/roblox/analyze-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:raw})});
-    if(!r){err.textContent='Network error.';err.classList.add('show');btn.disabled=false;btn.textContent='Analyze (1 credit)';return}
-    if(!r.ok){err.textContent=(r.data&&r.data.error)||'Analysis failed.';err.classList.add('show');btn.disabled=false;btn.textContent='Analyze (1 credit)';return}
+    const r=await api('/api/roblox/analyze-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r||!r.ok){_failAnalyze((r&&r.data&&r.data.error)||'Analysis failed.');return}
     const g=r.data.game;_lastAnalyzedGame=g;
     if(r.data.credits){credits=r.data.credits;updateCreditUI()}
-    const desc=(g.description||'No description provided.').slice(0,1200);
-    const cover=g.thumbnail_url?`<div class="agame-cover" style="background-image:url('${g.thumbnail_url}')"></div>`:`<div class="agame-cover"></div>`;
-    const icon=g.icon_url?`<div class="agame-icon" style="background-image:url('${g.icon_url}')"></div>`:`<div class="agame-icon"></div>`;
-    const creator=g.creator_name?`by <a href="https://www.roblox.com/users/profile" target="_blank" rel="noopener noreferrer">${escHtml(g.creator_name)}</a>`:'Unknown creator';
-    document.getElementById('analyze-result').innerHTML=`
-      <div class="agame-card">
-        ${cover}
-        <div class="agame-head">
-          ${icon}
-          <div style="min-width:0">
-            <div class="agame-name">${escHtml(g.name||'Untitled')}</div>
-            <div class="agame-creator">${creator}${g.genre?` · ${escHtml(g.genre)}`:''}</div>
-          </div>
-        </div>
-        <div class="agame-desc">${escHtml(desc)}</div>
-        <div class="agame-stats">
-          <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.playing)}</div><div class="agame-stat-lbl">Playing</div></div>
-          <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.visits)}</div><div class="agame-stat-lbl">Visits</div></div>
-          <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.favorites)}</div><div class="agame-stat-lbl">Favorites</div></div>
-          <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.max_players)}</div><div class="agame-stat-lbl">Max</div></div>
-        </div>
-      </div>`;
-    document.getElementById('analyze-result').classList.add('show');
-    document.getElementById('analyze-input-field').style.display='none';
-    document.getElementById('analyze-actions').style.display='none';
-    document.getElementById('analyze-actions-result').style.display='flex';
-    showToast('Analyzed — 1 credit used','success');
-  }catch(e){err.textContent='Network error.';err.classList.add('show');btn.disabled=false;btn.textContent='Analyze (1 credit)'}
+    _renderGameCard(g);
+    stage.insertAdjacentHTML('beforeend',`<div class="ag-loading" id="ag-ai-loading" style="margin-top:12px">Sonnet is breaking down the gameplay<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`);
+    showToast('Game fetched — 1 credit used','success');
+    const ir=await api('/api/roblox/insights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({game:g})});
+    const lo=document.getElementById('ag-ai-loading');if(lo)lo.remove();
+    if(!ir||!ir.ok||!ir.data||!ir.data.insights){
+      stage.insertAdjacentHTML('beforeend',`<div class="ag-loading" style="color:#ff8b6a">AI breakdown failed: ${escHtml((ir&&ir.data&&ir.data.error)||'unknown')}. You can still build manually.</div>`);
+      _showResultActions();return;
+    }
+    _lastInsights=ir.data.insights;
+    _renderInsights(_lastInsights);
+    _showResultActions();
+  }catch(e){_failAnalyze('Network error.')}
 }
-async function cloneAnalyzedGame(){
-  if(!_lastAnalyzedGame)return;
-  const g=_lastAnalyzedGame;
-  const cbtn=document.getElementById('analyze-clone-btn');cbtn.disabled=true;cbtn.textContent='Creating...';
-  const title=`Clone of ${g.name}`.slice(0,60);
+function _failAnalyze(msg){
+  const err=document.getElementById('analyze-err');err.textContent=msg;err.classList.add('show');
+  document.getElementById('analyze-input-field').style.display='';
+  document.getElementById('analyze-stage').classList.remove('show');
+  document.getElementById('analyze-stage').innerHTML='';
+  const btn=document.getElementById('analyze-run-btn');btn.disabled=false;btn.textContent='Analyze (1 credit)';
+}
+function _showResultActions(){
+  document.getElementById('analyze-actions').style.display='none';
+  document.getElementById('analyze-actions-result').style.display='flex';
+  document.getElementById('analyze-title').textContent='Pick what to recreate';
+  document.getElementById('analyze-sub').textContent='Tick the systems you want Rux to start building. The percentage shows how confident Sonnet is it can recreate it cleanly in Studio.';
+}
+function _renderGameCard(g){
+  const desc=(g.description||'No description provided.').slice(0,800);
+  const cover=g.thumbnail_url?`<div class="agame-cover" style="background-image:url('${g.thumbnail_url}')"></div>`:`<div class="agame-cover"></div>`;
+  const icon=g.icon_url?`<div class="agame-icon" style="background-image:url('${g.icon_url}')"></div>`:`<div class="agame-icon"></div>`;
+  const creator=g.creator_name?`by ${escHtml(g.creator_name)}`:'Unknown creator';
+  document.getElementById('analyze-stage').innerHTML=`
+    <div class="agame-card">
+      ${cover}
+      <div class="agame-head">
+        ${icon}
+        <div style="min-width:0">
+          <div class="agame-name">${escHtml(g.name||'Untitled')}</div>
+          <div class="agame-creator">${creator}${g.genre?` · ${escHtml(g.genre)}`:''}</div>
+        </div>
+      </div>
+      <div class="agame-desc">${escHtml(desc)}</div>
+      <div class="agame-stats">
+        <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.playing)}</div><div class="agame-stat-lbl">Playing</div></div>
+        <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.visits)}</div><div class="agame-stat-lbl">Visits</div></div>
+        <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.favorites)}</div><div class="agame-stat-lbl">Favorites</div></div>
+        <div class="agame-stat"><div class="agame-stat-val">${_fmtNum(g.max_players)}</div><div class="agame-stat-lbl">Max</div></div>
+      </div>
+    </div>`;
+}
+function _feasibilityClass(n){if(n>=70)return'high';if(n>=40)return'med';return'low'}
+function _renderInsights(ins){
+  const themes=(ins.themes||[]).slice(0,8).map(t=>`<span class="ag-theme">${escHtml(String(t))}</span>`).join('');
+  const sysHtml=(ins.systems||[]).map((s,i)=>{
+    const f=Number(s.feasibility||50);
+    const cls=_feasibilityClass(f);
+    const tags=[s.scope?`<span class="ag-system-tag">${escHtml(s.scope)} scope</span>`:'',s.luau_difficulty?`<span class="ag-system-tag">${escHtml(s.luau_difficulty)} luau</span>`:''].filter(Boolean).join('');
+    return `<div class="ag-system" data-idx="${i}">
+      <div class="ag-system-head">
+        <div class="ag-system-check"><svg viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+        <div class="ag-system-name">${escHtml(s.name||'System')}</div>
+        <div class="ag-feasibility ${cls}">${f}% match</div>
+      </div>
+      <div class="ag-system-desc">${escHtml(s.description||'')}</div>
+      <div class="ag-system-meta">${tags}</div>
+    </div>`;
+  }).join('');
+  const stage=document.getElementById('analyze-stage');
+  stage.insertAdjacentHTML('beforeend',`
+    <div class="ag-insights">
+      <div class="ag-insights-eyebrow"><svg viewBox="0 0 24 24"><path d="M12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z"/></svg> Sonnet's breakdown</div>
+      <div class="ag-insights-summary">${escHtml(ins.summary||'')}</div>
+      <div class="ag-insights-gameplay">${escHtml(ins.gameplay||'')}</div>
+      ${themes?`<div class="ag-insights-themes">${themes}</div>`:''}
+    </div>
+    <div class="ag-systems-title">Recreatable systems<span class="pick-hint">Pick one or more</span></div>
+    <div class="ag-systems">${sysHtml||'<div class="ag-loading">No systems suggested.</div>'}</div>`);
+  stage.querySelectorAll('.ag-system').forEach(el=>el.addEventListener('click',()=>{
+    const idx=Number(el.dataset.idx);
+    if(_pickedSystems.has(idx)){_pickedSystems.delete(idx);el.classList.remove('selected')}
+    else{_pickedSystems.add(idx);el.classList.add('selected')}
+    const bbtn=document.getElementById('analyze-build-btn');
+    bbtn.disabled=_pickedSystems.size===0;
+    bbtn.textContent=`Build with selected (${_pickedSystems.size})`;
+  }));
+}
+
+async function buildFromSelection(){
+  if(!_lastAnalyzedGame||_pickedSystems.size===0)return;
+  const g=_lastAnalyzedGame,ins=_lastInsights||{};
+  const picked=Array.from(_pickedSystems).map(i=>(ins.systems||[])[i]).filter(Boolean);
+  const bbtn=document.getElementById('analyze-build-btn');bbtn.disabled=true;bbtn.textContent='Creating...';
+  const title=`${g.name} clone`.slice(0,60);
+  const sysList=picked.map(s=>`### ${s.name} (${s.feasibility}% feasible · ${s.luau_difficulty||'medium'} difficulty)\n${s.description||''}\nKey parts: ${(s.key_components||[]).join(', ')||'TBD'}`).join('\n\n');
   const seed=
-`I want to recreate the core concept of the Roblox game **${g.name}** (place ID ${g.place_id}).
+`I want to build my own version of **${g.name}** (place ${g.place_id||g.universe_id}).
 
-Game info from Roblox:
-• Creator: ${g.creator_name||'Unknown'}
-• Genre: ${g.genre||'Unspecified'}
-• Visits: ${g.visits||0}
-• Currently playing: ${g.playing||0}
-• Favorites: ${g.favorites||0}
-• Max players: ${g.max_players||0}
+Sonnet's breakdown of the original:
+${ins.summary||''}
 
-Description:
-${(g.description||'').slice(0,1500)||'(no description provided)'}
+${ins.gameplay||''}
 
-Help me design a similar game in my own Roblox Studio place. Start by listing the core mechanics you can infer from the description and stats, then propose a script architecture (services, modules, scripts) that recreates them. Don't copy assets — design original systems with the same feel.`;
+Focus on recreating these systems first:
+
+${sysList}
+
+Plan the script architecture (services, ModuleScripts, RemoteEvents, folder layout in Workspace/ServerScriptService/ReplicatedStorage), then start implementing the highest-feasibility system end-to-end. Use original assets and original ideas — don't copy anything from the source game. Ask me before building anything destructive in my place.`;
   try{
     await startNewConv(title);
     const ti=document.getElementById('chat-input');
     ti.value=seed;
     ti.dispatchEvent(new Event('input',{bubbles:true}));
     ti.focus();
+    await saveConv();
     closeAnalyzeGameModal();
-    showToast('Project ready — review the prompt and send','success');
+    showToast(`Project ready · ${picked.length} system${picked.length>1?'s':''} queued`,'success');
   }catch(e){showToast('Failed to create project','error')}
-  cbtn.disabled=false;cbtn.textContent='Clone into new project';
+  bbtn.disabled=false;bbtn.textContent=`Build with selected (${_pickedSystems.size})`;
 }
-document.getElementById('analyze-overlay').addEventListener('click',function(e){if(e.target===this)closeAnalyzeGameModal()});
-document.getElementById('analyze-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runAnalyzeGame()}});
 
 const chatInput=document.getElementById('chat-input');
 chatInput.addEventListener('input',autoResizeInput);

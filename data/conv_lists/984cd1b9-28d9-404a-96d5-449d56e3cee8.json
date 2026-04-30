@@ -96,5 +96,12 @@
     "mode": "chat",
     "model": "gpt-5-codex",
     "updatedAt": 1777508190712
+  },
+  "new-1777509023344": {
+    "id": "new-1777509023344",
+    "title": "hu",
+    "mode": "chat",
+    "model": "gemini-pro",
+    "updatedAt": 1777509042151
   }
 }
