@@ -2685,6 +2685,8 @@ async function wsLoadCachedScriptsList(){
 }
 
 // ── Studio tool call ──
+// Plugin returns {success:true,data:{...}} or {success:false,error:"..."}
+// Unwrap here so every caller works with the inner payload directly.
 async function wsCall(tool,args,timeout=20000){
   const r=await api('/workspace/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool,args})});
   if(!r||!r.ok)throw new Error(r?.data?.error||'Studio not connected');
@@ -2693,7 +2695,14 @@ async function wsCall(tool,args,timeout=20000){
     await new Promise(res=>setTimeout(res,600));
     const poll=await api('/workspace/result/'+reqId);
     if(!poll||!poll.ok)continue;
-    if(poll.data.status==='done')return poll.data.result;
+    if(poll.data.status==='done'){
+      const raw=poll.data.result;
+      if(raw&&typeof raw==='object'&&'success' in raw){
+        if(raw.success===false)throw new Error(raw.error||'Studio tool failed');
+        return raw.data!==undefined?raw.data:raw;
+      }
+      return raw;
+    }
     if(poll.data.status==='error')throw new Error('Studio error');
   }
   throw new Error('Timed out — check Studio is open');
@@ -2768,12 +2777,7 @@ async function wsLoadScriptTree(){
     if(Array.isArray(result))scripts=result;
     else if(result&&Array.isArray(result.scripts))scripts=result.scripts;
     else if(result&&typeof result==='string')scripts=result.split('\n').map(s=>s.trim()).filter(Boolean);
-    else if(result&&typeof result==='object'){
-      const vals=Object.values(result);
-      if(vals.length&&Array.isArray(vals[0]))scripts=vals[0];
-      else scripts=Object.keys(result).filter(k=>!['ok','error','status'].includes(k));
-    }
-    wsAllScripts=scripts.map(s=>typeof s==='string'?s:(s.name||String(s)));
+    wsAllScripts=scripts.map(s=>typeof s==='string'?s:(s.name||s.path||String(s)));
     wsRenderTree(wsAllScripts,false);
     wsLastRefresh=Date.now();
     wsBumpCount(wsAllScripts.length);
