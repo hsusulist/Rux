@@ -794,6 +794,54 @@
     .ws-sugg-accept{padding:2px 8px;background:rgba(212,168,67,.12);border:1px solid rgba(212,168,67,.2);border-radius:4px;color:var(--accent);font-size:9px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer}
     .ws-sugg-dismiss{padding:2px 6px;background:none;border:1px solid var(--border2);border-radius:4px;color:var(--muted);font-size:9px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer}
     .ws-sugg-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',monospace;font-size:9.5px;opacity:.7}
+
+    /* ── Chat resize handle ── */
+    .ws-chat-resize{width:4px;flex-shrink:0;cursor:col-resize;background:transparent;transition:background .15s;position:relative;z-index:2}
+    .ws-chat-resize:hover,.ws-chat-resize.dragging{background:var(--accent)}
+    .ws-chat-resize::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:32px;background:var(--border3);border-radius:2px}
+    .ws-chat-resize:hover::after,.ws-chat-resize.dragging::after{background:var(--accent)}
+
+    /* ── Chat expand button ── */
+    .ws-chat-expand{width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--muted);cursor:pointer;border-radius:5px;transition:all .12s}
+    .ws-chat-expand:hover{background:var(--surface3);color:var(--text2)}
+    .ws-chat-expand svg{width:11px;height:11px;fill:currentColor}
+
+    /* ── Project badge in topbar ── */
+    .ws-project-badge{display:flex;align-items:center;gap:5px;padding:2px 8px;background:rgba(155,154,222,.08);border:1px solid rgba(155,154,222,.15);border-radius:5px;font-size:9.5px;color:#9b9ade;font-weight:600;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;cursor:default}
+    .ws-project-badge svg{width:9px;height:9px;fill:currentColor;flex-shrink:0}
+
+    /* ── History panel ── */
+    .ws-hist-panel{position:absolute;top:0;right:0;bottom:0;width:280px;background:#0c0c0c;border-left:1px solid var(--border);z-index:10;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s ease}
+    .ws-hist-panel.open{transform:translateX(0)}
+    .ws-tree{position:relative}
+    .ws-hist-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .ws-hist-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);flex:1}
+    .ws-hist-close{width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--muted);cursor:pointer;border-radius:5px;transition:all .12s}
+    .ws-hist-close:hover{background:var(--surface3);color:var(--text2)}
+    .ws-hist-close svg{width:11px;height:11px;fill:currentColor}
+    .ws-hist-list{flex:1;overflow-y:auto;padding:6px}
+    .ws-hist-list::-webkit-scrollbar{width:3px}
+    .ws-hist-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+    .ws-hist-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:10.5px;color:var(--muted);text-align:center;padding:20px}
+    .ws-hist-item{padding:8px 10px;border-radius:7px;border:1px solid var(--border);margin-bottom:5px;cursor:pointer;transition:all .12s;position:relative}
+    .ws-hist-item:hover{background:var(--surface2);border-color:var(--border2)}
+    .ws-hist-item.current{border-color:rgba(212,168,67,.2);background:rgba(212,168,67,.04)}
+    .ws-hist-meta{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+    .ws-hist-time{font-size:9.5px;font-weight:700;color:var(--text2)}
+    .ws-hist-source{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:1px 5px;border-radius:3px}
+    .ws-hist-source.local{background:rgba(212,168,67,.12);color:var(--accent)}
+    .ws-hist-source.studio{background:rgba(69,196,122,.1);color:#45c47a}
+    .ws-hist-source.revert{background:rgba(155,154,222,.1);color:#9b9ade}
+    .ws-hist-lines{font-size:9px;color:var(--muted);margin-left:auto}
+    .ws-hist-preview{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ws-hist-revert-btn{position:absolute;top:6px;right:8px;padding:2px 8px;background:var(--surface3);border:1px solid var(--border2);border-radius:4px;font-size:8.5px;font-weight:700;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;display:none;transition:all .12s}
+    .ws-hist-item:hover .ws-hist-revert-btn{display:block}
+    .ws-hist-revert-btn:hover{background:var(--surface2);border-color:var(--accent);color:var(--accent)}
+
+    /* ── Editor toolbar history button ── */
+    .ws-toolbar-btn{display:flex;align-items:center;gap:4px;padding:0 8px;height:24px;background:none;border:1px solid var(--border2);border-radius:5px;color:#888;font-size:9.5px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:all .12s;margin-left:auto}
+    .ws-toolbar-btn:hover{background:rgba(255,255,255,.05);border-color:#555;color:#ccc}
+    .ws-toolbar-btn svg{width:11px;height:11px;fill:currentColor}
   </style>
 </head>
 <body>
@@ -1135,6 +1183,10 @@
       Rux
     </div>
     <div class="ws-topbar-title">Workspace</div>
+    <div class="ws-project-badge" id="ws-project-badge" title="Current project">
+      <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+      <span id="ws-project-name">Default</span>
+    </div>
     <div class="ws-topbar-crumb" id="ws-crumb"><span style="color:var(--muted)">No file open</span></div>
     <button class="ws-save-btn" id="ws-save-btn" onclick="wsSaveScript()" disabled>
       <svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4zm-5 16a3 3 0 110-6 3 3 0 010 6zm3-10H5V5h10v4z"/></svg>
@@ -1150,8 +1202,13 @@
     <!-- Left: AI Chat -->
     <div class="ws-chat">
       <div class="ws-chat-head">
-        <div class="ws-chat-title">AI Assistant</div>
-        <div class="ws-chat-sub">Ask about the open script</div>
+        <div style="flex:1">
+          <div class="ws-chat-title">AI Assistant</div>
+          <div class="ws-chat-sub" id="ws-chat-sub">Ask about the open script</div>
+        </div>
+        <button class="ws-chat-expand" id="ws-chat-expand-btn" onclick="wsToggleChatExpand()" title="Expand chat">
+          <svg id="ws-expand-icon" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </button>
       </div>
       <div class="ws-chat-msgs" id="ws-chat-msgs">
         <div class="ws-msg system">Open a script and ask the AI anything about it.</div>
@@ -1164,6 +1221,9 @@
       </div>
     </div>
 
+    <!-- Chat resize handle -->
+    <div class="ws-chat-resize" id="ws-chat-resize"></div>
+
     <!-- Middle: Monaco Editor -->
     <div class="ws-editor">
       <div class="ws-editor-toolbar">
@@ -1172,6 +1232,10 @@
           <span id="ws-editor-tab-name">untitled.lua</span>
           <span class="ws-editor-tab-lang">Lua</span>
         </div>
+        <button class="ws-toolbar-btn" id="ws-hist-btn" onclick="wsToggleHistory()" title="Version history" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8H12z"/></svg>
+          History
+        </button>
       </div>
       <div class="ws-editor-empty" id="ws-editor-empty">
         <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
@@ -1202,6 +1266,20 @@
         <div class="ws-tree-empty">
           <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           Connect Studio and click Refresh
+        </div>
+      </div>
+
+      <!-- History panel slides over the tree -->
+      <div class="ws-hist-panel" id="ws-hist-panel">
+        <div class="ws-hist-head">
+          <span class="ws-hist-title">Version History</span>
+          <button class="ws-hist-close" onclick="wsCloseHistory()" title="Close history">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+        <div style="padding:5px 10px 0;font-size:9.5px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:6px" id="ws-hist-script-name"></div>
+        <div class="ws-hist-list" id="ws-hist-list">
+          <div class="ws-hist-empty">Open a script to see its history</div>
         </div>
       </div>
     </div>
@@ -1465,7 +1543,7 @@ function startRenameProject(convId,oldTitle,itemEl){const textEl=itemEl.querySel
 
 async function confirmDeleteProject(convId,title){if(!confirm(`Delete project "${title}"? This cannot be undone.`))return;await deleteConv(convId);showToast('Project deleted','success')}
 
-async function openConv(id){let c=convCache[id];if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';currentProjectTitle=c.title||'';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight});setViewMode(true);renderSidebar()}
+async function openConv(id){let c=convCache[id];if(!c){try{const r=await api('/api/conversations/'+id);if(r&&r.ok)c=r.data}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';currentProjectTitle=c.title||'';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight});setViewMode(true);renderSidebar();if(wsOpen)wsSetProject(id,c.title||id)}
 function showDashboard(){activeConvId=null;document.getElementById('messages').innerHTML='';setViewMode(false);renderSidebar()}
 
 function startNewConv(title){
@@ -1971,14 +2049,36 @@ document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefa
 document.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();window.open('/admin','_blank')}});
 
 // ═══════════════════════════════════════════════════
-// WORKSPACE  (offline-first, sync-on-reconnect)
+// WORKSPACE  (offline-first, per-project, sync-on-reconnect)
 // ═══════════════════════════════════════════════════
 let wsOpen=false,wsMonaco=null,wsMonacoReady=false;
 let wsCurrentScript=null,wsCurrentCode='',wsDirty=false;
 let wsAllScripts=[],wsSuggestion=null,wsSuggTimer=null;
 let wsConvHistory=[],wsIsChatLoading=false;
-let wsCacheTimer=null,wsSyncBanner=null;
-let wsCachedScripts={};  // name → entry from server
+let wsCacheTimer=null;
+let wsCachedScripts={};
+let wsCurrentProjectId='default',wsCurrentProjectName='Default';
+let wsChatExpanded=false;
+
+// ── Project management ──
+function wsGetPid(){return wsCurrentProjectId}
+
+function wsSetProject(id,name){
+  if(id===wsCurrentProjectId&&wsCurrentProjectName===name)return;
+  wsCurrentProjectId=id||'default';
+  wsCurrentProjectName=name||id||'Default';
+  const nameEl=document.getElementById('ws-project-name');
+  if(nameEl)nameEl.textContent=wsCurrentProjectName.length>20?wsCurrentProjectName.substring(0,20)+'…':wsCurrentProjectName;
+  wsCachedScripts={};
+  wsCurrentScript=null;wsDirty=false;wsCurrentCode='';
+  document.getElementById('ws-crumb').innerHTML='<span style="color:var(--muted)">No file open</span>';
+  document.getElementById('ws-save-btn').disabled=true;
+  document.getElementById('ws-hist-btn').style.display='none';
+  wsCloseHistory();
+  wsHideSyncBanner();
+  wsAddChatMsg('system','Switched to project: '+wsCurrentProjectName);
+  wsLoadScriptTree();
+}
 
 // ── open / close ──
 function toggleWorkspace(){if(wsOpen)closeWorkspace();else openWorkspace()}
@@ -1987,8 +2087,14 @@ function openWorkspace(){
   wsOpen=true;
   document.getElementById('ws-overlay').classList.add('open');
   document.getElementById('ws-fab').classList.add('ws-open');
+  const pid=activeConvId||'default';
+  const pname=currentProjectTitle||pid;
+  wsCurrentProjectId=pid;wsCurrentProjectName=pname;
+  const nameEl=document.getElementById('ws-project-name');
+  if(nameEl)nameEl.textContent=pname.length>20?pname.substring(0,20)+'…':pname;
   wsInitMonaco();
   wsLoadScriptTree();
+  wsInitChatResize();
 }
 
 function closeWorkspace(){
@@ -2039,17 +2145,106 @@ function wsShowEditor(){
   if(wsMonaco)wsMonaco.layout();
 }
 
+// ── Chat resize ──
+function wsInitChatResize(){
+  const handle=document.getElementById('ws-chat-resize');
+  const chat=document.querySelector('.ws-chat');
+  if(!handle||!chat||handle._inited)return;
+  handle._inited=true;
+  let dragging=false,startX=0,startW=0;
+  handle.addEventListener('mousedown',e=>{
+    dragging=true;startX=e.clientX;startW=chat.offsetWidth;
+    handle.classList.add('dragging');document.body.style.userSelect='none';document.body.style.cursor='col-resize';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    const delta=e.clientX-startX;
+    const newW=Math.max(180,Math.min(600,startW+delta));
+    chat.style.width=newW+'px';
+  });
+  document.addEventListener('mouseup',()=>{
+    if(!dragging)return;
+    dragging=false;handle.classList.remove('dragging');
+    document.body.style.userSelect='';document.body.style.cursor='';
+    if(wsMonaco)wsMonaco.layout();
+  });
+}
+
+function wsToggleChatExpand(){
+  const chat=document.querySelector('.ws-chat');
+  const icon=document.getElementById('ws-expand-icon');
+  wsChatExpanded=!wsChatExpanded;
+  if(wsChatExpanded){
+    chat.style.width='480px';
+    icon.innerHTML='<path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>';
+  }else{
+    chat.style.width='270px';
+    icon.innerHTML='<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>';
+  }
+  if(wsMonaco)setTimeout(()=>wsMonaco.layout(),150);
+}
+
+// ── History panel ──
+function wsToggleHistory(){
+  const panel=document.getElementById('ws-hist-panel');
+  if(panel.classList.contains('open')){wsCloseHistory()}else{wsOpenHistory()}
+}
+function wsCloseHistory(){document.getElementById('ws-hist-panel')?.classList.remove('open')}
+async function wsOpenHistory(){
+  if(!wsCurrentScript)return;
+  document.getElementById('ws-hist-panel').classList.add('open');
+  document.getElementById('ws-hist-script-name').textContent=wsCurrentScript;
+  await wsLoadHistory();
+}
+async function wsLoadHistory(){
+  const list=document.getElementById('ws-hist-list');
+  if(!wsCurrentScript){list.innerHTML='<div class="ws-hist-empty">Open a script to see its history</div>';return}
+  list.innerHTML='<div class="ws-hist-empty">Loading...</div>';
+  const pid=wsGetPid();
+  const r=await api('/workspace/script/history?name='+encodeURIComponent(wsCurrentScript)+'&project_id='+encodeURIComponent(pid));
+  if(!r||!r.ok){list.innerHTML='<div class="ws-hist-empty">Failed to load history</div>';return}
+  const hist=r.data.history||[];
+  if(!hist.length){list.innerHTML='<div class="ws-hist-empty">No versions saved yet.<br>Edits are saved automatically.</div>';return}
+  const current=wsMonaco?wsMonaco.getValue():'';
+  list.innerHTML='';
+  hist.forEach((v,i)=>{
+    const isCurrent=v.content===current;
+    const date=new Date(v.saved_at*1000);
+    const timeStr=date.toLocaleDateString()+' '+date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+    const preview=v.content.split('\n').find(l=>l.trim()&&!l.trim().startsWith('--'))||'(empty)';
+    const div=document.createElement('div');
+    div.className='ws-hist-item'+(isCurrent?' current':'');
+    div.innerHTML=`<div class="ws-hist-meta"><span class="ws-hist-time">${escHtml(timeStr)}</span><span class="ws-hist-source ${v.source}">${v.source}</span><span class="ws-hist-lines">${v.lines} lines</span></div><div class="ws-hist-preview">${escHtml(preview.trim().substring(0,60))}</div>${isCurrent?'<span style="position:absolute;top:6px;right:8px;font-size:8px;color:var(--muted)">current</span>':`<button class="ws-hist-revert-btn" onclick="wsRevertVersion(${i})">Restore</button>`}`;
+    list.appendChild(div);
+  });
+}
+
+async function wsRevertVersion(idx){
+  if(!wsCurrentScript||!wsMonaco)return;
+  const pid=wsGetPid();
+  const r=await api('/workspace/script/revert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,version_idx:idx,project_id:pid})});
+  if(!r||!r.ok){showToast('Revert failed','error');return}
+  wsMonaco.setValue(r.data.content);
+  wsDirty=true;wsSetSaveStatus('Restored version — push to apply');
+  showToast('Version restored','success');
+  wsCloseHistory();
+  wsAddChatMsg('system','Restored an older version of '+wsCurrentScript+'. Push to Studio when ready.');
+}
+
 // ── Cache helpers ──
 async function wsCacheCurrentScript(){
   if(!wsCurrentScript||!wsMonaco)return;
   const content=wsMonaco.getValue();
-  await api('/workspace/script/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,content})});
+  const pid=wsGetPid();
+  await api('/workspace/script/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,content,project_id:pid})});
   wsCachedScripts[wsCurrentScript]={...(wsCachedScripts[wsCurrentScript]||{}),local:content,dirty:true};
   wsUpdateDirtyBadges();
 }
 
 async function wsLoadCachedScriptsList(){
-  const r=await api('/workspace/scripts/cached');
+  const pid=wsGetPid();
+  const r=await api('/workspace/scripts/cached?project_id='+encodeURIComponent(pid));
   if(!r||!r.ok)return;
   wsCachedScripts={};
   (r.data.scripts||[]).forEach(e=>{wsCachedScripts[e.name]=e});
@@ -2226,7 +2421,7 @@ async function wsOpenScript(name){
     else if(result&&typeof result==='object'){code=result.source||result.code||result.content||result.text||JSON.stringify(result,null,2)}
 
     // Sync: compare studio content with local cache
-    const syncR=await api('/workspace/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,studio_content:code})});
+    const syncR=await api('/workspace/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,studio_content:code,project_id:wsGetPid()})});
     if(syncR&&syncR.ok){
       const {action,content}=syncR.data;
       code=content||code;
@@ -2247,9 +2442,10 @@ async function wsOpenScript(name){
 
 function wsLoadCodeIntoEditor(name,code,hasDirty=false){
   wsCurrentScript=name;wsCurrentCode=code;wsDirty=hasDirty;
-  const load=()=>{wsMonaco.setValue(code);wsShowEditor();document.getElementById('ws-save-btn').disabled=false};
+  const load=()=>{wsMonaco.setValue(code);wsShowEditor();document.getElementById('ws-save-btn').disabled=false;document.getElementById('ws-hist-btn').style.display='flex'};
   if(!wsMonacoReady){wsInitMonaco();setTimeout(()=>{if(wsMonaco)load()},1500)}else load();
   wsDismissSuggestion();
+  wsCloseHistory();
 }
 
 function wsSetActiveTreeItem(name){
@@ -2265,8 +2461,9 @@ async function wsSaveScript(){
   const saveBtn=document.getElementById('ws-save-btn');
   saveBtn.disabled=true;
 
+  const pid=wsGetPid();
   // Always save to cache
-  await api('/workspace/script/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,content:code})});
+  await api('/workspace/script/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,content:code,project_id:pid})});
   wsCachedScripts[wsCurrentScript]={...(wsCachedScripts[wsCurrentScript]||{}),local:code,dirty:true};
 
   if(!pluginConnected){
@@ -2281,7 +2478,7 @@ async function wsSaveScript(){
   wsSetSaveStatus('Pushing...');
   try{
     await wsCall('write_script',{name:wsCurrentScript,code});
-    await api('/workspace/push/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,content:code})});
+    await api('/workspace/push/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,content:code,project_id:pid})});
     wsCachedScripts[wsCurrentScript]={...(wsCachedScripts[wsCurrentScript]||{}),base:code,local:code,dirty:false};
     wsDirty=false;wsCurrentCode=code;
     wsSetSaveStatus('Pushed to Studio ✓',true);
@@ -2304,11 +2501,12 @@ async function wsPushAllDirty(){
   if(!dirty.length){wsHideSyncBanner();return}
   if(!pluginConnected){showToast('Studio not connected','error');return}
   wsHideSyncBanner();
+  const pid=wsGetPid();
   for(const entry of dirty){
     wsSetSaveStatus('Pushing '+entry.name+'...');
     try{
       await wsCall('write_script',{name:entry.name,code:entry.local});
-      await api('/workspace/push/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:entry.name,content:entry.local})});
+      await api('/workspace/push/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:entry.name,content:entry.local,project_id:pid})});
       wsCachedScripts[entry.name]={...entry,base:entry.local,dirty:false};
       showToast('Pushed: '+entry.name.split('.').pop(),'success');
     }catch(e){showToast('Failed to push '+entry.name.split('.').pop()+': '+e.message,'error')}
@@ -2333,7 +2531,7 @@ async function wsOnReconnect(){
       let studioCode='';
       if(typeof studioResult==='string')studioCode=studioResult;
       else if(studioResult&&typeof studioResult==='object'){studioCode=studioResult.source||studioResult.code||studioResult.content||studioResult.text||''}
-      const syncR=await api('/workspace/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,studio_content:studioCode})});
+      const syncR=await api('/workspace/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:wsCurrentScript,studio_content:studioCode,project_id:wsGetPid()})});
       if(syncR&&syncR.ok){
         const {action,content}=syncR.data;
         if(action==='merged'){

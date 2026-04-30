@@ -124,5 +124,12 @@
     "mode": "chat",
     "model": "sonnet",
     "updatedAt": 1777518785605
+  },
+  "new-1777527414360": {
+    "id": "new-1777527414360",
+    "title": "hi",
+    "mode": "chat",
+    "model": "sonnet",
+    "updatedAt": 1777527414360
   }
 }

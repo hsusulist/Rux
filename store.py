@@ -1083,24 +1083,32 @@ def export_all():
 
 
 # ═══════════════════════════════════════════
-#  WORKSPACE SCRIPT CACHE
+#  WORKSPACE SCRIPT CACHE  (per-project)
 # ═══════════════════════════════════════════
 
-def _ws_file(user_id):
-    return f"ws_scripts/{user_id}.json"
+MAX_VERSIONS = 25
 
-def ws_get_all(user_id):
-    with _lock:
-        return _load(_ws_file(user_id), default={})
+def _ws_file(user_id, project_id="default"):
+    safe = str(project_id).replace("/", "_").replace("..", "_")
+    return f"ws_scripts/{user_id}/{safe}.json"
 
-def ws_get_script(user_id, name):
+def _ws_hist_file(user_id, project_id, name):
+    safe_p = str(project_id).replace("/", "_").replace("..", "_")
+    safe_n = str(name).replace("/", "_").replace("..", "_").replace(".", "_")
+    return f"ws_history/{user_id}/{safe_p}/{safe_n}.json"
+
+def ws_get_all(user_id, project_id="default"):
     with _lock:
-        data = _load(_ws_file(user_id), default={})
+        return _load(_ws_file(user_id, project_id), default={})
+
+def ws_get_script(user_id, name, project_id="default"):
+    with _lock:
+        data = _load(_ws_file(user_id, project_id), default={})
         return data.get(name)
 
-def ws_pull_script(user_id, name, studio_content):
+def ws_pull_script(user_id, name, studio_content, project_id="default"):
     with _lock:
-        data = _load(_ws_file(user_id), default={})
+        data = _load(_ws_file(user_id, project_id), default={})
         existing = data.get(name, {})
         local = existing.get("local", studio_content)
         data[name] = {
@@ -1111,12 +1119,12 @@ def ws_pull_script(user_id, name, studio_content):
             "local_modified_at": existing.get("local_modified_at", int(time.time())),
             "dirty": local != studio_content,
         }
-        _save(_ws_file(user_id), data)
+        _save(_ws_file(user_id, project_id), data)
         return data[name]
 
-def ws_save_local(user_id, name, local_content):
+def ws_save_local(user_id, name, local_content, project_id="default", add_version=True):
     with _lock:
-        data = _load(_ws_file(user_id), default={})
+        data = _load(_ws_file(user_id, project_id), default={})
         existing = data.get(name, {})
         base = existing.get("base", local_content)
         data[name] = {
@@ -1127,12 +1135,14 @@ def ws_save_local(user_id, name, local_content):
             "local_modified_at": int(time.time()),
             "dirty": local_content != base,
         }
-        _save(_ws_file(user_id), data)
+        _save(_ws_file(user_id, project_id), data)
+        if add_version:
+            _ws_add_version_locked(user_id, project_id, name, local_content, "local")
         return data[name]
 
-def ws_mark_pushed(user_id, name, pushed_content):
+def ws_mark_pushed(user_id, name, pushed_content, project_id="default"):
     with _lock:
-        data = _load(_ws_file(user_id), default={})
+        data = _load(_ws_file(user_id, project_id), default={})
         data[name] = {
             "name": name,
             "base": pushed_content,
@@ -1141,18 +1151,59 @@ def ws_mark_pushed(user_id, name, pushed_content):
             "local_modified_at": int(time.time()),
             "dirty": False,
         }
-        _save(_ws_file(user_id), data)
+        _save(_ws_file(user_id, project_id), data)
+        _ws_add_version_locked(user_id, project_id, name, pushed_content, "studio")
 
-def ws_get_dirty(user_id):
+def ws_get_dirty(user_id, project_id="default"):
     with _lock:
-        data = _load(_ws_file(user_id), default={})
+        data = _load(_ws_file(user_id, project_id), default={})
         return {k: v for k, v in data.items() if v.get("dirty")}
 
-def ws_delete_script(user_id, name):
+def ws_delete_script(user_id, name, project_id="default"):
     with _lock:
-        data = _load(_ws_file(user_id), default={})
+        data = _load(_ws_file(user_id, project_id), default={})
         data.pop(name, None)
-        _save(_ws_file(user_id), data)
+        _save(_ws_file(user_id, project_id), data)
+
+# ── Version history ──
+
+def _ws_add_version_locked(user_id, project_id, name, content, source):
+    hist = _load(_ws_hist_file(user_id, project_id, name), default=[])
+    entry = {"content": content, "saved_at": int(time.time()), "source": source,
+             "lines": len(content.splitlines())}
+    if hist and hist[-1].get("content") == content:
+        return  # no-op: identical to last version
+    hist.append(entry)
+    if len(hist) > MAX_VERSIONS:
+        hist = hist[-MAX_VERSIONS:]
+    _save(_ws_hist_file(user_id, project_id, name), hist)
+
+def ws_get_history(user_id, name, project_id="default"):
+    with _lock:
+        hist = _load(_ws_hist_file(user_id, project_id, name), default=[])
+        return list(reversed(hist))  # newest first
+
+def ws_revert_to(user_id, name, version_idx, project_id="default"):
+    with _lock:
+        hist = _load(_ws_hist_file(user_id, project_id, name), default=[])
+        # version_idx is index in newest-first list
+        real_idx = len(hist) - 1 - version_idx
+        if real_idx < 0 or real_idx >= len(hist):
+            return None
+        entry = hist[real_idx]
+        content = entry["content"]
+        data = _load(_ws_file(user_id, project_id), default={})
+        existing = data.get(name, {})
+        base = existing.get("base", content)
+        data[name] = {
+            "name": name, "base": base, "local": content,
+            "pulled_at": existing.get("pulled_at", int(time.time())),
+            "local_modified_at": int(time.time()),
+            "dirty": content != base,
+        }
+        _save(_ws_file(user_id, project_id), data)
+        _ws_add_version_locked(user_id, project_id, name, content, "revert")
+        return content
 
 
 def import_all(data):
