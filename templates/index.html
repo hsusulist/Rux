@@ -699,14 +699,33 @@
     .mobile-menu-btn svg{width:12px;height:12px;fill:var(--text2)}
 
     /* ═══ WORKSPACE FAB ═══ */
-    .ws-fab{position:fixed;bottom:80px;right:18px;z-index:300;display:flex;align-items:center;gap:7px;padding:0 14px 0 10px;height:36px;background:var(--surface2);border:1px solid var(--border3);border-radius:10px;cursor:pointer;color:var(--text2);font-size:11.5px;font-weight:700;font-family:'Inter',sans-serif;transition:all .15s,opacity .18s ease,transform .18s ease;box-shadow:0 4px 20px rgba(0,0,0,.4);letter-spacing:-.1px}
+    .ws-fab-group{position:fixed;bottom:80px;right:18px;z-index:300;display:flex;flex-direction:column;align-items:flex-end;gap:8px;transition:opacity .18s ease,transform .18s ease}
+    .ws-fab-group.ws-hidden{opacity:0;pointer-events:none;transform:translateY(8px) scale(.96)}
+    .ws-fab-row{display:flex;align-items:center;gap:6px}
+    .ws-fab{display:flex;align-items:center;gap:7px;padding:0 14px 0 10px;height:36px;background:var(--surface2);border:1px solid var(--border3);border-radius:10px;cursor:pointer;color:var(--text2);font-size:11.5px;font-weight:700;font-family:'Inter',sans-serif;transition:all .15s;box-shadow:0 4px 20px rgba(0,0,0,.4);letter-spacing:-.1px}
     .ws-fab:hover{background:var(--surface3);color:var(--text);border-color:var(--accent);box-shadow:0 4px 24px rgba(212,168,67,.12)}
     .ws-fab svg{width:14px;height:14px;fill:currentColor;flex-shrink:0}
     .ws-fab.ws-open{background:var(--accent);color:#1a1100;border-color:transparent;box-shadow:0 4px 24px rgba(212,168,67,.28)}
     .ws-fab.ws-open:hover{background:#ffd454}
-    .ws-fab.ws-hidden{opacity:0;pointer-events:none;transform:translateY(8px) scale(.96)}
     .ws-fab.ws-create{background:linear-gradient(180deg,rgba(212,168,67,.16),rgba(212,168,67,.06));color:#ffd454;border-color:rgba(212,168,67,.4);box-shadow:0 4px 22px rgba(212,168,67,.16)}
     .ws-fab.ws-create:hover{background:linear-gradient(180deg,rgba(212,168,67,.24),rgba(212,168,67,.10));color:#ffe07a;border-color:rgba(212,168,67,.6);box-shadow:0 6px 28px rgba(212,168,67,.22)}
+    .ws-fab-chev{display:none;align-items:center;justify-content:center;width:32px;height:36px;background:var(--surface2);border:1px solid var(--border3);border-radius:10px;cursor:pointer;color:var(--text2);transition:all .15s;box-shadow:0 4px 20px rgba(0,0,0,.4);padding:0}
+    .ws-fab-chev.show{display:inline-flex}
+    .ws-fab-chev:hover{background:var(--surface3);color:var(--accent);border-color:var(--accent)}
+    .ws-fab-chev svg{width:14px;height:14px;fill:currentColor;transition:transform .18s ease}
+    .ws-fab-chev.open svg{transform:rotate(180deg)}
+    .ws-fab-menu{display:none;flex-direction:column;min-width:240px;max-width:300px;max-height:340px;overflow-y:auto;background:var(--surface);border:1px solid var(--border3);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 1px rgba(212,168,67,.04);padding:6px;animation:wsfabPop .14s ease-out}
+    .ws-fab-menu.open{display:flex}
+    @keyframes wsfabPop{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .ws-fab-menu-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s;font-family:'Inter',sans-serif;font-size:12px;color:var(--text2);font-weight:500;border:none;background:none;text-align:left;width:100%;letter-spacing:-.1px}
+    .ws-fab-menu-item:hover{background:var(--surface3);color:var(--text)}
+    .ws-fab-menu-item.active{background:rgba(212,168,67,.10);color:var(--accent)}
+    .ws-fab-menu-item.create{color:#ffd454;font-weight:700;border-bottom:1px solid var(--border);border-radius:7px 7px 0 0;margin-bottom:3px;padding-bottom:10px}
+    .ws-fab-menu-item.create:hover{background:rgba(212,168,67,.10);color:#ffe07a}
+    .ws-fab-menu-item svg{width:13px;height:13px;fill:currentColor;flex-shrink:0;opacity:.85}
+    .ws-fab-menu-item .wfm-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+    .ws-fab-menu-item .wfm-time{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);opacity:.7;flex-shrink:0;letter-spacing:.04em}
+    .ws-fab-menu-empty{padding:14px 10px;text-align:center;color:var(--muted);font-size:11px;font-style:italic}
 
     /* ═══ WORKSPACE OVERLAY ═══ */
     .ws-overlay{position:fixed;inset:0;z-index:400;background:#000;display:flex;flex-direction:column;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .2s ease,transform .2s ease}
@@ -1197,10 +1216,18 @@
 </div>
 
 <!-- ═══ WORKSPACE FAB ═══ -->
-<button class="ws-fab ws-hidden" id="ws-fab" onclick="onWsFabClick()">
-  <svg id="ws-fab-icon" viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-  <span id="ws-fab-label">Open Workspace</span>
-</button>
+<div class="ws-fab-group ws-hidden" id="ws-fab-group">
+  <div class="ws-fab-menu" id="ws-fab-menu" role="menu" aria-hidden="true"></div>
+  <div class="ws-fab-row">
+    <button class="ws-fab-chev" id="ws-fab-chev" type="button" onclick="toggleWsFabMenu(event)" aria-label="Switch workspace" title="Recent workspaces">
+      <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+    </button>
+    <button class="ws-fab" id="ws-fab" type="button" onclick="onWsFabClick()">
+      <svg id="ws-fab-icon" viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+      <span id="ws-fab-label">Open Workspace</span>
+    </button>
+  </div>
+</div>
 
 <!-- ═══ CREATE WORKSPACE MODAL ═══ -->
 <div class="proj-overlay" id="ws-create-overlay">
@@ -1563,7 +1590,7 @@ document.addEventListener('click',e=>{
   }
 });
 
-async function loadConversations(){try{const r=await api('/api/conversations');if(!r)return;convCache=r.data||{};renderSidebar()}catch(e){convCache={};renderSidebar()}}
+async function loadConversations(){try{const r=await api('/api/conversations');if(!r)return;convCache=r.data||{};renderSidebar();if(typeof updateWsFabState==='function')updateWsFabState()}catch(e){convCache={};renderSidebar();if(typeof updateWsFabState==='function')updateWsFabState()}}
 async function saveConv(){if(!currentMessages.length&&!currentProjectTitle)return;const cid=activeConvId||'conv-'+Date.now();activeConvId=cid;let title=currentProjectTitle;if(!title){const first=currentMessages.find(m=>m.role==='user');title=first?first.text.slice(0,48):'Project'}const convData={id:cid,title,messages:currentMessages,history:conversationHistory,mode,model:selectedModel,sessionId,updatedAt:Date.now()};try{await api('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convData)});convCache[cid]=convData;renderSidebar()}catch(e){}}
 async function deleteConv(id){try{await api('/api/conversations/'+id,{method:'DELETE'})}catch(e){}delete convCache[id];if(activeConvId===id){activeConvId=null;showDashboard()}renderSidebar()}
 function getConvList(){return Object.values(convCache).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))}
@@ -2127,17 +2154,24 @@ function wsSetProject(id,name){
 
 // ── FAB state (Create / Open / Close) ──
 function updateWsFabState(){
+  const grp=document.getElementById('ws-fab-group');
   const fab=document.getElementById('ws-fab');
   const lbl=document.getElementById('ws-fab-label');
   const icn=document.getElementById('ws-fab-icon');
-  if(!fab||!lbl||!icn)return;
+  const chev=document.getElementById('ws-fab-chev');
+  if(!grp||!fab||!lbl||!icn||!chev)return;
   // Only fully hide while the page is still bootstrapping (token not loaded).
   if(typeof token!=='undefined'&&!token){
-    fab.classList.add('ws-hidden');
+    grp.classList.add('ws-hidden');
     fab.classList.remove('ws-create','ws-open');
+    chev.classList.remove('show','open');
+    closeWsFabMenu();
     return;
   }
-  fab.classList.remove('ws-hidden');
+  grp.classList.remove('ws-hidden');
+  // Chevron only visible when there is at least one workspace to switch between (and we're not currently open).
+  const hasConvs=convCache&&Object.keys(convCache).length>0;
+  if(hasConvs&&!wsOpen)chev.classList.add('show');else{chev.classList.remove('show','open');closeWsFabMenu()}
   if(wsOpen){
     fab.classList.add('ws-open');fab.classList.remove('ws-create');
     lbl.textContent='Close Workspace';
@@ -2155,9 +2189,73 @@ function updateWsFabState(){
 }
 
 function onWsFabClick(){
+  closeWsFabMenu();
   if(wsOpen){closeWorkspace();return}
   if(activeConvId){openWorkspace();return}
   openWsCreateModal();
+}
+
+// ── Recent-workspaces dropdown ──
+function _wsRecentList(){
+  const arr=Object.entries(convCache||{}).map(([id,c])=>({
+    id,
+    title:(c&&c.title)||'Untitled',
+    updated:(c&&(c.updatedAt||c.lastUpdated||c.updated_at))||0
+  }));
+  arr.sort((a,b)=>(b.updated||0)-(a.updated||0));
+  return arr.slice(0,8);
+}
+function _wsTimeAgo(ts){
+  if(!ts)return'';
+  const d=Date.now()-Number(ts);
+  if(d<60000)return'now';
+  if(d<3600000)return Math.floor(d/60000)+'m';
+  if(d<86400000)return Math.floor(d/3600000)+'h';
+  if(d<604800000)return Math.floor(d/86400000)+'d';
+  return Math.floor(d/604800000)+'w';
+}
+function renderWsFabMenu(){
+  const menu=document.getElementById('ws-fab-menu');
+  if(!menu)return;
+  const recents=_wsRecentList();
+  let html='<button class="ws-fab-menu-item create" type="button" onclick="wsFabCreateNew()"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg><span class="wfm-label">Create new workspace</span></button>';
+  if(recents.length===0){
+    html+='<div class="ws-fab-menu-empty">No workspaces yet</div>';
+  }else{
+    recents.forEach(r=>{
+      const active=r.id===activeConvId?' active':'';
+      const t=_wsTimeAgo(r.updated);
+      html+=`<button class="ws-fab-menu-item${active}" type="button" onclick="wsFabPickConv('${r.id}')"><svg viewBox="0 0 24 24"><path d="M3 5h7l2 2h9v11a2 2 0 0 1-2 2H3V5z"/></svg><span class="wfm-label">${escHtml(r.title)}</span>${t?`<span class="wfm-time">${t}</span>`:''}</button>`;
+    });
+  }
+  menu.innerHTML=html;
+}
+function toggleWsFabMenu(e){
+  if(e)e.stopPropagation();
+  const menu=document.getElementById('ws-fab-menu');
+  const chev=document.getElementById('ws-fab-chev');
+  if(!menu||!chev)return;
+  if(menu.classList.contains('open')){closeWsFabMenu();return}
+  renderWsFabMenu();
+  menu.classList.add('open');
+  menu.setAttribute('aria-hidden','false');
+  chev.classList.add('open');
+}
+function closeWsFabMenu(){
+  const menu=document.getElementById('ws-fab-menu');
+  const chev=document.getElementById('ws-fab-chev');
+  if(menu){menu.classList.remove('open');menu.setAttribute('aria-hidden','true')}
+  if(chev)chev.classList.remove('open');
+}
+function wsFabCreateNew(){closeWsFabMenu();openWsCreateModal()}
+async function wsFabPickConv(id){
+  closeWsFabMenu();
+  if(id===activeConvId){
+    if(!wsOpen)openWorkspace();
+    return;
+  }
+  await openConv(id);
+  setTimeout(()=>{if(!wsOpen)openWorkspace()},80);
 }
 
 // ── Create-Workspace modal ──
@@ -2751,6 +2849,19 @@ document.getElementById('ws-overlay').addEventListener('keydown',function(e){if(
 document.getElementById('ws-create-overlay').addEventListener('click',function(e){if(e.target===this)closeWsCreateModal()});
 document.getElementById('ws-create-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();confirmCreateWorkspace()}else if(e.key==='Escape'){e.preventDefault();closeWsCreateModal()}});
 document.addEventListener('DOMContentLoaded',function(){setTimeout(updateWsFabState,0)});
+document.addEventListener('click',function(e){
+  const grp=document.getElementById('ws-fab-group');
+  if(!grp)return;
+  const menu=document.getElementById('ws-fab-menu');
+  if(!menu||!menu.classList.contains('open'))return;
+  if(!grp.contains(e.target))closeWsFabMenu();
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    const menu=document.getElementById('ws-fab-menu');
+    if(menu&&menu.classList.contains('open'))closeWsFabMenu();
+  }
+});
 </script>
 </body>
 </html>
