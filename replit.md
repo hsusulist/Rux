@@ -99,6 +99,19 @@ In the Roblox plugin script, set `SERVER_BASE_URL` to your Replit app URL (e.g. 
 - The workspace AI chat shares the main chat's `mode` and `selectedModel` state and persists changes through `/api/preferences`. Pickers live in the workspace's `.ws-chat-head`.
 - The last opened project id is stored in `localStorage` under `rux_last_conv` and auto-resumed on reload.
 
+## Plans & Pricing UI
+- Three tiers visible on the dashboard ("Choose your plan" section) and in a dedicated Plans modal:
+  - **Free** — $0/mo, 10 credits/day (matches `store.MAX_CREDITS`)
+  - **Core** — $9/mo, 30 credits/day, marked "Popular"
+  - **Max** — $19/mo, 50 credits/day, top tier
+- Sidebar bottom has a gold "Upgrade" pill button (`#sb-upgrade-btn` → `openPlansModal()`) that shows the current plan badge.
+- Current plan is detected from `userPlan` (set from `/auth/me` → `r.data.plan`); the matching card shows a green "Current" tag and a disabled "Your plan" CTA.
+- `choosePlan(planId)` is currently a placeholder — it shows a toast and opens Discord (no Stripe integration yet). Server-side plan changes still go through `/api/plan` (owner-only via `set_user_plan`).
+- The `.empty-state` dashboard container uses `overflow-y:auto` + `justify-content:safe center` so the longer Plans content scrolls naturally on smaller viewports without overlapping.
+
+## Workspace Overlay
+- Opening the workspace adds `body.ws-active`; CSS hides the floating top-right `.connection-bar` while the overlay is open so it no longer bleeds through the workspace UI.
+
 ## Environment Variables
 - `AI_INTEGRATIONS_ANTHROPIC_API_KEY` — Anthropic Claude API key (optional, app starts without it)
 - `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` — Custom Anthropic base URL (optional)
