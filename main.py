@@ -75,7 +75,8 @@ MAX_AGENT_STEPS = 20
 MAX_TOOL_RESULT_CHARS = 30000
 CODE_EXPIRY_MS = 5 * 60 * 1000
 CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-WEB_HEARTBEAT_TIMEOUT = 90
+WEB_HEARTBEAT_TIMEOUT = 180  # seconds — web tab considered offline after this
+PLUGIN_OFFLINE_AFTER = 45    # seconds — Studio plugin considered offline after this
 
 MODELS = {
     "gemini-flash": {"id": "gemini-2.5-flash", "provider": "google", "label": "Gemini Flash", "badge": "Fast", "credit_per_token": 0.0001},
@@ -650,7 +651,7 @@ def _fire_webhook(event_type, payload):
 def health_check():
     now = time.time()
     with plugin_registry_lock:
-        active_plugins = sum(1 for p in plugin_registry.values() if now - p["last_seen"] < 15)
+        active_plugins = sum(1 for p in plugin_registry.values() if now - p["last_seen"] < PLUGIN_OFFLINE_AFTER)
     return jsonify({"status": "ok", "timestamp": int(time.time()), "active_plugins": active_plugins, "maintenance": store.is_maintenance()})
 
 
@@ -1101,7 +1102,7 @@ def admin_plugin_status():
                 "user_id": info.get("user_id", ""),
                 "last_seen": info.get("last_seen", 0),
                 "status": info.get("status", ""),
-                "active": (now - info.get("last_seen", 0)) < 15,
+                "active": (now - info.get("last_seen", 0)) < PLUGIN_OFFLINE_AFTER,
             })
     return jsonify(result)
 
@@ -1248,7 +1249,7 @@ def auth_me():
     if active_session:
         pid = active_session.get("plugin_id")
         with plugin_registry_lock:
-            if pid and pid in plugin_registry and now - plugin_registry[pid]["last_seen"] < 15:
+            if pid and pid in plugin_registry and now - plugin_registry[pid]["last_seen"] < PLUGIN_OFFLINE_AFTER:
                 session_id = active_session.get("session_id")
 
     update_web_heartbeat(user["id"])
@@ -1637,7 +1638,7 @@ def web_heartbeat():
     if active_session:
         pid = active_session.get("plugin_id")
         with plugin_registry_lock:
-            if pid and pid in plugin_registry and time.time() - plugin_registry[pid]["last_seen"] < 15:
+            if pid and pid in plugin_registry and time.time() - plugin_registry[pid]["last_seen"] < PLUGIN_OFFLINE_AFTER:
                 plugin_connected = True
                 session_id = active_session.get("session_id")
 
@@ -2352,7 +2353,7 @@ def workspace_call():
     pid = active_session.get("plugin_id")
     with plugin_registry_lock:
         info = plugin_registry.get(pid)
-        if not info or time.time() - info.get("last_seen", 0) > 15:
+        if not info or time.time() - info.get("last_seen", 0) > PLUGIN_OFFLINE_AFTER:
             return jsonify({"error": "Studio not connected"}), 400
         sid = active_session.get("session_id") or str(uuid.uuid4())
 
@@ -2579,7 +2580,7 @@ def ws_push_script():
     plugin_pid = active_session.get("plugin_id")
     with plugin_registry_lock:
         info = plugin_registry.get(plugin_pid)
-        if not info or time.time() - info.get("last_seen", 0) > 15:
+        if not info or time.time() - info.get("last_seen", 0) > PLUGIN_OFFLINE_AFTER:
             return jsonify({"error": "Studio not connected"}), 400
 
     code = entry["local"]
@@ -2619,7 +2620,7 @@ def status_check():
     if active_session:
         pid = active_session.get("plugin_id")
         with plugin_registry_lock:
-            if pid and pid in plugin_registry and time.time() - plugin_registry[pid]["last_seen"] < 15:
+            if pid and pid in plugin_registry and time.time() - plugin_registry[pid]["last_seen"] < PLUGIN_OFFLINE_AFTER:
                 plugin_connected = True
                 sid = active_session.get("session_id")
     balance, _ = store.get_credits(user["id"])

@@ -10,8 +10,10 @@ local StudioService = game:GetService("StudioService")
 -- ═══════════════════════════════════════════════════════════════
 
 local PUBLIC_URL = "https://rux.app"
-local PLUGIN_VERSION = 4
+local PLUGIN_VERSION = 5
 local MIN_SERVER_VERSION = 3
+local HEARTBEAT_INTERVAL = 5   -- seconds — independent fast heartbeat
+local OFFLINE_AFTER = 45       -- must match server PLUGIN_OFFLINE_AFTER
 
 -- ── Persisted settings (survive Studio restarts) ──
 local function getSetting(key, fallback)
@@ -1632,6 +1634,25 @@ local function buildUI()
     --  POLL LOOP
     -- ═══════════════════════════════════════════════════════
 
+    -- ═══════════════════════════════════════════════════════
+    --  FAST HEARTBEAT (independent of poll loop)
+    --  Keeps the server seeing us as online even mid-tool-execution.
+    -- ═══════════════════════════════════════════════════════
+    task.spawn(function()
+      while true do
+        task.wait(HEARTBEAT_INTERVAL)
+        if isOutdated then continue end
+        if not session_id then continue end
+        doRequest(PUBLIC_URL .. "/plugin/heartbeat", "POST", {
+          plugin_id         = PLUGIN_ID,
+          session_id        = session_id,
+          status            = toolRunning and "busy" or "connected",
+          selected_instance = getSelectedInfo(),
+          version           = PLUGIN_VERSION,
+        })
+      end
+    end)
+
     task.spawn(function()
       while true do
         task.wait(math.max(pollInterval, 1))
@@ -1641,16 +1662,8 @@ local function buildUI()
         -- ── Not connected: wait for the user to click Connect ──
         if not session_id then continue end
 
-        -- ── Connected: heartbeat + poll ──────────────────
+        -- ── Connected: poll for tool calls ───────────────
         if toolRunning then continue end
-
-        doRequest(PUBLIC_URL .. "/plugin/heartbeat", "POST", {
-          plugin_id         = PLUGIN_ID,
-          session_id        = session_id,
-          status            = "connected",
-          selected_instance = getSelectedInfo(),
-          version           = PLUGIN_VERSION,
-        })
 
         local pok, presult = doRequest(PUBLIC_URL .. "/plugin/poll", "POST", {
           plugin_id  = PLUGIN_ID,

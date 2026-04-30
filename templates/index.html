@@ -867,23 +867,45 @@
     #ws-monaco-container{flex:1;overflow:hidden}
 
     /* Right script tree panel */
-    .ws-tree{width:240px;flex-shrink:0;border-left:1px solid var(--border);display:flex;flex-direction:column;background:var(--sidebar)}
-    .ws-tree-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
-    .ws-tree-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);flex:1}
+    .ws-tree{width:248px;flex-shrink:0;border-left:1px solid var(--border);display:flex;flex-direction:column;background:var(--sidebar)}
+    .ws-tree-head{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .ws-tree-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);flex:1;display:flex;align-items:center;gap:6px}
+    .ws-tree-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:14px;padding:0 5px;background:var(--surface3);border-radius:7px;font-size:8.5px;font-weight:700;color:var(--text2);letter-spacing:0;text-transform:none;transition:all .25s}
+    .ws-tree-count.bump{transform:scale(1.25);background:var(--accent);color:#000}
+    .ws-tree-iconbtn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--muted);cursor:pointer;border-radius:5px;transition:all .12s;flex-shrink:0;position:relative}
+    .ws-tree-iconbtn:hover{background:var(--surface3);color:var(--text2);transform:translateY(-1px)}
+    .ws-tree-iconbtn:active{transform:translateY(0)}
+    .ws-tree-iconbtn svg{width:11px;height:11px;fill:currentColor}
     .ws-tree-refresh{width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--muted);cursor:pointer;border-radius:5px;transition:all .12s;flex-shrink:0}
-    .ws-tree-refresh:hover{background:var(--surface3);color:var(--text2)}
+    .ws-tree-refresh:hover{background:var(--surface3);color:var(--text2);transform:translateY(-1px)}
     .ws-tree-refresh svg{width:11px;height:11px;fill:currentColor}
     .ws-tree-refresh.spinning svg{animation:spin .7s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
-    .ws-tree-search{padding:5px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
-    .ws-tree-search-input{width:100%;padding:4px 8px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:10.5px;font-family:'Inter',sans-serif;outline:none;transition:border-color .12s}
-    .ws-tree-search-input:focus{border-color:var(--border3)}
+    @keyframes wsTreeFadeIn{from{opacity:0;transform:translateY(-2px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes wsPulse{0%,100%{box-shadow:0 0 0 0 rgba(212,168,67,.4)}50%{box-shadow:0 0 0 4px rgba(212,168,67,0)}}
+    @keyframes wsConnDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.85)}}
+    .ws-tree-search{padding:5px 10px;border-bottom:1px solid var(--border);flex-shrink:0;position:relative}
+    .ws-tree-search-input{width:100%;padding:4px 8px 4px 24px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:10.5px;font-family:'Inter',sans-serif;outline:none;transition:all .15s}
+    .ws-tree-search-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(212,168,67,.12)}
     .ws-tree-search-input::placeholder{color:var(--muted)}
+    .ws-tree-search-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:11px;height:11px;fill:var(--muted);pointer-events:none}
+    .ws-tree-search-kbd{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:8.5px;color:var(--muted);background:var(--surface);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;pointer-events:none;opacity:.7}
+    .ws-tree-status{display:flex;align-items:center;gap:6px;padding:4px 12px;font-size:9px;color:var(--muted);border-bottom:1px solid var(--border);flex-shrink:0;background:rgba(0,0,0,.15)}
+    .ws-tree-status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .25s}
+    .ws-tree-status-dot.online{background:#45c47a;animation:wsConnDot 2.4s ease-in-out infinite}
+    .ws-tree-status-dot.offline{background:#e66e6e}
+    .ws-tree-status-dot.idle{background:#d4a843}
+    .ws-tree-status-time{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:8.5px;opacity:.65}
     .ws-tree-list{flex:1;overflow-y:auto;padding:4px 6px}
     .ws-tree-list::-webkit-scrollbar{width:3px}
     .ws-tree-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-    .ws-tree-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:100%;color:var(--muted);font-size:10.5px;text-align:center;padding:20px}
-    .ws-tree-empty svg{width:24px;height:24px;fill:var(--border3)}
+    .ws-tree-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:100%;color:var(--muted);font-size:10.5px;text-align:center;padding:20px;animation:wsTreeFadeIn .25s ease}
+    .ws-tree-empty svg{width:28px;height:28px;fill:var(--border3);opacity:.7}
+    .ws-tree-empty .ws-empty-action{margin-top:6px;padding:5px 12px;background:var(--accent);color:#000;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;animation:wsPulse 2s ease-in-out infinite}
+    .ws-tree-empty .ws-empty-action:hover{filter:brightness(1.1);transform:translateY(-1px)}
+    .ws-script-item{animation:wsTreeFadeIn .18s ease backwards}
+    .ws-script-item.removed{opacity:.45;text-decoration:line-through}
+    .ws-script-item.removed::after{content:"removed";position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:8px;color:#e66e6e;font-weight:700;text-decoration:none;opacity:.8}
     .ws-group{margin-bottom:2px}
     .ws-group-label{display:flex;align-items:center;gap:6px;padding:5px 6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);cursor:pointer;border-radius:5px;transition:background .1s}
     .ws-group-label:hover{background:rgba(255,255,255,.03)}
@@ -1431,18 +1453,29 @@
     <!-- Right: Script Tree -->
     <div class="ws-tree">
       <div class="ws-tree-head">
-        <span class="ws-tree-title">Explorer</span>
-        <button class="ws-tree-refresh" id="ws-tree-refresh" onclick="wsLoadScriptTree()" title="Refresh">
+        <span class="ws-tree-title">Explorer<span class="ws-tree-count" id="ws-tree-count" style="display:none">0</span></span>
+        <button class="ws-tree-iconbtn" id="ws-tree-pull-all" onclick="wsPullAllFromStudio()" title="Pull every script from Studio (overwrite cache)">
+          <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        </button>
+        <button class="ws-tree-refresh" id="ws-tree-refresh" onclick="wsLoadScriptTree()" title="Refresh tree (R)">
           <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
         </button>
       </div>
       <div class="ws-tree-search">
+        <svg class="ws-tree-search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
         <input class="ws-tree-search-input" id="ws-tree-search" placeholder="Filter scripts..." oninput="wsFilterTree(this.value)">
+        <span class="ws-tree-search-kbd" id="ws-tree-search-kbd">⌘K</span>
+      </div>
+      <div class="ws-tree-status" id="ws-tree-status">
+        <span class="ws-tree-status-dot offline" id="ws-tree-status-dot"></span>
+        <span id="ws-tree-status-text">Studio offline</span>
+        <span class="ws-tree-status-time" id="ws-tree-status-time"></span>
       </div>
       <div class="ws-tree-list" id="ws-tree-list">
         <div class="ws-tree-empty">
           <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          Connect Studio and click Refresh
+          <div>Connect Studio to see your scripts</div>
+          <button class="ws-empty-action" onclick="wsLoadScriptTree()">Refresh now</button>
         </div>
       </div>
 
@@ -1586,6 +1619,7 @@ function updatePluginUI(){
   if(eDot)eDot.classList.toggle('on',pluginConnected);
   if(eText)eText.textContent=pluginConnected?'Studio connected':'Studio disconnected';
   if(pluginConnected&&window.location.pathname.startsWith('/code/')){window.history.replaceState({},'','/app')}
+  if(typeof wsUpdateTreeStatus==='function')wsUpdateTreeStatus();
 }
 
 function enterChat(){document.body.classList.add('ready');document.getElementById('sb-new-btn').disabled=false;updateInputState();applyChatState();startStatusPoll();updateWsFabState()}
@@ -2665,6 +2699,44 @@ async function wsCall(tool,args,timeout=20000){
   throw new Error('Timed out — check Studio is open');
 }
 
+// ── Tree status indicator ──
+let wsLastRefresh=0;
+function wsFmtAgo(ts){
+  if(!ts)return '';
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<5)return 'just now';
+  if(s<60)return s+'s ago';
+  if(s<3600)return Math.floor(s/60)+'m ago';
+  return Math.floor(s/3600)+'h ago';
+}
+function wsUpdateTreeStatus(){
+  const dot=document.getElementById('ws-tree-status-dot');
+  const txt=document.getElementById('ws-tree-status-text');
+  const time=document.getElementById('ws-tree-status-time');
+  if(!dot||!txt)return;
+  dot.classList.remove('online','offline','idle');
+  if(pluginConnected){
+    dot.classList.add('online');
+    txt.textContent='Studio connected';
+  }else{
+    const cachedCount=Object.keys(wsCachedScripts||{}).length;
+    if(cachedCount>0){dot.classList.add('idle');txt.textContent='Offline · '+cachedCount+' cached'}
+    else{dot.classList.add('offline');txt.textContent='Studio offline'}
+  }
+  if(time)time.textContent=wsLastRefresh?wsFmtAgo(wsLastRefresh):'';
+}
+setInterval(()=>{if(document.getElementById('ws-tree-status-time'))document.getElementById('ws-tree-status-time').textContent=wsLastRefresh?wsFmtAgo(wsLastRefresh):''},10000);
+
+function wsBumpCount(n){
+  const c=document.getElementById('ws-tree-count');
+  if(!c)return;
+  if(n<=0){c.style.display='none';return}
+  const prev=parseInt(c.textContent||'0',10);
+  c.textContent=n;
+  c.style.display='';
+  if(n!==prev){c.classList.add('bump');setTimeout(()=>c.classList.remove('bump'),300)}
+}
+
 // ── Script tree ──
 async function wsLoadScriptTree(){
   const btn=document.getElementById('ws-tree-refresh');
@@ -2676,19 +2748,22 @@ async function wsLoadScriptTree(){
   if(!pluginConnected){
     const cached=Object.keys(wsCachedScripts);
     if(!cached.length){
-      list.innerHTML='<div class="ws-conn-warn"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>Studio disconnected — no cached scripts yet</div>';
+      list.innerHTML='<div class="ws-tree-empty"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><div>Studio disconnected</div><div style="font-size:9.5px;opacity:.7;margin-top:-2px">No cached scripts yet</div><button class="ws-empty-action" onclick="openConnectModal()">Connect Studio</button></div>';
+      wsBumpCount(0);
     }else{
       wsAllScripts=cached;
       wsRenderTree(cached,true);
+      wsBumpCount(cached.length);
       wsShowSyncBanner('Offline mode — showing '+cached.length+' cached script'+(cached.length!==1?'s':''),null,'offline');
     }
+    wsUpdateTreeStatus();
     btn.classList.remove('spinning');
     return;
   }
 
-  list.innerHTML='<div class="ws-tree-empty" style="color:var(--muted)">Loading scripts...</div>';
+  list.innerHTML='<div class="ws-tree-empty" style="color:var(--muted)"><div class="ws-tree-refresh spinning" style="display:inline-flex;width:18px;height:18px;color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></div><div>Pulling tree from Studio…</div></div>';
   try{
-    const result=await wsCall('list_scripts',{});
+    const result=await wsCall('list_scripts',{},45000);
     let scripts=[];
     if(Array.isArray(result))scripts=result;
     else if(result&&Array.isArray(result.scripts))scripts=result.scripts;
@@ -2700,12 +2775,49 @@ async function wsLoadScriptTree(){
     }
     wsAllScripts=scripts.map(s=>typeof s==='string'?s:(s.name||String(s)));
     wsRenderTree(wsAllScripts,false);
+    wsLastRefresh=Date.now();
+    wsBumpCount(wsAllScripts.length);
     const dirtyCount=Object.values(wsCachedScripts).filter(e=>e.dirty).length;
-    if(dirtyCount>0)wsShowSyncBanner(dirtyCount+' script'+(dirtyCount!==1?'s':'')+' have local changes ready to push','wsPushAllDirty','push');
+    const removedCount=Object.keys(wsCachedScripts).filter(n=>!wsAllScripts.includes(n)).length;
+    if(removedCount>0)wsShowSyncBanner(removedCount+' cached script'+(removedCount!==1?'s':'')+' no longer exist in Studio',null,'offline');
+    else if(dirtyCount>0)wsShowSyncBanner(dirtyCount+' script'+(dirtyCount!==1?'s':'')+' have local changes ready to push','wsPushAllDirty','push');
     else wsHideSyncBanner();
   }catch(e){
-    list.innerHTML=`<div class="ws-tree-empty">${escHtml(e.message)}</div>`;
-  }finally{btn.classList.remove('spinning')}
+    list.innerHTML=`<div class="ws-tree-empty"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l4.59-4.58L17 11l-6 6z" style="fill:#e66e6e"/></svg><div>${escHtml(e.message)}</div><button class="ws-empty-action" onclick="wsLoadScriptTree()">Try again</button></div>`;
+  }finally{btn.classList.remove('spinning');wsUpdateTreeStatus()}
+}
+
+// ── Pull every script from Studio (refresh tree + read each one into cache) ──
+async function wsPullAllFromStudio(){
+  if(!pluginConnected){showToast('Studio not connected','error');return}
+  const btn=document.getElementById('ws-tree-pull-all');
+  if(btn){btn.classList.add('spinning')}
+  try{
+    await wsLoadScriptTree();
+    if(!wsAllScripts||!wsAllScripts.length){return}
+    const total=wsAllScripts.length;let done=0,failed=0;
+    showToast(`Pulling ${total} scripts from Studio…`,'success');
+    for(const name of wsAllScripts){
+      try{
+        const r=await wsCall('read_script',{name},20000);
+        const code=typeof r==='string'?r:(r?.source||r?.code||r?.content||'');
+        const pid=wsGetPid();
+        await api('/workspace/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,studio_content:code,project_id:pid})});
+        done++;
+      }catch(e){failed++}
+      if(done%5===0||done+failed===total){
+        const bar=document.getElementById('ws-sync-bar');
+        if(bar)bar.querySelector('span').textContent=`Pulled ${done}/${total} from Studio${failed?` · ${failed} failed`:''}`;
+        else wsShowSyncBanner(`Pulled ${done}/${total} from Studio${failed?` · ${failed} failed`:''}`,null,'merge');
+      }
+    }
+    await wsLoadCachedScriptsList();
+    wsRenderTree(wsAllScripts,false);
+    showToast(`Pulled ${done} script${done!==1?'s':''} from Studio${failed?` (${failed} failed)`:''}`,failed?'error':'success');
+    setTimeout(wsHideSyncBanner,4000);
+  }finally{
+    if(btn)btn.classList.remove('spinning');
+  }
 }
 
 // ── Sync banner ──
@@ -2732,10 +2844,14 @@ const WS_ICONS={Script:'<svg viewBox="0 0 24 24" fill="none"><path d="M13 2H6a2 
 function wsRenderTree(scripts,offlineMode=false){
   const list=document.getElementById('ws-tree-list');
   if(!scripts||!scripts.length){
-    list.innerHTML='<div class="ws-tree-empty">No scripts found.</div>';return;
+    list.innerHTML='<div class="ws-tree-empty"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><div>No scripts found</div><button class="ws-empty-action" onclick="wsLoadScriptTree()">Refresh</button></div>';return;
   }
+  // Detect cached scripts that are no longer in Studio (when online)
+  const studioSet=new Set(scripts);
+  const removedNames=offlineMode?[]:Object.keys(wsCachedScripts||{}).filter(n=>!studioSet.has(n));
+  const allNames=offlineMode?scripts:[...scripts,...removedNames];
   const grouped={};
-  scripts.forEach(name=>{
+  allNames.forEach(name=>{
     let svc='Other';
     for(const sv of WS_SERVICES){if(name.startsWith(sv+'.')||name===sv){svc=sv;break}}
     if(!grouped[svc])grouped[svc]=[];grouped[svc].push(name);
@@ -2745,19 +2861,21 @@ function wsRenderTree(scripts,offlineMode=false){
   order.forEach(svc=>{
     if(!grouped[svc]||!grouped[svc].length)return;
     html+=`<div class="ws-group" id="wsg-${svc}"><div class="ws-group-label" onclick="wsToggleGroup('${svc}')"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>${escHtml(svc)}<span style="color:var(--text3);margin-left:auto;font-size:8.5px">${grouped[svc].length}</span></div><div class="ws-group-children">`;
-    grouped[svc].forEach(name=>{
+    grouped[svc].forEach((name,idx)=>{
       const shortName=name.split('.').pop()||name;
       const typeMatch=name.match(/(LocalScript|ModuleScript|Script)/i);
       const type=typeMatch?typeMatch[0]:'Script';
       const icon=WS_ICONS[type]||WS_ICONS.Script;
       const cached=wsCachedScripts[name];
       const dirty=cached&&cached.dirty;
+      const removed=!offlineMode&&cached&&!studioSet.has(name);
       const safe=btoa(unescape(encodeURIComponent(name))).replace(/[^a-z0-9]/gi,'');
-      html+=`<div class="ws-script-item ${wsCurrentScript===name?'active':''}" id="wsi-${safe}" onclick="wsOpenScript('${name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" title="${escHtml(name)}">
+      const delay=Math.min(idx*15,300);
+      html+=`<div class="ws-script-item ${wsCurrentScript===name?'active':''}${removed?' removed':''}" id="wsi-${safe}" onclick="wsOpenScript('${name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')" title="${escHtml(name)}${removed?' (removed in Studio — only cached copy left)':''}" style="animation-delay:${delay}ms">
         <span class="ws-script-icon">${icon}</span>
         <span class="ws-script-name">${escHtml(shortName)}</span>
         ${dirty?'<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0" title="Local changes"></span>':''}
-        <span class="ws-script-type">${type==='LocalScript'?'L':type==='ModuleScript'?'M':'S'}</span>
+        ${!removed?`<span class="ws-script-type">${type==='LocalScript'?'L':type==='ModuleScript'?'M':'S'}</span>`:''}
       </div>`;
     });
     html+='</div></div>';
@@ -3045,7 +3163,26 @@ document.getElementById('ws-overlay').addEventListener('keydown',function(e){if(
 document.getElementById('ws-overlay').addEventListener('keydown',function(e){if(e.ctrlKey&&e.key==='s'){e.preventDefault();wsSaveScript()}});
 document.getElementById('ws-create-overlay').addEventListener('click',function(e){if(e.target===this)closeWsCreateModal()});
 document.getElementById('ws-create-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();confirmCreateWorkspace()}else if(e.key==='Escape'){e.preventDefault();closeWsCreateModal()}});
-document.addEventListener('DOMContentLoaded',function(){setTimeout(renderProjectBar,0);setTimeout(wsRenderPickers,0)});
+document.addEventListener('DOMContentLoaded',function(){
+  setTimeout(renderProjectBar,0);
+  setTimeout(wsRenderPickers,0);
+  // Platform-aware kbd label
+  const kbd=document.getElementById('ws-tree-search-kbd');
+  if(kbd){const isMac=/Mac|iPhone|iPad|iPod/.test(navigator.platform);kbd.textContent=isMac?'⌘K':'Ctrl K'}
+  // Workspace keyboard shortcuts
+  document.addEventListener('keydown',function(e){
+    if(!window.wsOpen)return;
+    const tag=(e.target.tagName||'').toUpperCase();
+    const editing=tag==='INPUT'||tag==='TEXTAREA'||e.target.isContentEditable;
+    // ⌘K / Ctrl+K → focus filter (works even when editing)
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();const f=document.getElementById('ws-tree-search');if(f){f.focus();f.select()}return}
+    if(editing)return;
+    // R → refresh tree
+    if(e.key==='r'||e.key==='R'){if(!e.metaKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();wsLoadScriptTree()}}
+    // ⌘P / Ctrl+P → focus filter (Quick Open style)
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='p'){e.preventDefault();const f=document.getElementById('ws-tree-search');if(f){f.focus();f.select()}}
+  });
+});
 document.addEventListener('click',function(e){
   // Close project-bar dropdown when clicking outside
   const pbm=document.getElementById('pb-menu');
