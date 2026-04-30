@@ -194,6 +194,9 @@ def hash_password(password):
         return password
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
+def _is_bcrypt_hash(s):
+    return isinstance(s, str) and len(s) >= 59 and s.startswith(("$2a$", "$2b$", "$2y$"))
+
 def fetch_roblox_profile(roblox_id):
     rid = str(roblox_id).strip()
     if not rid:
@@ -225,12 +228,18 @@ def fetch_roblox_profile(roblox_id):
         return None
 
 def verify_password(password, hashed):
+    if not isinstance(hashed, str) or not hashed:
+        return False
     if not HAS_BCRYPT:
         return password == hashed
-    try:
-        return bcrypt.checkpw(password.encode(), hashed.encode())
-    except Exception:
-        return False
+    if _is_bcrypt_hash(hashed):
+        try:
+            return bcrypt.checkpw(password.encode(), hashed.encode())
+        except Exception:
+            return False
+    # Legacy / pre-bcrypt accounts stored the password as-is in `password_hash`.
+    # Accept the plaintext match so imported data still works.
+    return password == hashed
 
 # ═══ WEB HEARTBEAT HELPERS ═══
 def update_web_heartbeat(user_id):
@@ -454,6 +463,7 @@ TOOL_DEFINITIONS = [
     {"name": "get_selection", "description": "Return the current Explorer selection.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "get_current_script", "description": "Return the currently selected or active script name and source if available.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "get_place_metadata", "description": "Return game name, place id, and version.", "input_schema": {"type": "object", "properties": {}}},
+    {"name": "get_workspace_summary", "description": "Return a compact snapshot of the connected place: top-level Roblox services (Workspace, ReplicatedStorage, ServerScriptService, StarterGui, etc.) with each service's child count, descendant count, script count broken down by Script/LocalScript/ModuleScript, and up to 12 example top-level children. Cheap and safe — call this as the FIRST step of any task to understand the user's place before reading scripts or modifying instances.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "snapshot_script", "description": "Save a snapshot of a script before modification.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "diff_script", "description": "Show differences against the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "restore_script", "description": "Restore a script to the last snapshot.", "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
@@ -1210,6 +1220,13 @@ def auth_login():
 
     if user.get("blocked"):
         return jsonify({"error": "Account blocked", "blocked": True}), 403
+
+    # Auto-upgrade legacy plaintext password storage to a real bcrypt hash.
+    if HAS_BCRYPT and not _is_bcrypt_hash(user.get("password_hash") or ""):
+        try:
+            store.update_user_password(user["id"], hash_password(password))
+        except Exception:
+            pass
 
     token = str(uuid.uuid4())
     store.save_session(token, user["id"])

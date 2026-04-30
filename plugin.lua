@@ -9,11 +9,36 @@ local StudioService = game:GetService("StudioService")
 --  CONFIG
 -- ═══════════════════════════════════════════════════════════════
 
-local PUBLIC_URL = "https://.replit.app/"
-local PLUGIN_VERSION = 3
+local DEFAULT_PUBLIC_URL = "https://your-rux-app.replit.app"
+local PLUGIN_VERSION = 4
 local MIN_SERVER_VERSION = 3
 
-local PLUGIN_ID = "rux-" .. HttpService:GenerateGUID(false)
+-- ── Persisted settings (survive Studio restarts) ──
+local function getSetting(key, fallback)
+  local ok, val = pcall(function() return plugin:GetSetting(key) end)
+  if ok and val ~= nil then return val end
+  return fallback
+end
+
+local function setSetting(key, value)
+  pcall(function() plugin:SetSetting(key, value) end)
+end
+
+local function normalizeUrl(u)
+  u = tostring(u or ""):gsub("%s+", "")
+  if u:sub(-1) == "/" then u = u:sub(1, -2) end
+  return u
+end
+
+local PUBLIC_URL = normalizeUrl(getSetting("rux_server_url", DEFAULT_PUBLIC_URL))
+
+local PLUGIN_ID = getSetting("rux_plugin_id", nil)
+if not PLUGIN_ID or PLUGIN_ID == "" then
+  PLUGIN_ID = "rux-" .. HttpService:GenerateGUID(false)
+  setSetting("rux_plugin_id", PLUGIN_ID)
+end
+
+local SAVED_SESSION = getSetting("rux_session_id", nil)
 local session_id = nil
 local connected = false
 local webConnected = false
@@ -668,6 +693,75 @@ local function executeTool(name, args)
       }
     })
 
+  elseif name == "get_workspace_summary" then
+    -- Compact one-shot snapshot of the place — services, top-level children,
+    -- script counts, and instance counts. Cheap to call, safe for the LLM
+    -- to use as the very first step of a session.
+    local serviceNames = {
+      "Workspace", "ReplicatedStorage", "ReplicatedFirst",
+      "ServerStorage", "ServerScriptService",
+      "StarterGui", "StarterPack", "StarterPlayer",
+      "Lighting", "SoundService", "Players", "Teams",
+      "Chat", "MaterialService",
+    }
+    local services = {}
+    local totalScripts = 0
+    local totalInstances = 0
+    for _, sName in ipairs(serviceNames) do
+      local sok, svc = pcall(function() return game:GetService(sName) end)
+      if sok and svc then
+        local kids = svc:GetChildren()
+        local descCount = 0
+        local scriptCount = 0
+        local breakdown = {Script = 0, LocalScript = 0, ModuleScript = 0}
+        local descOk = pcall(function()
+          for _, d in ipairs(svc:GetDescendants()) do
+            descCount += 1
+            local cls = d.ClassName
+            if cls == "Script" or cls == "LocalScript" or cls == "ModuleScript" then
+              scriptCount += 1
+              breakdown[cls] = (breakdown[cls] or 0) + 1
+            end
+          end
+        end)
+        if not descOk then descCount = #kids end
+        totalScripts += scriptCount
+        totalInstances += descCount
+        local topChildren = {}
+        local maxKids = math.min(#kids, 12)
+        for i = 1, maxKids do
+          local c = kids[i]
+          table.insert(topChildren, {
+            name = c.Name,
+            class = c.ClassName,
+            children = #c:GetChildren(),
+          })
+        end
+        table.insert(services, {
+          service = sName,
+          child_count = #kids,
+          descendant_count = descCount,
+          script_count = scriptCount,
+          script_breakdown = breakdown,
+          top_children = topChildren,
+          truncated = #kids > maxKids,
+        })
+      end
+    end
+    return truncateResult(ok({
+      place = {
+        name = game.Name,
+        place_id = game.PlaceId,
+        place_version = game.PlaceVersion,
+      },
+      totals = {
+        services = #services,
+        scripts = totalScripts,
+        instances = totalInstances,
+      },
+      services = services,
+    }))
+
   elseif name == "snapshot_script" then
     local inst = findScript(args.name)
     if not inst then return err("Script not found: " .. tostring(args.name)) end
@@ -975,14 +1069,48 @@ local function buildUI()
       sl.TextTruncate = Enum.TextTruncate.None
     end
 
+    -- ── Server URL field (persisted across sessions) ──
+    local urlCard = mkFrame(C.surface, UDim2.new(1, 0, 0, 1), nil, connectScroll)
+    urlCard.LayoutOrder = 25
+    urlCard.AutomaticSize = Enum.AutomaticSize.Y
+    corner(10, urlCard)
+    stroke(C.border, 1, urlCard)
+    pad(10, 12, 10, 12, urlCard)
+    vList(6, urlCard)
+    mkLabel("SERVER URL", UDim2.new(1, 0, 0, 10), 8, C.muted, Enum.Font.GothamBold, urlCard).LayoutOrder = 0
+    local urlBox = Instance.new("TextBox")
+    urlBox.Size = UDim2.new(1, 0, 0, 28)
+    urlBox.BackgroundColor3 = C.surface2
+    urlBox.BorderSizePixel = 0
+    urlBox.PlaceholderText = "https://your-rux-app.replit.app"
+    urlBox.PlaceholderColor3 = C.muted
+    urlBox.Text = PUBLIC_URL ~= DEFAULT_PUBLIC_URL and PUBLIC_URL or ""
+    urlBox.Font = Enum.Font.Code
+    urlBox.TextSize = 11
+    urlBox.TextColor3 = C.text
+    urlBox.TextXAlignment = Enum.TextXAlignment.Left
+    urlBox.ClearTextOnFocus = false
+    urlBox.LayoutOrder = 1
+    urlBox.Parent = urlCard
+    corner(7, urlBox)
+    stroke(C.border2, 1, urlBox)
+    pad(0, 8, 0, 8, urlBox)
+    urlBox.FocusLost:Connect(function()
+      local cleaned = normalizeUrl(urlBox.Text)
+      if cleaned ~= "" then
+        PUBLIC_URL = cleaned
+        setSetting("rux_server_url", cleaned)
+      end
+    end)
+
     local connectBtn = mkBtn("Connect to Rux", C.accent, C.bg, UDim2.new(1, 0, 0, 42), connectScroll)
-    connectBtn.LayoutOrder = 3
+    connectBtn.LayoutOrder = 30
     connectBtn.TextSize = 12
     corner(10, connectBtn)
     hover(connectBtn, C.accent, C.accentDim)
 
     local errLbl = mkLabel("", UDim2.new(1, 0, 0, 15), 9, C.error, Enum.Font.GothamMedium, connectScroll)
-    errLbl.LayoutOrder = 4
+    errLbl.LayoutOrder = 31
     errLbl.Visible = true
     errLbl.TextXAlignment = Enum.TextXAlignment.Center
     errLbl.TextTruncate = Enum.TextTruncate.None
@@ -1311,6 +1439,7 @@ local function buildUI()
       consecutiveFailures = 0
       autoConnectFailures = 0
       autoConnectCooldown = 0
+      setSetting("rux_session_id", session_id)
       showConnected()
       addActivity("Connected" .. (method and " (" .. method .. ")" or ""), "connect")
       pollInterval = 2
@@ -1422,6 +1551,8 @@ local function buildUI()
           })
         end)
       end
+      setSetting("rux_session_id", "")
+      SAVED_SESSION = nil
       session_id            = nil
       connected             = false
       webConnected          = false
@@ -1553,10 +1684,27 @@ local function buildUI()
 
         if isOutdated then continue end
 
-        -- ── Not connected: attempt auto-connect quietly ──
+        -- ── Not connected: silently retry auto-connect ──
         -- Backs off after failures so it never spams the server.
-        -- Connects automatically the moment the web app is open.
+        -- Once the user is signed in on the web, the next attempt links us.
         if not session_id then
+          if dotRunning then continue end
+          local now = os.time()
+          if now < autoConnectCooldown then continue end
+          local rok, result = doRequest(PUBLIC_URL .. "/plugin/connect", "POST", {
+            plugin_id  = PLUGIN_ID,
+            creator_id = StudioService:GetUserId(),
+            version    = PLUGIN_VERSION,
+          })
+          if rok and result and result.ok and result.session_id then
+            errLbl.Text = ""
+            handleConnectSuccess(result, "auto")
+          else
+            autoConnectFailures += 1
+            -- Backoff: 5s, 10s, 20s, 30s, 60s cap
+            local delay = math.min(5 * (2 ^ math.min(autoConnectFailures - 1, 4)), 60)
+            autoConnectCooldown = now + delay
+          end
           continue
         end
 
