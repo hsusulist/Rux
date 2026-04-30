@@ -180,7 +180,8 @@
     .agent-status-tokens{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace}
 
     /* ═══ CONNECTION BAR ═══ */
-    .connection-bar{position:absolute;top:10px;right:14px;display:inline-flex;align-items:center;gap:8px;padding:5px 6px 5px 12px;background:rgba(20,20,22,.72);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);border:1px solid rgba(255,255,255,.07);border-radius:999px;box-shadow:0 4px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);z-index:18;transition:opacity .25s,transform .25s,background .25s,border-color .25s}
+    .connection-bar{position:absolute;top:10px;right:14px;display:inline-flex;align-items:center;gap:8px;padding:5px 6px 5px 12px;background:rgba(20,20,22,.72);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);border:1px solid rgba(255,255,255,.07);border-radius:999px;box-shadow:0 4px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);z-index:18;transition:opacity .25s,transform .25s,background .25s,border-color .25s,top .2s}
+    body[data-chat-state="chatting"] .connection-bar{top:58px}
     .connection-bar.connected{opacity:.55;background:rgba(20,20,22,.5);border-color:rgba(255,255,255,.05)}
     .connection-bar.connected:hover{opacity:1}
     .connection-bar-dot{width:6px;height:6px;border-radius:100px;background:#8a6a1c;box-shadow:0 0 0 3px rgba(212,176,90,.10);flex-shrink:0;transition:all .3s}
