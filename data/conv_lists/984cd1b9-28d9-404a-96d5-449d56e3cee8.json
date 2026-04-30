@@ -110,5 +110,12 @@
     "mode": "chat",
     "model": "sonnet",
     "updatedAt": 1777509884908
+  },
+  "new-1777518236086": {
+    "id": "new-1777518236086",
+    "title": "idk",
+    "mode": "chat",
+    "model": "sonnet",
+    "updatedAt": 1777518236086
   }
 }
