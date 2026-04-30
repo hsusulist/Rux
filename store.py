@@ -348,6 +348,19 @@ def deduct_credits(user_id, amount):
         balance = round(balance - amount, 6)
         credits[user_id] = {"balance": balance, "last_updated": last_updated, "max_credit": max_credit}
         _save("credits.json", credits)
+        # track daily spend for cap enforcement (only positive deductions count toward cap)
+        try:
+            if amount and float(amount) > 0:
+                spend = _load("daily_spend.json")
+                rec = spend.get(user_id, {})
+                today = _today_key()
+                if rec.get("day") != today:
+                    rec = {"day": today, "total": 0.0}
+                rec["total"] = float(rec.get("total", 0)) + float(amount)
+                spend[user_id] = rec
+                _save("daily_spend.json", spend)
+        except Exception:
+            pass
         return balance, last_updated
 
 
@@ -1219,3 +1232,154 @@ def import_all(data):
             if subdir in data:
                 for item_id, item_data in data[subdir].items():
                     _save(f"{subdir}/{item_id}.json", item_data)
+
+# ═══════════════════════════════════════════
+#  PLANS  (free / core / max)
+# ═══════════════════════════════════════════
+
+PLAN_FREE = "free"
+PLAN_CORE = "core"
+PLAN_MAX = "max"
+VALID_PLANS = (PLAN_FREE, PLAN_CORE, PLAN_MAX)
+
+
+def get_user_plan(user_id):
+    if user_id == OWNER_ID:
+        return PLAN_MAX
+    with _lock:
+        plans = _load("plans.json")
+        return plans.get(user_id, PLAN_FREE)
+
+
+def set_user_plan(user_id, plan):
+    if plan not in VALID_PLANS:
+        return False
+    with _lock:
+        plans = _load("plans.json")
+        plans[user_id] = plan
+        _save("plans.json", plans)
+        return True
+
+
+# ═══════════════════════════════════════════
+#  DAILY SPENDING CAP
+# ═══════════════════════════════════════════
+
+def _today_key():
+    return time.strftime("%Y-%m-%d", time.gmtime())
+
+
+def get_spending_cap(user_id):
+    """Return daily spending cap (in credits) or 0 = no cap."""
+    with _lock:
+        caps = _load("spending_caps.json")
+        v = caps.get(user_id)
+        try:
+            return float(v) if v is not None else 0.0
+        except (TypeError, ValueError):
+            return 0.0
+
+
+def set_spending_cap(user_id, cap):
+    with _lock:
+        caps = _load("spending_caps.json")
+        try:
+            cap = max(0.0, float(cap))
+        except (TypeError, ValueError):
+            cap = 0.0
+        caps[user_id] = cap
+        _save("spending_caps.json", caps)
+        return cap
+
+
+def get_daily_spend(user_id):
+    with _lock:
+        spend = _load("daily_spend.json")
+        rec = spend.get(user_id, {})
+        if rec.get("day") != _today_key():
+            return 0.0
+        try:
+            return float(rec.get("total", 0))
+        except (TypeError, ValueError):
+            return 0.0
+
+
+def add_daily_spend(user_id, amount):
+    with _lock:
+        spend = _load("daily_spend.json")
+        rec = spend.get(user_id, {})
+        today = _today_key()
+        if rec.get("day") != today:
+            rec = {"day": today, "total": 0.0}
+        try:
+            rec["total"] = float(rec.get("total", 0)) + float(amount)
+        except (TypeError, ValueError):
+            rec["total"] = float(amount)
+        spend[user_id] = rec
+        _save("daily_spend.json", spend)
+        return rec["total"]
+
+
+# ═══════════════════════════════════════════
+#  PROJECT MEMORY  (per conversation)
+# ═══════════════════════════════════════════
+
+def _mem_path(conv_id):
+    return f"memories/{conv_id}.json"
+
+
+def list_memories(conv_id):
+    if not conv_id:
+        return []
+    with _lock:
+        data = _load(_mem_path(conv_id), default=[])
+        return data if isinstance(data, list) else []
+
+
+def add_memory(conv_id, text, source="user"):
+    if not conv_id or not text:
+        return None
+    text = str(text).strip()
+    if not text:
+        return None
+    text = text[:500]
+    with _lock:
+        data = _load(_mem_path(conv_id), default=[])
+        if not isinstance(data, list):
+            data = []
+        for m in data:
+            if isinstance(m, dict) and m.get("text", "").strip().lower() == text.lower():
+                return m
+        if len(data) >= 30:
+            data = data[-29:]
+        item = {
+            "id": f"mem-{int(time.time()*1000)}",
+            "text": text,
+            "source": source,
+            "created_at": int(time.time()),
+        }
+        data.append(item)
+        _save(_mem_path(conv_id), data)
+        return item
+
+
+def delete_memory(conv_id, mem_id):
+    if not conv_id or not mem_id:
+        return False
+    with _lock:
+        data = _load(_mem_path(conv_id), default=[])
+        if not isinstance(data, list):
+            return False
+        new_data = [m for m in data if isinstance(m, dict) and m.get("id") != mem_id]
+        if len(new_data) == len(data):
+            return False
+        _save(_mem_path(conv_id), new_data)
+        return True
+
+
+def clear_memories(conv_id):
+    if not conv_id:
+        return False
+    with _lock:
+        _save(_mem_path(conv_id), [])
+        return True

@@ -92,8 +92,10 @@ MODELS = {
     "grok-4": {"id": "x-ai/grok-4", "provider": "openrouter", "label": "Grok 4", "badge": "Smart", "credit_per_token": 0.0004},
     "deepseek": {"id": "deepseek/deepseek-chat", "provider": "openrouter", "label": "DeepSeek", "badge": "Free", "credit_per_token": 0},
     "llama-70b": {"id": "meta-llama/llama-3.3-70b-instruct", "provider": "openrouter", "label": "Llama 3.3 70B", "badge": "Free", "credit_per_token": 0},
+    "max": {"id": "claude-sonnet-4-6", "provider": "anthropic", "label": "Max (multi-model)", "badge": "Max", "credit_per_token": 0.0006, "requires_plan": "max", "max_mode": True},
 }
 DEFAULT_MODEL = "sonnet"
+MAX_MODE_DELEGATES = ["haiku", "gemini-flash", "gpt-5-mini", "qwen-coder", "opus", "gpt-5"]
 OWNER_ID = "984cd1b9-28d9-404a-96d5-449d56e3cee8"
 
 
@@ -353,12 +355,28 @@ def _compact_history(history):
     return out, trimmed_older_count
 
 
-def build_chat_messages(session, user_message, context):
+def _memory_preface(conv_id):
+    """Return a short preface that injects saved project facts for this conversation."""
+    if not conv_id:
+        return ""
+    mems = store.list_memories(conv_id)
+    if not mems:
+        return ""
+    bullets = "\n".join(f"- {m.get('text','')}" for m in mems if isinstance(m, dict))
+    return (
+        "Project memory (facts the user has asked you to remember about this project):\n"
+        f"{bullets}\n\n"
+        "Use these facts when relevant. Do NOT re-ask. Use the `remember` tool to add new facts and `forget` to remove.\n\n"
+    )
+
+
+def build_chat_messages(session, user_message, context, conv_id=None):
     history, trimmed = _compact_history(list(session["conversation"]))
     session["history_trimmed_count"] = trimmed
     messages = history
-    ctx_msg = f"User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"
-    if messages and messages[-1].get("role") == "user" and messages[-1].get("content") == user_message:
+    preface = _memory_preface(conv_id)
+    ctx_msg = f"{preface}User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"
+    if messages and messages[-1].get("role") == "user" and isinstance(messages[-1].get("content"), str) and messages[-1].get("content") == user_message:
         messages[-1] = {"role": "user", "content": ctx_msg}
     else:
         messages.append({"role": "user", "content": ctx_msg})
@@ -533,9 +551,11 @@ TOOL_DEFINITIONS = [
     {"name": "create_checkpoint", "description": "Save a named checkpoint of one or more scripts.", "input_schema": {"type": "object", "properties": {"label": {"type": "string"}, "scripts": {"type": "object", "additionalProperties": {"type": "string"}}}, "required": ["label", "scripts"]}},
     {"name": "list_checkpoints", "description": "List all checkpoints saved for the current session.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "restore_checkpoint", "description": "Retrieve saved script contents from a checkpoint by ID.", "input_schema": {"type": "object", "properties": {"checkpoint_id": {"type": "string"}}, "required": ["checkpoint_id"]}},
+    {"name": "remember", "description": "Save a short fact about this project so you remember it in future turns without re-asking the user. Use for preferences (e.g. 'uses Knit framework'), conventions ('all RemoteEvents live in ReplicatedStorage.Net'), or recurring requirements. One fact per call. Do NOT save secrets.", "input_schema": {"type": "object", "properties": {"fact": {"type": "string", "description": "A single concise fact, max 500 chars."}}, "required": ["fact"]}},
+    {"name": "forget", "description": "Remove a previously saved project memory by its id (the id shown in the Project memory list).", "input_schema": {"type": "object", "properties": {"memory_id": {"type": "string"}}, "required": ["memory_id"]}},
 ]
 
-SERVER_SIDE_TOOLS = {"create_checkpoint", "list_checkpoints", "restore_checkpoint"}
+SERVER_SIDE_TOOLS = {"create_checkpoint", "list_checkpoints", "restore_checkpoint", "remember", "forget"}
 
 # ═══ CHECKPOINT HELPERS ═══
 
@@ -596,6 +616,24 @@ def _resolve_server_tool(session, tc):
             return {"error": "Checkpoint has no saved scripts to restore"}
         return {"ok": True, "checkpoint_id": checkpoint_id, "label": ckpt["label"], "scripts": scripts,
                 "message": f"Checkpoint has {len(scripts)} script(s). Use write_script for each to restore."}
+    elif name == "remember":
+        conv_id = session.get("conv_id")
+        fact = (args.get("fact") or "").strip()
+        if not conv_id:
+            return {"error": "No active conversation — cannot save memory."}
+        if not fact:
+            return {"error": "fact is required"}
+        item = store.add_memory(conv_id, fact, source="ai")
+        if not item:
+            return {"error": "Could not save memory"}
+        return {"ok": True, "id": item["id"], "text": item["text"]}
+    elif name == "forget":
+        conv_id = session.get("conv_id")
+        mem_id = (args.get("memory_id") or "").strip()
+        if not conv_id or not mem_id:
+            return {"error": "memory_id and active conversation required"}
+        ok = store.delete_memory(conv_id, mem_id)
+        return {"ok": ok}
     return {"ok": True}
 
 def _continue_agent_with_result(session, tc, result_data):
@@ -1323,6 +1361,9 @@ def auth_me():
         "session_id": session_id,
         "preferences": prefs,
         "announcements": announcements,
+        "plan": store.get_user_plan(user["id"]),
+        "spending_cap": store.get_spending_cap(user["id"]),
+        "spent_today": round(store.get_daily_spend(user["id"]), 4),
     })
 
 @app.route("/auth/logout", methods=["POST"])
@@ -1851,13 +1892,40 @@ def ai():
     user_message = data.get("message", "")
     model_key = data.get("model", DEFAULT_MODEL)
     conversation_history = data.get("conversation_history", [])
+    conv_id = data.get("conv_id") or None
     context = build_context(data)
+
+    # Plan gate — Max model is paid-only
+    mi_check = resolve_model(model_key)
+    required_plan = mi_check.get("requires_plan")
+    if required_plan:
+        user_plan = store.get_user_plan(user["id"])
+        rank = {"free": 0, "core": 1, "max": 2}
+        if rank.get(user_plan, 0) < rank.get(required_plan, 99):
+            return jsonify({
+                "error": "plan_required",
+                "required_plan": required_plan,
+                "current_plan": user_plan,
+                "message": f"This model requires the {required_plan.title()} plan.",
+            }), 402
+
+    # Daily spending cap gate
+    cap = store.get_spending_cap(user["id"])
+    if cap > 0:
+        today_spent = store.get_daily_spend(user["id"])
+        if today_spent >= cap:
+            return jsonify({
+                "error": "spending_cap_reached",
+                "cap": cap, "spent_today": round(today_spent, 4),
+                "message": f"Daily cap of {cap:g} credits reached. Raise it in Settings to continue.",
+            }), 402
 
     session = get_session(session_id)
     session["conversation"] = conversation_history
     session["latest_context"] = context
     session["model_key"] = model_key
     session["user_id"] = user["id"]
+    session["conv_id"] = conv_id
     session["accumulated_reply"] = ""
     session["accumulated_cost"] = 0.0
 
@@ -1866,7 +1934,13 @@ def ai():
 
     try:
         if mode == "chat":
-            msgs = build_chat_messages(session, user_message, context)
+            msgs = build_chat_messages(session, user_message, context, conv_id=conv_id)
+            if mi.get("max_mode") and msgs and isinstance(msgs[-1].get("content"), str):
+                msgs[-1]["content"] = (
+                    "[MAX MODE] You are operating with the highest tier. Think deeply, "
+                    "use tools liberally, save important facts with `remember`, and produce "
+                    "a thorough, production-ready answer.\n\n" + msgs[-1]["content"]
+                )
             if prov == "anthropic":
                 r = call_anthropic(mid, msgs, tools=TOOL_DEFINITIONS)
                 output_tokens = r.usage.output_tokens
@@ -1939,7 +2013,7 @@ def ai():
             session["step_count"] = 0
             session["pending_tool_call"] = None
             session["status"] = "planning"
-            pm = build_chat_messages(session, user_message, context)
+            pm = build_chat_messages(session, user_message, context, conv_id=conv_id)
             pm.append({"role": "user", "content": "Produce a numbered execution plan only. Do not call any tools yet."})
             r = call_anthropic(mid, pm, max_tokens=2000)
             output_tokens = r.usage.output_tokens
@@ -2325,6 +2399,97 @@ def rename_conversation(conv_id):
     conv["title"] = new_title
     store.save_conv(user["id"], conv_id, conv)
     return jsonify({"ok": True, "title": new_title})
+
+# ═══ MEMORY ROUTES (per-conversation project facts)
+
+@app.route("/api/memory", methods=["GET"])
+@require_auth
+def memory_list():
+    user = request.user
+    conv_id = request.args.get("conv_id", "").strip()
+    if not conv_id:
+        return jsonify({"memories": []})
+    conv = store.get_conv(conv_id)
+    if conv and conv.get("user_id") and conv["user_id"] != user["id"]:
+        return jsonify({"error": "Forbidden"}), 403
+    return jsonify({"memories": store.list_memories(conv_id)})
+
+
+@app.route("/api/memory", methods=["POST"])
+@require_auth
+def memory_add():
+    user = request.user
+    data = request.get_json(force=True) or {}
+    conv_id = (data.get("conv_id") or "").strip()
+    text = (data.get("text") or data.get("fact") or "").strip()
+    if not conv_id or not text:
+        return jsonify({"error": "conv_id and text required"}), 400
+    conv = store.get_conv(conv_id)
+    if conv and conv.get("user_id") and conv["user_id"] != user["id"]:
+        return jsonify({"error": "Forbidden"}), 403
+    item = store.add_memory(conv_id, text, source="user")
+    if not item:
+        return jsonify({"error": "Could not save"}), 400
+    return jsonify({"ok": True, "memory": item})
+
+
+@app.route("/api/memory/<mem_id>", methods=["DELETE"])
+@require_auth
+def memory_delete(mem_id):
+    user = request.user
+    conv_id = request.args.get("conv_id", "").strip()
+    if not conv_id:
+        return jsonify({"error": "conv_id required"}), 400
+    conv = store.get_conv(conv_id)
+    if conv and conv.get("user_id") and conv["user_id"] != user["id"]:
+        return jsonify({"error": "Forbidden"}), 403
+    ok = store.delete_memory(conv_id, mem_id)
+    return jsonify({"ok": ok})
+
+
+# ═══ ACCOUNT (plan + spending cap + spend tracking)
+
+@app.route("/api/account", methods=["GET"])
+@require_auth
+def account_info():
+    user = request.user
+    return jsonify({
+        "plan": store.get_user_plan(user["id"]),
+        "spending_cap": store.get_spending_cap(user["id"]),
+        "spent_today": round(store.get_daily_spend(user["id"]), 4),
+    })
+
+
+@app.route("/api/spending_cap", methods=["POST"])
+@require_auth
+def account_set_cap():
+    user = request.user
+    data = request.get_json(force=True) or {}
+    try:
+        cap = float(data.get("cap", 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "cap must be a number"}), 400
+    if cap < 0:
+        cap = 0
+    new_cap = store.set_spending_cap(user["id"], cap)
+    return jsonify({"ok": True, "cap": new_cap})
+
+
+@app.route("/api/plan", methods=["POST"])
+@require_auth
+def account_set_plan():
+    """Owner-only: set a user's plan tier."""
+    user = request.user
+    if user["id"] != OWNER_ID:
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.get_json(force=True) or {}
+    target_uid = (data.get("user_id") or user["id"]).strip()
+    plan = (data.get("plan") or "").strip().lower()
+    if plan not in store.VALID_PLANS:
+        return jsonify({"error": f"plan must be one of {list(store.VALID_PLANS)}"}), 400
+    store.set_user_plan(target_uid, plan)
+    return jsonify({"ok": True, "user_id": target_uid, "plan": plan})
+
 
 # ═══ CHECKPOINT ROUTES
 

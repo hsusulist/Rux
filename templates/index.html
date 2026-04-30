@@ -525,6 +525,46 @@
 
     /* ═══ CHECKPOINT PANEL ═══ */
     .checkpoint-panel{position:absolute;bottom:calc(100% + 8px);right:24px;left:24px;max-width:380px;margin-left:auto;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:7px;box-shadow:0 -12px 40px rgba(0,0,0,.7);z-index:51;display:none;animation:pickerIn .14s ease both}
+    /* Project memory panel */
+    .pb-mem-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 5px;border-radius:8px;background:var(--accent);color:#0a0a0a;font-size:9.5px;font-weight:800;margin-left:4px}
+    .memory-panel{position:absolute;top:calc(100% + 6px);right:18px;width:340px;max-width:calc(100vw - 36px);background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:14px 14px 12px;box-shadow:0 16px 50px rgba(0,0,0,.65);z-index:60;display:none;animation:pickerIn .14s ease both}
+    .memory-panel.open{display:block}
+    .mem-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+    .mem-title{font-family:'Inter',sans-serif;font-size:12.5px;font-weight:700;color:var(--text);letter-spacing:-.1px}
+    .mem-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:6px}
+    .mem-close:hover{background:var(--surface3);color:var(--text)}
+    .mem-sub{font-size:10.5px;color:var(--muted);margin-bottom:10px;line-height:1.4}
+    .mem-list{display:flex;flex-direction:column;gap:5px;max-height:240px;overflow-y:auto;margin-bottom:10px}
+    .mem-empty{font-size:11px;color:var(--muted);font-style:italic;padding:14px 6px;text-align:center}
+    .mem-item{display:flex;align-items:flex-start;gap:6px;padding:7px 8px;background:var(--surface);border:1px solid var(--border);border-radius:7px;font-size:11.5px;color:var(--text2);line-height:1.4}
+    .mem-item-text{flex:1;word-break:break-word}
+    .mem-item-src{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.4px}
+    .mem-item-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 5px;border-radius:5px;flex-shrink:0}
+    .mem-item-del:hover{background:rgba(224,116,116,.15);color:#ff8a8a}
+    .mem-add-row{display:flex;gap:6px}
+    .mem-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 9px;color:var(--text);font-family:'Inter',sans-serif;font-size:11.5px;outline:none}
+    .mem-input:focus{border-color:var(--accent)}
+    .mem-add-btn{background:var(--accent);color:#0a0a0a;border:none;border-radius:7px;padding:0 12px;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.2px}
+    .mem-add-btn:hover{filter:brightness(1.08)}
+    /* Max model tier styling in picker */
+    .picker-option.max-tier{background:linear-gradient(90deg,rgba(212,168,67,.06),rgba(212,168,67,.02))}
+    .picker-option.max-tier .picker-option-badge.power{background:linear-gradient(135deg,#d4a843,#b8851f);color:#0a0a0a;font-weight:800}
+    .picker-option.max-tier.locked{opacity:.55;position:relative}
+    .picker-option.max-tier.locked::after{content:"🔒";position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px}
+    /* Dashboard examples */
+    .dash-examples{margin-top:18px;width:100%;max-width:680px}
+    .dash-examples-title{font-family:'Inter',sans-serif;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:uppercase;text-align:center;margin-bottom:10px}
+    .dash-examples-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+    .dash-example{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text2);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:background .14s,border-color .14s,transform .14s;text-align:left}
+    .dash-example:hover{background:var(--surface3);border-color:var(--border2);color:var(--text);transform:translateY(-1px)}
+    .dex-emoji{font-size:16px;flex-shrink:0}
+    .dex-text{line-height:1.3}
+    /* Per-message cost badge */
+    .msg-cost{display:inline-block;font-size:9.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:4px;letter-spacing:.2px}
+    .msg-cost .mc-num{color:var(--accent);font-weight:600}
+    /* History trim notice */
+    .trim-notice{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted);font-family:'Inter',sans-serif;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;margin:4px 0;font-weight:500}
+    .trim-notice .tn-num{color:var(--accent);font-weight:700}
     .checkpoint-panel.open{display:block}
     .cp-header{display:flex;align-items:center;justify-content:space-between;padding:3px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
     .cp-title{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.6px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
@@ -1094,10 +1134,28 @@
           </button>
           <div class="pb-menu" id="pb-menu" role="menu"></div>
         </div>
+        <button class="pb-btn" id="pb-mem-btn" type="button" onclick="toggleMemoryPanel(event)" title="Project memory — facts the AI remembers across turns">
+          <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 5 5 5 5 0 0 0 5-5V7a5 5 0 0 0-5-5zm-1 18h2v2h-2zm-4 0h2v2H7zm8 0h2v2h-2z"/></svg>
+          <span>Memory</span>
+          <span class="pb-mem-count" id="pb-mem-count" style="display:none">0</span>
+        </button>
         <button class="pb-btn gold" id="pb-open-ws" type="button" onclick="openWorkspace()" title="Open the code workspace for this project">
           <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
           Open Workspace
         </button>
+      </div>
+
+      <div class="memory-panel" id="memory-panel">
+        <div class="mem-head">
+          <div class="mem-title">Project memory</div>
+          <button class="mem-close" type="button" onclick="closeMemoryPanel()" aria-label="Close">&#10005;</button>
+        </div>
+        <div class="mem-sub">Facts the AI remembers across turns. Add anything you don't want to repeat.</div>
+        <div class="mem-list" id="mem-list"></div>
+        <div class="mem-add-row">
+          <input type="text" id="mem-input" class="mem-input" placeholder="e.g. Use Knit framework for all services" maxlength="500">
+          <button type="button" class="mem-add-btn" onclick="addMemory()">Add</button>
+        </div>
       </div>
     </div>
 
@@ -1131,6 +1189,18 @@
               </div>
               <div class="dash-card-cta">Analyze <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></div>
             </button>
+          </div>
+
+          <div class="dash-examples">
+            <div class="dash-examples-title">Or jump straight in with an example</div>
+            <div class="dash-examples-grid">
+              <button class="dash-example" type="button" onclick="dashStartExample('Build a tycoon-style money dropper system with droppers, conveyor and collector. Include the leaderstats setup.')"><div class="dex-emoji">🏭</div><div class="dex-text">Tycoon dropper + conveyor</div></button>
+              <button class="dash-example" type="button" onclick="dashStartExample('Make a simple round-based round system: 30s lobby, 90s round, scoring, winner announcement, restart loop.')"><div class="dex-emoji">⏱️</div><div class="dex-text">Round-based game loop</div></button>
+              <button class="dash-example" type="button" onclick="dashStartExample('Add a sword tool with melee swing animation, hit detection via raycast, damage and cooldown.')"><div class="dex-emoji">⚔️</div><div class="dex-text">Sword combat tool</div></button>
+              <button class="dash-example" type="button" onclick="dashStartExample('Create a shop GUI with three categories, buy buttons that deduct from leaderstats Cash, and tooltips.')"><div class="dex-emoji">🛒</div><div class="dex-text">Shop GUI w/ leaderstats</div></button>
+              <button class="dash-example" type="button" onclick="dashStartExample('Set up DataStore that saves player Cash, Level, and Inventory on leave and loads on join, with retry logic.')"><div class="dex-emoji">💾</div><div class="dex-text">DataStore save/load</div></button>
+              <button class="dash-example" type="button" onclick="dashStartExample('Make a checkpoint race system: spawn at last touched checkpoint, leaderstats Time, finish line.')"><div class="dex-emoji">🏁</div><div class="dex-text">Checkpoint race</div></button>
+            </div>
           </div>
 
           <div class="empty-status">
@@ -1179,6 +1249,7 @@
             <div class="picker-option" data-key="grok-4" data-provider="openrouter" onclick="selectModel('grok-4')"><div class="picker-option-icon">{{ICON_GROK}}</div><div class="picker-option-body"><div class="picker-option-name">Grok 4</div><div class="picker-option-desc">Advanced reasoning</div></div><div class="picker-option-badge smart">Smart</div></div>
             <div class="picker-option" data-key="deepseek" data-provider="openrouter" onclick="selectModel('deepseek')"><div class="picker-option-icon">{{ICON_GLM}}</div><div class="picker-option-body"><div class="picker-option-name">DeepSeek</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
             <div class="picker-option" data-key="llama-70b" data-provider="openrouter" onclick="selectModel('llama-70b')"><div class="picker-option-icon">{{ICON_GEMMA}}</div><div class="picker-option-body"><div class="picker-option-name">Llama 3.3 70B</div><div class="picker-option-desc">No credits</div></div><div class="picker-option-badge free">Free</div></div>
+            <div class="picker-option max-tier" data-key="max" data-provider="anthropic" data-requires-plan="max" onclick="selectModel('max')"><div class="picker-option-icon">{{ICON_ANTHROPIC}}</div><div class="picker-option-body"><div class="picker-option-name">Max</div><div class="picker-option-desc">Multi-model orchestration</div></div><div class="picker-option-badge power">Max</div></div>
           </div>
         </div>
 
@@ -1276,6 +1347,21 @@
     <div class="settings-divider"></div>
     <div class="settings-field"><label class="settings-label">Roblox User ID</label><input class="settings-input" id="settings-rbx-id" type="text" placeholder="Enables auto-connect"><div style="font-size:9px;color:var(--muted);margin-top:3px">Find at roblox.com → profile → number in URL</div><a id="settings-rbx-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none;font-size:9.5px;color:var(--accent);margin-top:6px;text-decoration:none;font-weight:600">Visit on Roblox ↗</a></div>
     <button class="settings-btn" id="settings-save-rbx-btn" onclick="saveRobloxId()">Save Roblox ID</button>
+    <div class="settings-divider"></div>
+    <div class="settings-field">
+      <label class="settings-label">Plan</label>
+      <div id="settings-plan-row" style="display:flex;align-items:center;gap:8px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text2);font-weight:600">
+        <span id="settings-plan-pill" style="padding:3px 9px;border-radius:6px;background:var(--surface3);color:var(--text);font-size:11px;letter-spacing:.4px;text-transform:uppercase">Free</span>
+        <span style="font-size:10.5px;color:var(--muted);font-weight:500" id="settings-plan-hint">Upgrade to unlock Max model</span>
+      </div>
+    </div>
+    <div class="settings-field">
+      <label class="settings-label">Daily spending cap (credits)</label>
+      <input class="settings-input" id="settings-cap-input" type="number" min="0" step="0.5" placeholder="0 = no cap">
+      <div style="font-size:9.5px;color:var(--muted);margin-top:4px">Spent today: <span id="settings-spent-today">0</span></div>
+    </div>
+    <button class="settings-btn" onclick="saveSpendingCap()">Save spending cap</button>
+    <div class="settings-err" id="settings-cap-err"></div>
     <div class="settings-divider"></div>
     <button class="settings-btn danger" onclick="deleteAccount()">Delete Account</button>
     <div class="settings-err" id="settings-del-err"></div>
@@ -1500,7 +1586,9 @@
 
 <script>
 const TOKEN_KEY='rux_token';
-const MODEL_LABELS={'gemini-flash':'Flash','gemini-pro':'Pro','sonnet':'Sonnet','opus':'Opus','haiku':'Haiku','gpt-5':'GPT-5','gpt-5-mini':'GPT-5 Mini','gpt-4-1':'GPT-4.1','qwen-coder':'Qwen3','glm-5':'GLM-5','grok-4':'Grok 4','deepseek':'DeepSeek','llama-70b':'Llama 70B'};
+const MODEL_LABELS={'gemini-flash':'Flash','gemini-pro':'Pro','sonnet':'Sonnet','opus':'Opus','haiku':'Haiku','gpt-5':'GPT-5','gpt-5-mini':'GPT-5 Mini','gpt-4-1':'GPT-4.1','qwen-coder':'Qwen3','glm-5':'GLM-5','grok-4':'Grok 4','deepseek':'DeepSeek','llama-70b':'Llama 70B','max':'Max'};
+let userPlan='free',spendingCap=0,spentToday=0;
+let projectMemories=[];
 const MODE_LABELS={'chat':'Chat','agent':'Agent'};
 let token=null,userData=null,credits={balance:10.00,max:10.00,next_credit_at:0};
 let sessionId=null,mode='chat',activeConvId=null,pendingSessionId=null;
@@ -1537,7 +1625,7 @@ function stopGeneration(){if(currentAbortController){currentAbortController.abor
 
 function useSuggestion(text){document.getElementById('chat-input').value=text;document.getElementById('chat-input').focus();autoResizeInput()}
 
-function openSettingsModal(){if(!userData)return;document.getElementById('settings-email').textContent=userData.email||'';document.getElementById('settings-current-pw').value='';document.getElementById('settings-new-pw').value='';document.getElementById('settings-rbx-id').value=userData.roblox_id||'';document.getElementById('settings-pw-err').classList.remove('show');document.getElementById('settings-del-err').classList.remove('show');updateSettingsRobloxLink();document.getElementById('settings-overlay').classList.add('open')}
+function openSettingsModal(){if(!userData)return;document.getElementById('settings-email').textContent=userData.email||'';document.getElementById('settings-current-pw').value='';document.getElementById('settings-new-pw').value='';document.getElementById('settings-rbx-id').value=userData.roblox_id||'';document.getElementById('settings-pw-err').classList.remove('show');document.getElementById('settings-del-err').classList.remove('show');updateSettingsRobloxLink();const planEl=document.getElementById('settings-plan-pill');if(planEl){planEl.textContent=userPlan.toUpperCase();planEl.className='settings-plan-pill plan-'+userPlan}const capInp=document.getElementById('settings-cap-input');if(capInp)capInp.value=spendingCap||'';const spent=document.getElementById('settings-spent-today');if(spent)spent.textContent=(spentToday||0).toFixed(2);const capErr=document.getElementById('settings-cap-err');if(capErr)capErr.classList.remove('show');api('/api/account').then(r=>{if(r&&r.ok){userPlan=r.data.plan||userPlan;spendingCap=r.data.spending_cap!=null?r.data.spending_cap:spendingCap;spentToday=r.data.spent_today!=null?r.data.spent_today:spentToday;if(planEl){planEl.textContent=userPlan.toUpperCase();planEl.className='settings-plan-pill plan-'+userPlan}if(capInp)capInp.value=spendingCap||'';if(spent)spent.textContent=(spentToday||0).toFixed(2);applyPlanGates()}});document.getElementById('settings-overlay').classList.add('open')}
 function updateSettingsRobloxLink(){const link=document.getElementById('settings-rbx-link');if(!link)return;const rbx=userData&&userData.roblox_id;if(rbx){link.href=`https://www.roblox.com/users/${encodeURIComponent(rbx)}/profile`;link.style.display='inline-block'}else{link.style.display='none';link.removeAttribute('href')}}
 function closeSettingsModal(){document.getElementById('settings-overlay').classList.remove('open')}
 document.getElementById('settings-overlay').addEventListener('click',function(e){if(e.target===this)closeSettingsModal()});
@@ -1570,7 +1658,9 @@ const ANN_ICONS={info:'<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 1
 function renderAnnouncements(anns){const bar=document.getElementById('ann-bar');if(!bar)return;const dismissed=JSON.parse(localStorage.getItem('rux_dismissed_anns')||'[]');const active=(anns||[]).filter(a=>!dismissed.includes(a.id));bar.innerHTML=active.map(a=>{const t=a.type||'info';const icon=ANN_ICONS[t]||ANN_ICONS.info;return`<div class="ann-item ${t}" id="ann-${a.id}"><svg class="ann-icon" viewBox="0 0 24 24">${icon}</svg><div class="ann-content"><div class="ann-title">${escHtml(a.title)}</div>${a.body?`<div class="ann-body">${escHtml(a.body)}</div>`:''}</div><button class="ann-dismiss" onclick="dismissAnn('${a.id}')" title="Dismiss">✕</button></div>`}).join('')}
 function dismissAnn(id){const el=document.getElementById('ann-'+id);if(el){el.style.opacity='0';el.style.transition='opacity .2s';setTimeout(()=>el.remove(),200)}const dismissed=JSON.parse(localStorage.getItem('rux_dismissed_anns')||'[]');if(!dismissed.includes(id)){dismissed.push(id);localStorage.setItem('rux_dismissed_anns',JSON.stringify(dismissed))}}
 
-async function enterApp(){const r=await api('/auth/me');if(!r)return;credits=r.data.credits;sessionId=r.data.session_id;if(r.data.preferences){if(r.data.preferences.default_model)selectedModel=r.data.preferences.default_model;if(r.data.preferences.default_mode)mode=r.data.preferences.default_mode;updateModelUI();updateModeUI()}if(r.data.user)userData=r.data.user;updateCreditUI();updateRobloxChip();if(sessionId)pluginConnected=true;updatePluginUI();renderAnnouncements(r.data.announcements);enterChat();loadConversations();startWebHeartbeat();}
+async function enterApp(){const r=await api('/auth/me');if(!r)return;credits=r.data.credits;sessionId=r.data.session_id;if(r.data.preferences){if(r.data.preferences.default_model)selectedModel=r.data.preferences.default_model;if(r.data.preferences.default_mode)mode=r.data.preferences.default_mode;updateModelUI();updateModeUI()}if(r.data.user)userData=r.data.user;if(r.data.plan)userPlan=r.data.plan;if(r.data.spending_cap!=null)spendingCap=r.data.spending_cap;if(r.data.spent_today!=null)spentToday=r.data.spent_today;applyPlanGates();updateCreditUI();updateRobloxChip();if(sessionId)pluginConnected=true;updatePluginUI();renderAnnouncements(r.data.announcements);enterChat();loadConversations();startWebHeartbeat();}
+
+function applyPlanGates(){const rank={free:0,core:1,max:2};document.querySelectorAll('.picker-option[data-requires-plan]').forEach(el=>{const need=el.getAttribute('data-requires-plan');if((rank[userPlan]||0)<(rank[need]||0))el.classList.add('locked');else el.classList.remove('locked')})}
 function _setRbxPlaceholder(){const av=document.getElementById('sb-rbx-avatar');const name=document.getElementById('sb-rbx-name');const handle=document.getElementById('sb-rbx-handle');const chip=document.getElementById('sb-rbx');if(av){av.classList.add('empty');av.style.backgroundImage='none'}if(name)name.textContent=(userData&&userData.email)?(userData.email.split('@')[0]||'Guest'):'Guest';if(handle){handle.textContent='Link Roblox ID';handle.classList.add('placeholder')}if(chip){chip.removeAttribute('href');chip.title='Add your Roblox ID in Settings to link your profile'}}
 async function updateRobloxChip(bust){const chip=document.getElementById('sb-rbx');if(!chip)return;const rbx=userData&&userData.roblox_id;if(!rbx){_setRbxPlaceholder();return}try{const res=await fetch('/auth/roblox-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roblox_id:rbx})});if(!res.ok){_setRbxPlaceholder();return}const d=await res.json();const av=d.avatar_url?(bust?d.avatar_url+(d.avatar_url.includes('?')?'&':'?')+'_t='+Date.now():d.avatar_url):'';const avEl=document.getElementById('sb-rbx-avatar');if(av){avEl.classList.remove('empty');avEl.style.backgroundImage=`url("${av}")`}else{avEl.classList.add('empty');avEl.style.backgroundImage='none'}document.getElementById('sb-rbx-name').textContent=d.display_name||d.username||'Roblox User';const handle=document.getElementById('sb-rbx-handle');handle.textContent=`@${d.username||'unknown'}`;handle.classList.remove('placeholder');chip.href=`https://www.roblox.com/users/${encodeURIComponent(d.roblox_id)}/profile`;chip.title=`Open @${d.username||'unknown'} on Roblox (ID ${d.roblox_id})`}catch(e){_setRbxPlaceholder()}}
 async function refreshRobloxChip(ev){if(ev){ev.preventDefault();ev.stopPropagation()}const btn=document.getElementById('sb-rbx-refresh');if(!btn||btn.classList.contains('spinning'))return;btn.classList.add('spinning');try{await updateRobloxChip(true);if(typeof showToast==='function')showToast('Profile refreshed','success')}catch(e){}finally{setTimeout(()=>btn.classList.remove('spinning'),500)}}
@@ -1755,7 +1845,24 @@ function startRenameProject(convId,oldTitle,itemEl){const textEl=itemEl.querySel
 
 async function confirmDeleteProject(convId,title){if(!confirm(`Delete project "${title}"? This cannot be undone.`))return;await deleteConv(convId);showToast('Project deleted','success')}
 
-async function openConv(id){let c=convCache[id];if(!c||!Array.isArray(c.messages)){try{const r=await api('/api/conversations/'+id);if(r&&r.ok){c=r.data;convCache[id]=c}}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';currentProjectTitle=c.title||'';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight});setViewMode(true);renderSidebar();renderProjectBar();try{localStorage.setItem('rux_last_conv',id)}catch(e){}if(wsOpen)wsSetProject(id,c.title||id)}
+async function openConv(id){let c=convCache[id];if(!c||!Array.isArray(c.messages)){try{const r=await api('/api/conversations/'+id);if(r&&r.ok){c=r.data;convCache[id]=c}}catch(e){}}if(!c)return;activeConvId=id;sessionId=c.sessionId||sessionId;conversationHistory=c.history||[];currentMessages=c.messages||[];pendingSessionId=c.pendingSessionId||null;mode=c.mode||'chat';selectedModel=c.model||'sonnet';currentProjectTitle=c.title||'';updateModelUI();updateModeUI();document.getElementById('plan-banner').classList.remove('show');const msgs=document.getElementById('messages');msgs.innerHTML='';currentMessages.forEach(m=>renderMessage(m));requestAnimationFrame(()=>{msgs.scrollTop=msgs.scrollHeight});setViewMode(true);renderSidebar();renderProjectBar();loadMemories();try{localStorage.setItem('rux_last_conv',id)}catch(e){}if(wsOpen)wsSetProject(id,c.title||id)}
+
+// ═══ PROJECT MEMORY ═══
+async function loadMemories(){if(!activeConvId){projectMemories=[];renderMemoryCount();renderMemoryList();return}try{const r=await api('/api/memory?conv_id='+encodeURIComponent(activeConvId));if(r&&r.ok){projectMemories=r.data.memories||[]}}catch(e){projectMemories=[]}renderMemoryCount();renderMemoryList()}
+function renderMemoryCount(){const b=document.getElementById('pb-mem-count');if(!b)return;const n=projectMemories.length;if(n>0){b.textContent=n>9?'9+':n;b.style.display=''}else{b.style.display='none'}}
+function renderMemoryList(){const list=document.getElementById('mem-list');if(!list)return;if(!projectMemories.length){list.innerHTML='<div class="mem-empty">No saved facts yet. Add one below — or just chat and let the AI save them with the <code>remember</code> tool.</div>';return}list.innerHTML=projectMemories.map(m=>{const src=m.source==='ai'?'AI':'You';return`<div class="mem-item"><div class="mem-item-text">${escHtml(m.text)}<div class="mem-item-src">${src}</div></div><button class="mem-item-del" type="button" onclick="deleteMemory('${m.id}')" aria-label="Forget">✕</button></div>`}).join('')}
+function toggleMemoryPanel(e){if(e)e.stopPropagation();const panel=document.getElementById('memory-panel');if(!panel)return;if(panel.classList.contains('open')){closeMemoryPanel();return}loadMemories();panel.classList.add('open')}
+function closeMemoryPanel(){const p=document.getElementById('memory-panel');if(p)p.classList.remove('open')}
+async function addMemory(){const inp=document.getElementById('mem-input');if(!inp)return;const text=inp.value.trim();if(!text||!activeConvId)return;inp.disabled=true;try{const r=await api('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conv_id:activeConvId,text})});if(r&&r.ok){projectMemories.push(r.data.memory);inp.value='';renderMemoryCount();renderMemoryList();showToast('Memory saved','success')}else{showToast(r?.data?.error||'Failed','error')}}catch(e){showToast('Network error','error')}finally{inp.disabled=false;inp.focus()}}
+async function deleteMemory(id){if(!activeConvId)return;try{const r=await api('/api/memory/'+id+'?conv_id='+encodeURIComponent(activeConvId),{method:'DELETE'});if(r&&r.ok){projectMemories=projectMemories.filter(m=>m.id!==id);renderMemoryCount();renderMemoryList()}}catch(e){}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMemoryPanel()}});
+document.addEventListener('click',e=>{const panel=document.getElementById('memory-panel');if(!panel||!panel.classList.contains('open'))return;if(!e.target.closest('#memory-panel')&&!e.target.closest('#pb-mem-btn'))closeMemoryPanel()});
+
+// ═══ DASHBOARD EXAMPLES ═══
+async function dashStartExample(prompt){if(!prompt)return;startNewConv();await new Promise(r=>setTimeout(r,40));chatInput.value=prompt;chatInput.dispatchEvent(new Event('input'));sendMessage()}
+
+// ═══ SPENDING CAP ═══
+async function saveSpendingCap(){const inp=document.getElementById('settings-cap-input');const err=document.getElementById('settings-cap-err');err.classList.remove('show');err.textContent='';let v=parseFloat(inp.value);if(isNaN(v)||v<0)v=0;try{const r=await api('/api/spending_cap',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cap:v})});if(r&&r.ok){spendingCap=r.data.cap;showToast(v>0?`Daily cap set to ${v} credits`:'Spending cap removed','success')}else{err.textContent=r?.data?.error||'Failed';err.classList.add('show')}}catch(e){err.textContent='Network error';err.classList.add('show')}}
 function showDashboard(){activeConvId=null;currentProjectTitle='';document.getElementById('messages').innerHTML='';setViewMode(false);renderSidebar();renderProjectBar();try{localStorage.removeItem('rux_last_conv')}catch(e){}}
 
 function startNewConv(title){
@@ -2126,6 +2233,8 @@ function handleResponse(d){
   if(d.session_id)pendingSessionId=d.session_id;
   if(d.credits!=null){credits.balance=d.credits;updateCreditUI();updateInputState()}
   if(d.error==='no_credits'){credits.balance=0;credits.next_credit_at=d.next_credit_at;updateCreditUI();updateInputState();pushMsg({role:'system',text:'No credits remaining.'});pushLog('error','❌','No credits remaining');setAgentStatus('Error',true);return}
+  if(d.error==='plan_required'){removeThinking();pushMsg({role:'system',text:`This model needs the ${d.required_plan||'paid'} plan. You're on ${d.current_plan||'free'}. Pick another model or upgrade in Settings.`});pushLog('error','🔒','Plan required: '+(d.required_plan||'paid'));setAgentStatus('Locked',true);return}
+  if(d.error==='spending_cap_reached'){removeThinking();pushMsg({role:'system',text:`Daily cap of ${d.cap} credits reached (spent ${d.spent_today}). Raise it in Settings to keep going.`});pushLog('error','🛑','Daily spending cap reached');setAgentStatus('Capped',true);return}
   if(d.plan&&d.status==='awaiting_approval'){
     const planLines=d.plan.split('\n').filter(l=>l.trim().match(/^\d/));
     agentTotalSteps=planLines.length||3;agentStepCount=0;updateAgentStepUI();
@@ -2197,7 +2306,7 @@ async function sendMessage(){
   addThinking();
   currentAbortController=new AbortController();
   try{
-    const r=await api('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,mode,message:text,model:selectedModel,conversation_history:conversationHistory.slice(-20)}),signal:currentAbortController.signal});
+    const r=await api('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,mode,message:text,model:selectedModel,conv_id:activeConvId||null,conversation_history:conversationHistory.slice(-20)}),signal:currentAbortController.signal});
     removeThinking();
     if(!r){pushMsg({role:'assistant',text:'Connection error.'});pushLog('error','❌','Connection error');setAgentStatus('Error',true);return}
     handleResponse(r.data);
