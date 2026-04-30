@@ -9,7 +9,7 @@ local StudioService = game:GetService("StudioService")
 --  CONFIG
 -- ═══════════════════════════════════════════════════════════════
 
-local DEFAULT_PUBLIC_URL = "https://your-rux-app.replit.app"
+local PUBLIC_URL = "https://rux.app"
 local PLUGIN_VERSION = 4
 local MIN_SERVER_VERSION = 3
 
@@ -23,14 +23,6 @@ end
 local function setSetting(key, value)
   pcall(function() plugin:SetSetting(key, value) end)
 end
-
-local function normalizeUrl(u)
-  u = tostring(u or ""):gsub("%s+", "")
-  if u:sub(-1) == "/" then u = u:sub(1, -2) end
-  return u
-end
-
-local PUBLIC_URL = normalizeUrl(getSetting("rux_server_url", DEFAULT_PUBLIC_URL))
 
 local PLUGIN_ID = getSetting("rux_plugin_id", nil)
 if not PLUGIN_ID or PLUGIN_ID == "" then
@@ -49,8 +41,6 @@ local webDisconnectNotified = false
 local webOfflineCount = 0
 local webOnlineCount = 0
 local consecutiveFailures = 0
-local autoConnectFailures = 0
-local autoConnectCooldown = 0
 local connectedAt = 0
 local lastToolName = ""
 local lastToolTime = 0
@@ -1069,40 +1059,6 @@ local function buildUI()
       sl.TextTruncate = Enum.TextTruncate.None
     end
 
-    -- ── Server URL field (persisted across sessions) ──
-    local urlCard = mkFrame(C.surface, UDim2.new(1, 0, 0, 1), nil, connectScroll)
-    urlCard.LayoutOrder = 25
-    urlCard.AutomaticSize = Enum.AutomaticSize.Y
-    corner(10, urlCard)
-    stroke(C.border, 1, urlCard)
-    pad(10, 12, 10, 12, urlCard)
-    vList(6, urlCard)
-    mkLabel("SERVER URL", UDim2.new(1, 0, 0, 10), 8, C.muted, Enum.Font.GothamBold, urlCard).LayoutOrder = 0
-    local urlBox = Instance.new("TextBox")
-    urlBox.Size = UDim2.new(1, 0, 0, 28)
-    urlBox.BackgroundColor3 = C.surface2
-    urlBox.BorderSizePixel = 0
-    urlBox.PlaceholderText = "https://your-rux-app.replit.app"
-    urlBox.PlaceholderColor3 = C.muted
-    urlBox.Text = PUBLIC_URL ~= DEFAULT_PUBLIC_URL and PUBLIC_URL or ""
-    urlBox.Font = Enum.Font.Code
-    urlBox.TextSize = 11
-    urlBox.TextColor3 = C.text
-    urlBox.TextXAlignment = Enum.TextXAlignment.Left
-    urlBox.ClearTextOnFocus = false
-    urlBox.LayoutOrder = 1
-    urlBox.Parent = urlCard
-    corner(7, urlBox)
-    stroke(C.border2, 1, urlBox)
-    pad(0, 8, 0, 8, urlBox)
-    urlBox.FocusLost:Connect(function()
-      local cleaned = normalizeUrl(urlBox.Text)
-      if cleaned ~= "" then
-        PUBLIC_URL = cleaned
-        setSetting("rux_server_url", cleaned)
-      end
-    end)
-
     local connectBtn = mkBtn("Connect to Rux", C.accent, C.bg, UDim2.new(1, 0, 0, 42), connectScroll)
     connectBtn.LayoutOrder = 30
     connectBtn.TextSize = 12
@@ -1437,8 +1393,6 @@ local function buildUI()
       webOnlineCount      = 0
       connectedAt         = os.time()
       consecutiveFailures = 0
-      autoConnectFailures = 0
-      autoConnectCooldown = 0
       setSetting("rux_session_id", session_id)
       showConnected()
       addActivity("Connected" .. (method and " (" .. method .. ")" or ""), "connect")
@@ -1684,29 +1638,8 @@ local function buildUI()
 
         if isOutdated then continue end
 
-        -- ── Not connected: silently retry auto-connect ──
-        -- Backs off after failures so it never spams the server.
-        -- Once the user is signed in on the web, the next attempt links us.
-        if not session_id then
-          if dotRunning then continue end
-          local now = os.time()
-          if now < autoConnectCooldown then continue end
-          local rok, result = doRequest(PUBLIC_URL .. "/plugin/connect", "POST", {
-            plugin_id  = PLUGIN_ID,
-            creator_id = StudioService:GetUserId(),
-            version    = PLUGIN_VERSION,
-          })
-          if rok and result and result.ok and result.session_id then
-            errLbl.Text = ""
-            handleConnectSuccess(result, "auto")
-          else
-            autoConnectFailures += 1
-            -- Backoff: 5s, 10s, 20s, 30s, 60s cap
-            local delay = math.min(5 * (2 ^ math.min(autoConnectFailures - 1, 4)), 60)
-            autoConnectCooldown = now + delay
-          end
-          continue
-        end
+        -- ── Not connected: wait for the user to click Connect ──
+        if not session_id then continue end
 
         -- ── Connected: heartbeat + poll ──────────────────
         if toolRunning then continue end
