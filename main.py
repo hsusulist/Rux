@@ -295,8 +295,68 @@ def build_context(data):
         "selected_instance": data.get("selected_instance"),
     }
 
+MAX_HISTORY_TURNS = 8  # keep last N user+assistant turns verbatim
+MAX_MSG_CHARS = 8000   # truncate very long single messages
+
+
+def _compact_history(history):
+    """Trim chat history sent to the AI to control cost.
+    Strategy: keep the last MAX_HISTORY_TURNS turns (user+assistant pairs)
+    verbatim. Everything older is replaced with a single short summary note
+    so the AI still has continuity without re-sending (and re-paying for)
+    every old message every turn. Long individual messages are truncated.
+    """
+    if not history:
+        return [], 0
+    # Walk backwards collecting up to N user-role anchors.
+    keep_idx = 0
+    user_seen = 0
+    for i in range(len(history) - 1, -1, -1):
+        m = history[i]
+        if isinstance(m, dict) and m.get("role") == "user":
+            user_seen += 1
+            if user_seen >= MAX_HISTORY_TURNS:
+                keep_idx = i
+                break
+    older = history[:keep_idx]
+    recent = history[keep_idx:]
+    trimmed_older_count = len(older)
+
+    out = []
+    if older:
+        # Compact summary stub — does not call the AI, just lists topics
+        # cheaply from user turns so the model has continuity context.
+        topics = []
+        for m in older:
+            if isinstance(m, dict) and m.get("role") == "user":
+                c = m.get("content", "")
+                if isinstance(c, str):
+                    topics.append(c.strip().split("\n")[0][:80])
+        topic_blurb = " · ".join(topics[-6:]) if topics else "earlier discussion"
+        out.append({
+            "role": "user",
+            "content": f"[Earlier in this conversation ({trimmed_older_count} messages): {topic_blurb}]",
+        })
+        out.append({
+            "role": "assistant",
+            "content": "Got it, continuing from where we left off.",
+        })
+
+    # Truncate any oversized individual message
+    for m in recent:
+        if isinstance(m, dict) and isinstance(m.get("content"), str) and len(m["content"]) > MAX_MSG_CHARS:
+            mc = dict(m)
+            mc["content"] = m["content"][:MAX_MSG_CHARS] + "\n\n... [truncated to control cost]"
+            out.append(mc)
+        else:
+            out.append(m)
+    return out, trimmed_older_count
+
+
 def build_chat_messages(session, user_message, context):
-    messages = list(session["conversation"])
+    history, trimmed = _compact_history(list(session["conversation"]))
+    session["history_trimmed_count"] = trimmed
+    messages = history
     ctx_msg = f"User message:\n{user_message}\n\nCurrent script name:\n{context.get('current_script_name')}\n\nSelected instance:\n{json.dumps(context.get('selected_instance'), indent=2)}"
     if messages and messages[-1].get("role") == "user" and messages[-1].get("content") == user_message:
         messages[-1] = {"role": "user", "content": ctx_msg}
