@@ -1,0 +1,50 @@
+{
+  "id": "new-1777509854184",
+  "title": "21",
+  "messages": [
+    {
+      "role": "user",
+      "text": "hi",
+      "attachments": [],
+      "logTime": "07:44:21"
+    },
+    {
+      "role": "assistant",
+      "text": "Hello! I'm Rux, your AI assistant for Roblox Studio.\n\nI can help you build, script, and debug your game. For example, you can ask me to:\n\n*   \"Create a part that glows and make it kill the player on touch.\"\n*   \"Find all scripts that use `MarketplaceService`.\"\n*   \"Why is my character spawning in the sky? Find the `SpawnLocation` and move it to the ground.\"\n*   \"Add a `Tool` to `StarterPack` with a `Part` named 'Handle'.\"\n\nHow can I help you today?",
+      "logTime": "07:44:24"
+    },
+    {
+      "role": "user",
+      "text": ":/",
+      "attachments": [],
+      "logTime": "07:44:40"
+    },
+    {
+      "role": "assistant",
+      "text": "Looks like something might be off! 😄 No worries — I'm here to help.\n\nAre you:\n- **Stuck on a bug?** I can check your scripts for errors.\n- **Not sure where to start?** Tell me what you're trying to build!\n- **Running into a Roblox Studio issue?** Describe what's happening and I'll dig in.\n\nWhat's going on? 🙂",
+      "logTime": "07:44:44"
+    }
+  ],
+  "history": [
+    {
+      "role": "user",
+      "content": "hi"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! I'm Rux, your AI assistant for Roblox Studio.\n\nI can help you build, script, and debug your game. For example, you can ask me to:\n\n*   \"Create a part that glows and make it kill the player on touch.\"\n*   \"Find all scripts that use `MarketplaceService`.\"\n*   \"Why is my character spawning in the sky? Find the `SpawnLocation` and move it to the ground.\"\n*   \"Add a `Tool` to `StarterPack` with a `Part` named 'Handle'.\"\n\nHow can I help you today?"
+    },
+    {
+      "role": "user",
+      "content": ":/"
+    },
+    {
+      "role": "assistant",
+      "content": "Looks like something might be off! 😄 No worries — I'm here to help.\n\nAre you:\n- **Stuck on a bug?** I can check your scripts for errors.\n- **Not sure where to start?** Tell me what you're trying to build!\n- **Running into a Roblox Studio issue?** Describe what's happening and I'll dig in.\n\nWhat's going on? 🙂"
+    }
+  ],
+  "mode": "chat",
+  "model": "sonnet",
+  "sessionId": "64d2995d-dd4c-4cad-b60e-13e3de5b077d",
+  "updatedAt": 1777509884908
+}

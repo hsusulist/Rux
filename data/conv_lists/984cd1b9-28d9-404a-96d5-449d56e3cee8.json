@@ -103,5 +103,12 @@
     "mode": "chat",
     "model": "gemini-pro",
     "updatedAt": 1777509042151
+  },
+  "new-1777509854184": {
+    "id": "new-1777509854184",
+    "title": "21",
+    "mode": "chat",
+    "model": "sonnet",
+    "updatedAt": 1777509884908
   }
 }

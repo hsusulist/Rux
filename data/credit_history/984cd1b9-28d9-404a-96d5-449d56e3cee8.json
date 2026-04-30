@@ -64,5 +64,17 @@
     "reason": "AI chat (Gemini Pro)",
     "admin_id": "",
     "timestamp": 1777509041359
+  },
+  {
+    "amount": -0.0384,
+    "reason": "AI chat (Gemini Pro)",
+    "admin_id": "",
+    "timestamp": 1777509863871
+  },
+  {
+    "amount": -0.0505,
+    "reason": "AI chat (Claude Sonnet)",
+    "admin_id": "",
+    "timestamp": 1777509884175
   }
 ]
